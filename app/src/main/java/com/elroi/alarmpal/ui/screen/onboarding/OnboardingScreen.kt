@@ -10,27 +10,29 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.elroi.alarmpal.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -47,6 +49,8 @@ fun OnboardingScreen(
     val coroutineScope = rememberCoroutineScope()
     var currentPage by remember { mutableStateOf(0) }
     val totalPages = 5
+
+    val userName by viewModel.userName.collectAsState()
 
     var buddyName by remember { mutableStateOf("") }
     var buddyPhone by remember { mutableStateOf("") }
@@ -101,113 +105,40 @@ fun OnboardingScreen(
         if (isGranted) contactPickerLauncher.launch(null)
     }
 
-    val pages = listOf(
-        OnboardingPage(
-            emoji = "⏰",
-            title = "Wake Up Smarter",
-            body = "AlarmPal is the alarm that doesn't just wake you up — it briefs you. Weather, calendar, a morning mission, all delivered in the voice of a character you choose.",
-            primaryLabel = "Let's Go",
-            onPrimary = { currentPage++ },
-            secondaryLabel = null
-        ),
-        OnboardingPage(
-            emoji = "🔔",
-            title = "Allow Notifications & Alarms",
-            body = "AlarmPal needs permission to send notifications and schedule exact alarms. Without these, your alarms cannot fire.\n\nThis is required for the app to work.",
-            primaryLabel = "Grant Permissions",
-            onPrimary = {
-                // Notification permission (Android 13+)
+    val hasContactPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    
+    var grantedCount by remember { mutableStateOf(0) }
+    var totalCount by remember { mutableStateOf(0) }
+    
+    // Observe lifecycle to re-check when returning from Settings
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                var granted = 0
+                var total = 0
+                
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val granted = ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.POST_NOTIFICATIONS
-                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    if (!granted) {
-                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
+                    total++
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) granted++
                 }
-                // Exact alarm permission (Android 12+)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    total++
                     val alarmManager = context.getSystemService(AlarmManager::class.java)
-                    if (!alarmManager.canScheduleExactAlarms()) {
-                        context.startActivity(
-                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                                .setData(Uri.parse("package:${context.packageName}"))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        )
-                    }
+                    if (alarmManager.canScheduleExactAlarms()) granted++
                 }
-                // Overlay permission (for alarm-over-lock-screen on Android 10+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:${context.packageName}")
-                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                }
-                currentPage++
-            },
-            secondaryLabel = "Skip (Not Recommended)",
-            onSecondary = { currentPage++ }
-        ),
-        OnboardingPage(
-            emoji = "🌤️",
-            title = "Power Up Your Briefing",
-            body = "AlarmPal can read your calendar and location to give you a personalised morning briefing.\n\nThis is optional — you can always enable it later in Settings.",
-            primaryLabel = "Enable Briefing Features",
-            onPrimary = {
-                val calGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.READ_CALENDAR
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                val locGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!calGranted) calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
-                if (!locGranted) locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                currentPage++
-            },
-            secondaryLabel = "Skip for Now",
-            onSecondary = { currentPage++ }
-        ),
-        OnboardingPage(
-            emoji = "🤝",
-            title = "Never Wake Up Alone",
-            body = "Add an accountability buddy who will get a text if you snooze too many times or miss your alarm entirely.\n\nIt's the ultimate safety net.",
-            primaryLabel = if (buddyName.isBlank()) "Add First Buddy" else "Change Buddy",
-            onPrimary = {
-                // Request SMS permissions
-                val smsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!smsGranted) {
-                    smsLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS))
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    total++
+                    if (Settings.canDrawOverlays(context)) granted++
                 }
                 
-                // Then launch contact picker
-                val hasContactPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (hasContactPermission) {
-                    contactPickerLauncher.launch(null)
-                } else {
-                    contactPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-                }
-            },
-            secondaryLabel = if (buddyName.isBlank()) "Skip for Now" else "Next",
-            onSecondary = { currentPage++ }
-        ),
-        OnboardingPage(
-            emoji = "🚀",
-            title = "You're All Set!",
-            body = "Create your first alarm with the ➕ button.\n\nChoose a wake-up persona in Settings to personalise your morning briefing.",
-            primaryLabel = "Create My First Alarm",
-            onPrimary = {
-                coroutineScope.launch {
-                    viewModel.completeOnboarding()
-                    onFinished()
-                }
-            },
-            secondaryLabel = null
-        )
-    )
-
-    val page = pages[currentPage]
+                grantedCount = granted
+                totalCount = total
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Box(
         modifier = Modifier
@@ -221,14 +152,17 @@ fun OnboardingScreen(
                     )
                 )
             )
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp),
+                .padding(horizontal = 32.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.weight(0.5f))
+            Spacer(modifier = Modifier.height(48.dp))
 
             // Page indicators
             Row(
@@ -255,99 +189,301 @@ fun OnboardingScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Emoji icon
-            AnimatedVisibility(
-                visible = true,
-                enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 4 },
-                exit = fadeOut() + slideOutVertically { -it / 4 }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(32.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = page.emoji,
-                        fontSize = 56.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Title
-            Text(
-                text = page.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Body
-            Text(
-                text = page.body,
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 24.sp
-            )
-
-            if (currentPage == 3 && buddyName.isNotBlank()) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("✅ Buddy assigned: ", style = MaterialTheme.typography.bodyMedium)
-                        Text(buddyName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            // Animated content transition
+            AnimatedContent<Int>(
+                targetState = currentPage,
+                transitionSpec = {
+                    if (targetState > initialState) {
+                        (fadeIn(tween(400)) + slideInHorizontally(tween(400)) { it / 2 })
+                            .togetherWith(fadeOut(tween(400)) + slideOutHorizontally(tween(400)) { -it / 2 })
+                    } else {
+                        (fadeIn(tween(400)) + slideInHorizontally(tween(400)) { -it / 2 })
+                            .togetherWith(fadeOut(tween(400)) + slideOutHorizontally(tween(400)) { it / 2 })
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Primary button
-            Button(
-                onClick = page.onPrimary,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = page.primaryLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            // Secondary / skip button
-            if (page.secondaryLabel != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                TextButton(
-                    onClick = page.onSecondary ?: {},
-                    modifier = Modifier.fillMaxWidth()
+                },
+                label = "page_content",
+                modifier = Modifier.fillMaxWidth()
+            ) { targetPage ->
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val emoji: String
+                    val title: String
+                    val body: String
+                    val primaryLabel: String
+                    val onPrimary: () -> Unit
+                    val secondaryLabel: String?
+                    val onSecondary: (() -> Unit)?
+                    var customContent: (@Composable () -> Unit)? = null
+
+                    when (targetPage) {
+                        0 -> {
+                            emoji = "⏰"
+                            title = stringResource(R.string.onboarding_1_title)
+                            body = stringResource(R.string.onboarding_1_body)
+                            primaryLabel = stringResource(R.string.onboarding_1_primary)
+                            onPrimary = { currentPage++ }
+                            secondaryLabel = null
+                            onSecondary = null
+                        }
+                        1 -> {
+                            emoji = "🔔"
+                            title = stringResource(R.string.onboarding_2_title)
+                            body = stringResource(R.string.onboarding_2_body)
+                            primaryLabel = if (grantedCount == totalCount && totalCount > 0)
+                                stringResource(R.string.onboarding_2_continue)
+                            else
+                                stringResource(R.string.onboarding_2_primary)
+                            onPrimary = onPrimaryLabel@ {
+                                // 1. Notification permission (Android 13+)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    val granted = ContextCompat.checkSelfPermission(
+                                        context, Manifest.permission.POST_NOTIFICATIONS
+                                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                    if (!granted) {
+                                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        return@onPrimaryLabel
+                                    }
+                                }
+                                
+                                // 2. Exact alarm permission (Android 12+)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    val alarmManager = context.getSystemService(AlarmManager::class.java)
+                                    if (!alarmManager.canScheduleExactAlarms()) {
+                                        context.startActivity(
+                                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                                .setData(Uri.parse("package:${context.packageName}"))
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                        return@onPrimaryLabel
+                                    }
+                                }
+                                
+                                // 3. Overlay permission (for alarm-over-lock-screen on Android 10+)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            Uri.parse("package:${context.packageName}")
+                                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    )
+                                    return@onPrimaryLabel
+                                }
+                                
+                                currentPage++
+                            }
+                            secondaryLabel = stringResource(R.string.onboarding_2_secondary)
+                            onSecondary = { currentPage++ }
+                            customContent = {
+                                if (totalCount > 0) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Setup Progress: $grantedCount / $totalCount",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.6f)
+                                                .height(8.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), 
+                                                    CircleShape
+                                                )
+                                                .clip(CircleShape)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(if (totalCount > 0) grantedCount.toFloat() / totalCount else 0f)
+                                                    .fillMaxHeight()
+                                                    .background(MaterialTheme.colorScheme.primary)
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = if (grantedCount == totalCount) "All set! Click below to continue." else "Grant permissions to proceed",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        2 -> {
+                            emoji = "🌤️"
+                            title = stringResource(R.string.onboarding_3_title)
+                            body = stringResource(R.string.onboarding_3_body) + "\n" + stringResource(R.string.onboarding_3_personas)
+                            primaryLabel = stringResource(R.string.onboarding_3_primary)
+                            onPrimary = {
+                                val calGranted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.READ_CALENDAR
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                val locGranted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.ACCESS_COARSE_LOCATION
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                if (!calGranted) calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
+                                if (!locGranted) locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                                currentPage++
+                            }
+                            secondaryLabel = stringResource(R.string.onboarding_3_secondary)
+                            onSecondary = { currentPage++ }
+                            customContent = {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Text(
+                                        stringResource(R.string.onboarding_3_label_name),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    
+                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                        OutlinedTextField(
+                                            value = userName,
+                                            onValueChange = { viewModel.updateUserName(it) },
+                                            placeholder = { 
+                                                Text(
+                                                    stringResource(R.string.onboarding_3_hint_name),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    textAlign = TextAlign.Center
+                                                ) 
+                                            },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        3 -> {
+                            emoji = "🤝"
+                            title = stringResource(R.string.onboarding_4_title)
+                            body = stringResource(R.string.onboarding_4_body)
+                            primaryLabel = stringResource(R.string.onboarding_4_primary)
+                            onPrimary = { currentPage++ }
+                            secondaryLabel = null
+                            onSecondary = null
+                        }
+                        else -> {
+                            emoji = "🚀"
+                            title = stringResource(R.string.onboarding_5_title)
+                            body = stringResource(R.string.onboarding_5_body)
+                            primaryLabel = stringResource(R.string.onboarding_5_primary)
+                            onPrimary = {
+                                coroutineScope.launch {
+                                    viewModel.completeOnboarding()
+                                    onFinished()
+                                }
+                            }
+                            secondaryLabel = null
+                            onSecondary = null
+                        }
+                    }
+                    
+                    // Render the page content
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(32.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = emoji,
+                            fontSize = 56.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
                     Text(
-                        text = page.secondaryLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = body,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 24.sp
+                    )
+
+                    customContent?.invoke()
+
+                    if (targetPage == 3 && buddyName.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(stringResource(R.string.onboarding_buddy_assigned_prefix), style = MaterialTheme.typography.bodyMedium)
+                                Text(buddyName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    Button(
+                        onClick = onPrimary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(
+                            text = primaryLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    if (secondaryLabel != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(
+                            onClick = onSecondary ?: {},
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = secondaryLabel,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(40.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
@@ -359,5 +495,6 @@ private data class OnboardingPage(
     val primaryLabel: String,
     val onPrimary: () -> Unit,
     val secondaryLabel: String?,
-    val onSecondary: (() -> Unit)? = null
+    val onSecondary: (() -> Unit)? = null,
+    val customContent: (@Composable () -> Unit)? = null
 )

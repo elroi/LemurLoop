@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
@@ -37,6 +38,8 @@ import com.elroi.alarmpal.ui.components.BuddySelectionDialog
 import com.elroi.alarmpal.ui.components.SettingHelpIcon
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.elroi.alarmpal.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
@@ -1279,7 +1282,7 @@ fun AccountabilityBuddyContent(
                     ) {
                         Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Select Buddy")
+                        Text(stringResource(R.string.buddy_dialog_title_select))
                     }
                 } else {
                     Surface(
@@ -1298,7 +1301,7 @@ fun AccountabilityBuddyContent(
                                 Text(phoneNumber, style = MaterialTheme.typography.bodySmall)
                             }
                             IconButton(onClick = { onContactNameChange(""); onPhoneNumberChange("") }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear buddy")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.alarm_detail_buddy_clear_content_desc))
                             }
                         }
                     }
@@ -1307,7 +1310,7 @@ fun AccountabilityBuddyContent(
                         onClick = { showBuddySelection = true },
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     ) {
-                        Text("Change Buddy")
+                        Text(stringResource(R.string.buddy_btn_change))
                     }
                 }
 
@@ -1329,8 +1332,8 @@ fun AccountabilityBuddyContent(
                 OutlinedTextField(
                     value         = phoneNumber,
                     onValueChange = onPhoneNumberChange,
-                    label         = { Text(if (hasContact) "Phone Number" else "Or type a phone number") },
-                    placeholder   = { Text("+1 234 567 8901") },
+                    label         = { Text(if (hasContact) stringResource(R.string.buddy_dialog_field_phone) else stringResource(R.string.alarm_detail_buddy_field_phone_or_type)) },
+                    placeholder   = { Text(stringResource(R.string.alarm_detail_buddy_hint_phone)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine    = true,
                     modifier      = Modifier.fillMaxWidth()
@@ -1339,8 +1342,8 @@ fun AccountabilityBuddyContent(
                 OutlinedTextField(
                     value         = userName,
                     onValueChange = onUserNameChange,
-                    label         = { Text("Your name") },
-                    placeholder   = { Text("Alex") },
+                    label         = { Text(stringResource(R.string.alarm_detail_buddy_field_user_name)) },
+                    placeholder   = { Text(stringResource(R.string.alarm_detail_buddy_hint_user_name)) },
                     singleLine    = true,
                     modifier      = Modifier.fillMaxWidth()
                 )
@@ -1350,8 +1353,8 @@ fun AccountabilityBuddyContent(
                     onValueChange = { typed ->
                         onCustomMessageChange(if (typed == defaultMessage) "" else typed)
                     },
-                    label         = { Text("Message") },
-                    supportingText = { Text("Use {name} as a placeholder for your name",
+                    label         = { Text(stringResource(R.string.alarm_detail_buddy_field_message)) },
+                    supportingText = { Text(stringResource(R.string.alarm_detail_buddy_message_hint),
                         style = MaterialTheme.typography.labelSmall) },
                     minLines = 2,
                     maxLines = 4,
@@ -1363,10 +1366,10 @@ fun AccountabilityBuddyContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Alert after", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.alarm_detail_buddy_alert_after), style = MaterialTheme.typography.bodyMedium)
                     Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
                         Text(
-                            text     = "$alertDelayMinutes min",
+                            text     = stringResource(R.string.alarm_detail_buddy_unit_min, alertDelayMinutes),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style    = MaterialTheme.typography.labelLarge,
                             color    = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1386,7 +1389,7 @@ fun AccountabilityBuddyContent(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Message preview", style = MaterialTheme.typography.labelSmall,
+                        Text(stringResource(R.string.alarm_detail_buddy_message_preview), style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(smsPreview, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
                     }
@@ -1394,7 +1397,7 @@ fun AccountabilityBuddyContent(
 
                 if (!hasSmsPermissions) {
                     Text(
-                        "⚠️ SMS permissions required to send/receive messages",
+                        stringResource(R.string.alarm_detail_buddy_permissions_error),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -1411,9 +1414,9 @@ fun AccountabilityBuddyContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = when {
-                                    isConfirmed -> "✅ Buddy Confirmed"
-                                    pendingCode != null -> "⏳ Awaiting code: $pendingCode"
-                                    else -> "📲 Notify buddy"
+                                    isConfirmed -> stringResource(R.string.alarm_detail_buddy_status_confirmed)
+                                    pendingCode != null -> stringResource(R.string.alarm_detail_buddy_status_awaiting_code, pendingCode)
+                                    else -> stringResource(R.string.alarm_detail_buddy_status_notify)
                                 },
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Medium,
@@ -1425,9 +1428,9 @@ fun AccountabilityBuddyContent(
                             )
                             Text(
                                 text = when {
-                                    isConfirmed -> "They've opted in! They'll be alerted if you miss this."
-                                    pendingCode != null -> "Invite sent. Ask them to reply with the code."
-                                    else -> "Send them an invite SMS so they can opt-in to help you."
+                                    isConfirmed -> stringResource(R.string.alarm_detail_buddy_desc_confirmed)
+                                    pendingCode != null -> stringResource(R.string.alarm_detail_buddy_desc_awaiting_code)
+                                    else -> stringResource(R.string.alarm_detail_buddy_desc_notify)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1444,7 +1447,7 @@ fun AccountabilityBuddyContent(
                                 },
                                 modifier = Modifier.padding(start = 12.dp)
                             ) {
-                                Text("Send")
+                                Text(stringResource(R.string.btn_add))
                             }
                         } else if (pendingCode != null) {
                             TextButton(
@@ -1453,7 +1456,7 @@ fun AccountabilityBuddyContent(
                                 },
                                 modifier = Modifier.padding(start = 12.dp)
                             ) {
-                                Text("Resend", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.alarm_detail_buddy_btn_resend), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }

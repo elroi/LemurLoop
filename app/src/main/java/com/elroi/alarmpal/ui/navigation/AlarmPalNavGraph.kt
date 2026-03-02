@@ -55,7 +55,8 @@ fun AlarmPalNavGraph(
         composable(Screen.Settings.route) {
             com.elroi.alarmpal.ui.screen.settings.SettingsScreen(
                 onNavigateUp = { navController.navigateUp() },
-                onNavigateToHelp = { navController.navigate(Screen.Help.route) }
+                onNavigateToHelp = { navController.navigate(Screen.Help.route) },
+                onNavigateToOnboarding = { navController.navigate(Screen.Onboarding.route) }
             )
         }
 

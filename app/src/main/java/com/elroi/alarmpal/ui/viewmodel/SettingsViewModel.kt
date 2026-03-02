@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,6 +57,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _draftAiFallbackOrder = MutableStateFlow("CLOUD_THEN_LOCAL")
     val aiFallbackOrder = _draftAiFallbackOrder.asStateFlow()
+
+    val userName: StateFlow<String> = alarmDefaults.map { it.briefingUserName }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     private val _isKeyValidating = MutableStateFlow(false)
     val isKeyValidating = _isKeyValidating.asStateFlow()
@@ -230,6 +234,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateAlarmDefaults(defaults: AlarmDefaults) {
         _draftAlarmDefaults.value = defaults
+    }
+
+    fun updateUserName(name: String) {
+        updateAlarmDefaults(alarmDefaults.value.copy(briefingUserName = name))
     }
 
     fun updateGeminiApiKey(apiKey: String) {

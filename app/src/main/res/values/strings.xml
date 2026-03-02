@@ -1,3 +1,97 @@
 <resources>
     <string name="app_name">AlarmPal</string>
+
+    <!-- Onboarding - Page 1 -->
+    <string name="onboarding_1_title">Wake Up Smarter</string>
+    <string name="onboarding_1_body">AlarmPal is the alarm that doesn\'t just wake you up — it makes it fun! \nIt briefs you on the weather, your calendar, and a morning mission, all configurable and delivered in the voice of a character you choose.</string>
+    <string name="onboarding_1_primary">Let\'s Go</string>
+
+    <!-- Onboarding - Page 2 (Permissions) -->
+    <string name="onboarding_2_title">Allow Notifications &amp; Alarms</string>
+    <string name="onboarding_2_body">AlarmPal needs permission to send notifications and schedule exact alarms. Without these, your alarms cannot fire.\n\nThis is required for the app to work.</string>
+    <string name="onboarding_2_primary">Grant Permissions</string>
+    <string name="onboarding_2_continue">Continue</string>
+    <string name="onboarding_2_secondary">Skip (Not Recommended)</string>
+
+    <!-- Onboarding - Page 3 (Briefing) -->
+    <string name="onboarding_3_title">Personas &amp; Personalization</string>
+    <string name="onboarding_3_body">Choose your wake-up style! Our AI personas deliver your briefing with a unique twist:</string>
+    <string name="onboarding_3_personas">\n• 🎖️ The Drill Sergeant: Tough love only.\n• 🎭 The Sarcastic Friend: Witty and dry.\n• 🧘 The Zen Master: Calm and mindful.\n• ⚡ The Hype-Man: High energy flow.</string>
+    <string name="onboarding_3_label_name">I\'d like to be called...</string>
+    <string name="onboarding_3_hint_name">Enter your name to make it personal</string>
+    <string name="onboarding_3_primary">Enable Briefing Features</string>
+    <string name="onboarding_3_secondary">Skip for Now</string>
+
+    <!-- Onboarding - Page 4 (Buddy) -->
+    <string name="onboarding_4_title">Backup for Your Wake-Up</string>
+    <string name="onboarding_4_body">Add an accountability buddy who will get a text if you snooze too many times or miss your alarm entirely. \n\nYou can set this up whenever you create or edit an alarm. **Pro tip: Try adding yourself first to see it in action!**</string>
+    <string name="onboarding_4_primary">Sounds Great</string>
+    <string name="onboarding_4_secondary_skip">Skip for Now</string>
+    <string name="onboarding_4_secondary_next">Next</string>
+    <string name="onboarding_buddy_assigned_prefix">Buddy assigned: </string>
+
+    <!-- Onboarding - Page 5 (Finished) -->
+    <string name="onboarding_5_title">You\'re All Set!</string>
+    <string name="onboarding_5_body">Create your first alarm with the + button.\n\nChoose a wake-up persona in Settings to personalise your morning briefing.</string>
+    <string name="onboarding_5_primary">Create My First Alarm</string>
+
+    <!-- Common -->
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_add">Add</string>
+    <!-- Buddy Selection Dialog -->
+    <string name="buddy_dialog_title_add">Add New Buddy</string>
+    <string name="buddy_dialog_title_select">Select Buddy</string>
+    <string name="buddy_dialog_btn_pick_contacts">Pick from Contacts</string>
+    <string name="buddy_dialog_label_manual_entry">- or enter manually -</string>
+    <string name="buddy_dialog_field_name">Buddy Name</string>
+    <string name="buddy_dialog_field_phone">Phone Number</string>
+    <string name="buddy_dialog_hint_phone">+1...</string>
+    <string name="buddy_dialog_unknown">Unknown</string>
+    <string name="buddy_dialog_btn_add_new">Add New Buddy</string>
+    <string name="buddy_dialog_btn_add_select">Add &amp; Select</string>
+
+    <!-- Settings - Accountability -->
+    <string name="settings_buddy_title">Accountability Buddies</string>
+    <string name="settings_buddy_empty_state">No buddies added yet. Your buddies help you stay accountable if you sleep through an alarm.</string>
+    <string name="settings_buddy_status_confirmed">Confirmed</string>
+    <string name="settings_buddy_status_pending">Pending Opt-in</string>
+    <string name="settings_buddy_btn_remove">Remove Buddy</string>
+    <string name="buddy_btn_change">Change Buddy</string>
+    <string name="buddy_btn_add">Add Buddy</string>
+
+    <!-- Settings - System & Tutorial -->
+    <string name="settings_system_title">System &amp; Tutorial</string>
+    <string name="settings_onboarding_replay">Replay App Tutorial</string>
+    <string name="settings_onboarding_replay_desc">Walk through the setup guide again to configure your briefing and buddies.</string>
+
+    <!-- Settings - AI Persona Customization -->
+    <string name="settings_persona_description">You can customize the exact system instructions given to the AI for each personality type.</string>
+    <string name="settings_persona_label_coach">The Drill Sergeant</string>
+    <string name="settings_persona_label_comedian">The Sarcastic Friend</string>
+    <string name="settings_persona_label_zen">The Zen Master</string>
+    <string name="settings_persona_label_hypeman">The Hype-Man</string>
+    <string name="settings_persona_btn_reset">Reset to Defaults</string>
+
+    <!-- Alarm Detail - Accountability -->
+    <string name="alarm_detail_buddy_clear_content_desc">Clear buddy</string>
+    <string name="alarm_detail_buddy_field_phone_or_type">Or type a phone number</string>
+    <string name="alarm_detail_buddy_hint_phone">+1 234 567 8901</string>
+    <string name="alarm_detail_buddy_field_user_name">Your name</string>
+    <string name="alarm_detail_buddy_hint_user_name">Alex</string>
+    <string name="alarm_detail_buddy_field_message">Message</string>
+    <string name="alarm_detail_buddy_message_hint">Use {name} as a placeholder for your name</string>
+    <string name="alarm_detail_buddy_alert_after">Alert after</string>
+    <string name="alarm_detail_buddy_unit_min">%1$d min</string>
+    <string name="alarm_detail_buddy_message_preview">Message preview</string>
+    <string name="alarm_detail_buddy_permissions_error">SMS permissions required to send/receive messages</string>
+    <string name="alarm_detail_buddy_status_confirmed">Buddy Confirmed</string>
+    <string name="alarm_detail_buddy_status_awaiting_code">Awaiting code: %1$s</string>
+    <string name="alarm_detail_buddy_status_notify">Notify buddy</string>
+    <string name="alarm_detail_buddy_desc_confirmed">They\'ve opted in! They\'ll be alerted if you miss this.</string>
+    <string name="alarm_detail_buddy_desc_awaiting_code">Invite sent. Ask them to reply with the code.</string>
+    <string name="alarm_detail_buddy_desc_notify">Send them an invite SMS so they can opt-in to help you.</string>
+    <string name="alarm_detail_buddy_btn_resend">Resend</string>
 </resources>

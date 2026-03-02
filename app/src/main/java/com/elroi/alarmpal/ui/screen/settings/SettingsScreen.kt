@@ -25,6 +25,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.elroi.alarmpal.R
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -58,6 +60,7 @@ import com.elroi.alarmpal.ui.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateUp: () -> Unit,
     onNavigateToHelp: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val location by viewModel.location.collectAsState()
@@ -209,6 +212,16 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = !isAutoLocation
+            )
+
+            val userName by viewModel.userName.collectAsState()
+            OutlinedTextField(
+                value = userName,
+                onValueChange = { viewModel.updateUserName(it) },
+                label = { Text(stringResource(R.string.onboarding_3_label_name)) },
+                placeholder = { Text(stringResource(R.string.onboarding_3_hint_name)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
@@ -588,6 +601,44 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            Text(stringResource(R.string.settings_system_title), style = MaterialTheme.typography.titleLarge)
+            
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clickable { onNavigateToOnboarding() }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.settings_onboarding_replay),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            stringResource(R.string.settings_onboarding_replay_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             var showEditPromptsDialogLocal by remember { mutableStateOf(false) }
             OutlinedButton(
                 onClick = { showEditPromptsDialogLocal = true },
@@ -1298,7 +1349,7 @@ fun EditPromptsDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    "You can customize the exact system instructions given to the AI for each personality type.",
+                    stringResource(R.string.settings_persona_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1306,7 +1357,7 @@ fun EditPromptsDialog(
                 OutlinedTextField(
                     value = promptCoach,
                     onValueChange = { promptCoach = it },
-                    label = { Text("The Drill Sergeant") },
+                    label = { Text(stringResource(R.string.settings_persona_label_coach)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 5
@@ -1315,7 +1366,7 @@ fun EditPromptsDialog(
                 OutlinedTextField(
                     value = promptComedian,
                     onValueChange = { promptComedian = it },
-                    label = { Text("The Sarcastic Friend") },
+                    label = { Text(stringResource(R.string.settings_persona_label_comedian)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 5
@@ -1324,7 +1375,7 @@ fun EditPromptsDialog(
                 OutlinedTextField(
                     value = promptZen,
                     onValueChange = { promptZen = it },
-                    label = { Text("The Zen Master") },
+                    label = { Text(stringResource(R.string.settings_persona_label_zen)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 5
@@ -1333,7 +1384,7 @@ fun EditPromptsDialog(
                 OutlinedTextField(
                     value = promptHypeman,
                     onValueChange = { promptHypeman = it },
-                    label = { Text("The Hype-Man") },
+                    label = { Text(stringResource(R.string.settings_persona_label_hypeman)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 5
@@ -1348,7 +1399,7 @@ fun EditPromptsDialog(
                     },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Reset to Defaults", fontSize = 12.sp)
+                    Text(stringResource(R.string.settings_persona_btn_reset), fontSize = 12.sp)
                 }
             }
         },
@@ -1356,12 +1407,12 @@ fun EditPromptsDialog(
             TextButton(
                 onClick = { onSave(promptCoach, promptComedian, promptZen, promptHypeman) }
             ) {
-                Text("Save")
+                Text(stringResource(R.string.btn_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )
@@ -1379,11 +1430,11 @@ fun BuddyManagementSection(viewModel: SettingsViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Accountability Buddies 🛡️", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.settings_buddy_title), style = MaterialTheme.typography.titleLarge)
             TextButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Add")
+                Text(stringResource(R.string.btn_add))
             }
         }
 
@@ -1394,7 +1445,7 @@ fun BuddyManagementSection(viewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "No buddies added yet. Your buddies help you stay accountable if you sleep through an alarm.",
+                    stringResource(R.string.settings_buddy_empty_state),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp)
@@ -1403,7 +1454,7 @@ fun BuddyManagementSection(viewModel: SettingsViewModel) {
         } else {
             buddies.forEach { buddyStr ->
                 val parts = buddyStr.split("|")
-                val name = parts.getOrNull(0) ?: "Unknown"
+                val name = parts.getOrNull(0) ?: stringResource(R.string.buddy_dialog_unknown)
                 val phone = parts.getOrNull(1) ?: ""
                 val isConfirmed = confirmedNumbers.any { it.replace(Regex("[^\\d+]"), "").endsWith(phone.replace(Regex("[^\\d+]"), "")) || phone.replace(Regex("[^\\d+]"), "").endsWith(it.replace(Regex("[^\\d+]"), "")) }
 
@@ -1468,7 +1519,7 @@ fun BuddyListItem(
                     Text(phone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isConfirmed) "• Confirmed" else "• Pending Opt-in",
+                        text = if (isConfirmed) stringResource(R.string.settings_buddy_status_confirmed) else stringResource(R.string.settings_buddy_status_pending),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (isConfirmed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary
                     )
@@ -1476,7 +1527,7 @@ fun BuddyListItem(
             }
 
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Remove Buddy", tint = MaterialTheme.colorScheme.error)
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.settings_buddy_btn_remove), tint = MaterialTheme.colorScheme.error)
             }
         }
     }

@@ -346,6 +346,12 @@ class SettingsManager @Inject constructor(
         }
     }
 
+    suspend fun saveBriefingUserName(name: String) {
+        context.dataStore.edit { settings ->
+            settings[BRIEFING_USER_NAME] = name
+        }
+    }
+
     // ---------- Confirmed Buddy Numbers ----------
     val confirmedBuddyNumbersFlow: Flow<Set<String>> = context.dataStore.data.map { preferences ->
         preferences[CONFIRMED_BUDDY_NUMBERS] ?: emptySet()

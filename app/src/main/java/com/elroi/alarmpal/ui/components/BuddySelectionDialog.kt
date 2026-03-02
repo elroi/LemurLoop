@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
+import com.elroi.alarmpal.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -66,7 +68,7 @@ fun BuddySelectionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (showManualEntry) "Add New Buddy" else "Select Buddy") },
+        title = { Text(if (showManualEntry) stringResource(R.string.buddy_dialog_title_add) else stringResource(R.string.buddy_dialog_title_select)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -85,10 +87,10 @@ fun BuddySelectionDialog(
                     ) {
                         Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Pick from Contacts")
+                        Text(stringResource(R.string.buddy_dialog_btn_pick_contacts))
                     }
 
-                    Text("— or enter manually —",
+                    Text(stringResource(R.string.buddy_dialog_label_manual_entry),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -97,16 +99,16 @@ fun BuddySelectionDialog(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Buddy Name") },
+                        label = { Text(stringResource(R.string.buddy_dialog_field_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("Phone Number") },
+                        label = { Text(stringResource(R.string.buddy_dialog_field_phone)) },
                         singleLine = true,
-                        placeholder = { Text("+1...") },
+                        placeholder = { Text(stringResource(R.string.buddy_dialog_hint_phone)) },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -116,7 +118,7 @@ fun BuddySelectionDialog(
                     ) {
                         items(globalBuddies.toList()) { buddyStr ->
                             val parts = buddyStr.split("|")
-                            val bName = parts.getOrNull(0) ?: "Unknown"
+                            val bName = parts.getOrNull(0) ?: stringResource(R.string.buddy_dialog_unknown)
                             val bPhone = parts.getOrNull(1) ?: ""
 
                             Surface(
@@ -147,7 +149,7 @@ fun BuddySelectionDialog(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Add New Buddy")
+                        Text(stringResource(R.string.buddy_dialog_btn_add_new))
                     }
                 }
             }
@@ -158,7 +160,7 @@ fun BuddySelectionDialog(
                     onClick = { if (name.isNotBlank() && phone.isNotBlank()) onBuddySelected(name, phone) },
                     enabled = name.isNotBlank() && phone.isNotBlank()
                 ) {
-                    Text("Add & Select")
+                    Text(stringResource(R.string.buddy_dialog_btn_add_select))
                 }
             }
         },
@@ -167,7 +169,7 @@ fun BuddySelectionDialog(
                 if (showManualEntry && globalBuddies.isNotEmpty()) showManualEntry = false
                 else onDismiss()
             }) {
-                Text(if (showManualEntry && globalBuddies.isNotEmpty()) "Back" else "Cancel")
+                Text(if (showManualEntry && globalBuddies.isNotEmpty()) stringResource(R.string.btn_back) else stringResource(R.string.btn_cancel))
             }
         }
     )
