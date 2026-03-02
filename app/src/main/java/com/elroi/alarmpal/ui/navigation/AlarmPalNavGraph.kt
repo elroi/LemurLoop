@@ -18,9 +18,15 @@ fun AlarmPalNavGraph(
     ) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
-                onFinished = {
-                    navController.navigate(Screen.AlarmList.route) {
-                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                onFinished = { createAlarm ->
+                    if (createAlarm) {
+                        navController.navigate(Screen.AlarmDetail.createRoute("")) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate(Screen.AlarmList.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
                     }
                 }
             )

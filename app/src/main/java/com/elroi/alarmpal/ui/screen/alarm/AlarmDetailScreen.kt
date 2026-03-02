@@ -346,7 +346,7 @@ fun AlarmDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (alarmId == null) "New Alarm" else "Edit Alarm") },
+                title = { Text(if (alarmId.isNullOrBlank()) "New Alarm" else "Edit Alarm") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")

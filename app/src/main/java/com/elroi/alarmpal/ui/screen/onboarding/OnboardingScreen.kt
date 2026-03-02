@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -15,12 +16,14 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import com.elroi.alarmpal.R
 import androidx.compose.ui.Alignment
@@ -42,7 +45,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun OnboardingScreen(
-    onFinished: () -> Unit,
+    onFinished: (Boolean) -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -110,7 +113,85 @@ fun OnboardingScreen(
     var grantedCount by remember { mutableStateOf(0) }
     var totalCount by remember { mutableStateOf(0) }
     
-    // Observe lifecycle to re-check when returning from Settings
+    var briefingGrantedCount by remember { mutableStateOf(0) }
+    var briefingTotalCount by remember { mutableStateOf(0) }
+    
+    fun handleBack() {
+        if (currentPage > 0) currentPage--
+    }
+
+    fun handleNext(createAlarm: Boolean = true) {
+        when (currentPage) {
+            1 -> {
+                // Permissions Page Logic
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val granted = ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.POST_NOTIFICATIONS
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!granted) {
+                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        return
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val alarmManager = context.getSystemService(AlarmManager::class.java)
+                    if (!alarmManager.canScheduleExactAlarms()) {
+                        context.startActivity(
+                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                .setData(Uri.parse("package:${context.packageName}"))
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                        return
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                    context.startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:${context.packageName}")
+                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                    return
+                }
+                currentPage++
+            }
+            2 -> {
+                // Name & Extras Page - Request permissions sequentially
+                val calGranted = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.READ_CALENDAR
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!calGranted) {
+                    calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
+                    return
+                }
+
+                val locGranted = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!locGranted) {
+                    locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    return
+                }
+                
+                currentPage++
+            }
+            totalPages - 1 -> {
+                coroutineScope.launch {
+                    viewModel.completeOnboarding()
+                    onFinished(createAlarm)
+                }
+            }
+            else -> {
+                if (currentPage < totalPages - 1) currentPage++
+            }
+        }
+    }
+
+    // Handle system back press
+    BackHandler(enabled = currentPage > 0) {
+        handleBack()
+    }
+
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
@@ -134,6 +215,16 @@ fun OnboardingScreen(
                 
                 grantedCount = granted
                 totalCount = total
+
+                // Track Briefing Permissions (Page 3)
+                var bGranted = 0
+                var bTotal = 2 // Calendar and Weather (Location)
+                
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == android.content.pm.PackageManager.PERMISSION_GRANTED) bGranted++
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) bGranted++
+                
+                briefingGrantedCount = bGranted
+                briefingTotalCount = bTotal
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -154,7 +245,37 @@ fun OnboardingScreen(
             )
             .statusBarsPadding()
             .navigationBarsPadding()
+            .pointerInput(Unit) {
+                var offsetX = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { offsetX = 0f },
+                    onDragEnd = {
+                        if (offsetX > 150f) {
+                            handleBack()
+                        } else if (offsetX < -150f) {
+                            handleNext()
+                        }
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        offsetX += dragAmount
+                    }
+                )
+            }
     ) {
+        // Back Button
+        if (currentPage > 0) {
+            TextButton(
+                onClick = { handleBack() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(stringResource(R.string.onboarding_back))
+            }
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -225,7 +346,7 @@ fun OnboardingScreen(
                             title = stringResource(R.string.onboarding_1_title)
                             body = stringResource(R.string.onboarding_1_body)
                             primaryLabel = stringResource(R.string.onboarding_1_primary)
-                            onPrimary = { currentPage++ }
+                            onPrimary = { handleNext() }
                             secondaryLabel = null
                             onSecondary = null
                         }
@@ -237,46 +358,9 @@ fun OnboardingScreen(
                                 stringResource(R.string.onboarding_2_continue)
                             else
                                 stringResource(R.string.onboarding_2_primary)
-                            onPrimary = onPrimaryLabel@ {
-                                // 1. Notification permission (Android 13+)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    val granted = ContextCompat.checkSelfPermission(
-                                        context, Manifest.permission.POST_NOTIFICATIONS
-                                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                    if (!granted) {
-                                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                        return@onPrimaryLabel
-                                    }
-                                }
-                                
-                                // 2. Exact alarm permission (Android 12+)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                    val alarmManager = context.getSystemService(AlarmManager::class.java)
-                                    if (!alarmManager.canScheduleExactAlarms()) {
-                                        context.startActivity(
-                                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                                                .setData(Uri.parse("package:${context.packageName}"))
-                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        )
-                                        return@onPrimaryLabel
-                                    }
-                                }
-                                
-                                // 3. Overlay permission (for alarm-over-lock-screen on Android 10+)
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-                                    context.startActivity(
-                                        Intent(
-                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                            Uri.parse("package:${context.packageName}")
-                                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    )
-                                    return@onPrimaryLabel
-                                }
-                                
-                                currentPage++
-                            }
+                            onPrimary = { handleNext() }
                             secondaryLabel = stringResource(R.string.onboarding_2_secondary)
-                            onSecondary = { currentPage++ }
+                            onSecondary = { handleNext() }
                             customContent = {
                                 if (totalCount > 0) {
                                     Column(
@@ -325,20 +409,13 @@ fun OnboardingScreen(
                             emoji = "🌤️"
                             title = stringResource(R.string.onboarding_3_title)
                             body = stringResource(R.string.onboarding_3_body) + "\n" + stringResource(R.string.onboarding_3_personas)
-                            primaryLabel = stringResource(R.string.onboarding_3_primary)
-                            onPrimary = {
-                                val calGranted = ContextCompat.checkSelfPermission(
-                                    context, Manifest.permission.READ_CALENDAR
-                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                val locGranted = ContextCompat.checkSelfPermission(
-                                    context, Manifest.permission.ACCESS_COARSE_LOCATION
-                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                if (!calGranted) calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
-                                if (!locGranted) locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                                currentPage++
-                            }
+                            primaryLabel = if (briefingGrantedCount == briefingTotalCount)
+                                stringResource(R.string.onboarding_3_continue)
+                            else
+                                stringResource(R.string.onboarding_3_primary)
+                            onPrimary = { handleNext() }
                             secondaryLabel = stringResource(R.string.onboarding_3_secondary)
-                            onSecondary = { currentPage++ }
+                            onSecondary = { handleNext() }
                             customContent = {
                                 Column(
                                     modifier = Modifier.fillMaxWidth(),
@@ -371,6 +448,50 @@ fun OnboardingScreen(
                                             shape = RoundedCornerShape(12.dp)
                                         )
                                     }
+
+                                    // Briefing Setup Progress Bar
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.onboarding_3_setup_progress, briefingGrantedCount, briefingTotalCount),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.6f)
+                                                .height(8.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), 
+                                                    CircleShape
+                                                )
+                                                .clip(CircleShape)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth(if (briefingTotalCount > 0) briefingGrantedCount.toFloat() / briefingTotalCount else 0f)
+                                                    .fillMaxHeight()
+                                                    .background(MaterialTheme.colorScheme.primary)
+                                            )
+                                        }
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = if (briefingGrantedCount == briefingTotalCount) 
+                                                stringResource(R.string.onboarding_3_setup_complete) 
+                                            else 
+                                                stringResource(R.string.onboarding_3_setup_instructions),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -379,7 +500,7 @@ fun OnboardingScreen(
                             title = stringResource(R.string.onboarding_4_title)
                             body = stringResource(R.string.onboarding_4_body)
                             primaryLabel = stringResource(R.string.onboarding_4_primary)
-                            onPrimary = { currentPage++ }
+                            onPrimary = { handleNext() }
                             secondaryLabel = null
                             onSecondary = null
                         }
@@ -388,14 +509,10 @@ fun OnboardingScreen(
                             title = stringResource(R.string.onboarding_5_title)
                             body = stringResource(R.string.onboarding_5_body)
                             primaryLabel = stringResource(R.string.onboarding_5_primary)
-                            onPrimary = {
-                                coroutineScope.launch {
-                                    viewModel.completeOnboarding()
-                                    onFinished()
-                                }
-                            }
-                            secondaryLabel = null
-                            onSecondary = null
+                            onPrimary = { handleNext(true) }
+                            secondaryLabel = stringResource(R.string.onboarding_5_secondary)
+                            onSecondary = { handleNext(false) }
+                            customContent = null
                         }
                     }
                     
