@@ -16,22 +16,36 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = LemurTeal,
+    secondary = LemurLavender,
+    tertiary = LemurCream,
+    background = LemurBlack,
+    surface = LemurBlack,
+    onPrimary = LemurWhite,
+    onSecondary = LemurWhite,
+    onTertiary = LemurBlack,
+    onBackground = LemurWhite,
+    onSurface = LemurWhite
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = LemurTeal,
+    secondary = LemurLavender,
+    tertiary = LemurDarkTeal,
+    background = LemurCream,
+    surface = LemurWhite,
+    onPrimary = LemurWhite,
+    onSecondary = LemurWhite,
+    onTertiary = LemurWhite,
+    onBackground = LemurBlack,
+    onSurface = LemurBlack
 )
 
 @Composable
-fun AlarmPalTheme(
+fun LemurLoopTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Disabled by default for brand consistency
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -47,7 +61,7 @@ fun AlarmPalTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

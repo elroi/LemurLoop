@@ -17,6 +17,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,7 +29,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.elroi.alarmpal.BuildConfig
-import com.elroi.alarmpal.ui.navigation.AlarmPalNavGraph
+import com.elroi.alarmpal.ui.navigation.LemurLoopNavGraph
 import com.elroi.alarmpal.ui.navigation.Screen
 import com.elroi.alarmpal.ui.viewmodel.OnboardingViewModel
 
@@ -38,16 +39,23 @@ fun MainScreen(
 ) {
     val isOnboardingComplete by onboardingViewModel.isOnboardingComplete.collectAsStateWithLifecycle()
     val navController = rememberNavController()
+    
+    // Lock the start destination once onboarding status is loaded.
+    // This prevents the NavHost from resetting if isOnboardingComplete changes during the session.
+    val startDestination = remember(isOnboardingComplete != null) {
+        if (isOnboardingComplete == true) {
+            Screen.AlarmList.route
+        } else {
+            Screen.Onboarding.route
+        }
+    }
 
-    // Determine start destination: show onboarding only on fresh installs.
-    // isOnboardingComplete starts as `false` (DataStore default) and emits the real value quickly.
-    // We use a null-initial state trick via StateFlow's initialValue so we don't flicker to
-    // AlarmList before DataStore emits. The stateIn in OnboardingViewModel uses WhileSubscribed
-    // so the first emission arrives almost immediately.
-    val startDestination = if (isOnboardingComplete) {
-        Screen.AlarmList.route
-    } else {
-        Screen.Onboarding.route
+    if (isOnboardingComplete == null) {
+        // Still loading from DataStore, show a simple splash or empty box
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Loading...", style = MaterialTheme.typography.bodyLarge)
+        }
+        return
     }
 
     Scaffold(
@@ -108,7 +116,7 @@ fun MainScreen(
         }
     ) { innerPadding ->
         androidx.compose.foundation.layout.Box(modifier = Modifier.padding(innerPadding)) {
-            AlarmPalNavGraph(
+            LemurLoopNavGraph(
                 navController = navController,
                 startDestination = startDestination
             )

@@ -14,7 +14,7 @@ import java.util.Date
 import java.util.Locale
 
 @HiltAndroidApp
-class AlarmPalApp : Application(), Configuration.Provider {
+class LemurLoopApp : Application(), Configuration.Provider {
     
     @Inject
     lateinit var workerFactory: HiltWorkerFactory

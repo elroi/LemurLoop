@@ -70,6 +70,7 @@ import java.time.format.DateTimeFormatter
 fun AlarmDetailScreen(
     alarmId: String?,
     onNavigateUp: () -> Unit,
+    onSwitchToWizard: () -> Unit,
     viewModel: AlarmViewModel = hiltViewModel()
 ) {
     val defaultSettings by viewModel.defaultAlarmSettings.collectAsState()
@@ -354,6 +355,14 @@ fun AlarmDetailScreen(
                     }
                 },
                 actions = {
+                    TextButton(
+                        onClick = {
+                            viewModel.updateAlarmCreationStyle("WIZARD")
+                            onSwitchToWizard()
+                        }
+                    ) {
+                        Text("Guided Wizard", color = MaterialTheme.colorScheme.primary)
+                    }
                     if (alarmId != null) {
                         IconButton(onClick = {
                             currentAlarm?.let { viewModel.deleteAlarm(it) }
@@ -424,6 +433,7 @@ fun AlarmDetailScreen(
         ) {
 
             // ── ⏰ Time card ─────────────────────────────────────────────
+
             SectionCard(emoji = "⏰", title = "Time") {
                 // Large time display — tap to open picker
                 val is24Hour = android.text.format.DateFormat.is24HourFormat(context)
@@ -682,11 +692,11 @@ fun AlarmDetailScreen(
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Math challenge", fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.wizard_3_math_title), fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.width(8.dp))
-                            SettingHelpIcon(title = "Math Challenge", content = "Requires you to solve math problems before you can dismiss the alarm. You can adjust the difficulty and the number of problems.")
+                            SettingHelpIcon(title = stringResource(R.string.wizard_3_math_title), content = "Requires you to solve math problems before you can dismiss the alarm. You can adjust the difficulty and the number of problems.")
                         }
-                        Text("Solve a problem to dismiss", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.wizard_3_math_desc), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
@@ -738,11 +748,11 @@ fun AlarmDetailScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Face game", fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.wizard_3_face_title), fontWeight = FontWeight.Medium)
                             Spacer(modifier = Modifier.width(8.dp))
-                            SettingHelpIcon(title = "Face Game", content = "Uses the front camera to detect your face and asks you to mimic 3 random facial expressions (like smiling or winking) to prove you're awake.")
+                            SettingHelpIcon(title = stringResource(R.string.wizard_3_face_title), content = stringResource(R.string.wizard_3_face_help))
                         }
-                        Text("3 random face challenges to dismiss", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.wizard_3_face_desc), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
@@ -1134,7 +1144,7 @@ fun AccountabilityBuddyContent(
             title = { Text("📱 SMS Permission Required") },
             text = {
                 Text(
-                    "AlarmPal needs to send and receive SMS messages on your behalf to:\n\n" +
+                    "LemurLoop needs to send and receive SMS messages on your behalf to:\n\n" +
                     "• Invite your buddy to opt in as your accountability partner\n" +
                     "• Detect their confirmation code automatically\n" +
                     "• Alert them if you miss an alarm\n\n" +

@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elroi.alarmpal.service.AlarmService
-import com.elroi.alarmpal.ui.theme.AlarmPalTheme
+import com.elroi.alarmpal.ui.theme.LemurLoopTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 
@@ -36,7 +36,7 @@ class WakeupCheckActivity : ComponentActivity() {
         turnScreenOnAndKeyguardOff()
         
         setContent {
-            AlarmPalTheme {
+            LemurLoopTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

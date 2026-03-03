@@ -93,7 +93,10 @@ data class AlarmDefaults(
     val promptCoach: String = "The Drill Sergeant. You are loud, demanding, and use military terms. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
     val promptComedian: String = "The Sarcastic Best Friend. You are witty, dry, and slightly ironic. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
     val promptZen: String = "The Zen Master. You are calm, poetic, and mindful. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
-    val promptHypeman: String = "The Hype-Man. You are extremely energetic, use caps, and over-the-top excited. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text."
+    val promptHypeman: String = "The Hype-Man. You are extremely energetic, use caps, and over-the-top excited. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
+    val isSmartWakeupEnabled: Boolean = false,
+    val wakeupCheckDelayMinutes: Int = 3,
+    val wakeupCheckTimeoutSeconds: Int = 60
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
@@ -129,6 +132,9 @@ class SettingsManager @Inject constructor(
         val DEFAULT_SOUND_URI = stringPreferencesKey("default_sound_uri")
         val DEFAULT_IS_VIBRATE = booleanPreferencesKey("default_is_vibrate")
         val DEFAULT_IS_SOUND_ENABLED = booleanPreferencesKey("default_is_sound_enabled")
+        val DEFAULT_IS_SMART_WAKEUP = booleanPreferencesKey("default_is_smart_wakeup")
+        val DEFAULT_WAKEUP_CHECK_DELAY = intPreferencesKey("default_wakeup_check_delay")
+        val DEFAULT_WAKEUP_CHECK_TIMEOUT = intPreferencesKey("default_wakeup_check_timeout")
         val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
         val IS_CLOUD_AI_ENABLED = booleanPreferencesKey("is_cloud_ai_enabled")
         val PREFERRED_AI_TIER = stringPreferencesKey("preferred_ai_tier") // STANDARD, ADVANCED, CLOUD
@@ -152,6 +158,7 @@ class SettingsManager @Inject constructor(
         val LAST_GEN_ERROR = stringPreferencesKey("last_gen_error")
         val WORKING_GEMINI_MODEL = stringPreferencesKey("working_gemini_model")
         val WORKING_GEMINI_VERSION = stringPreferencesKey("working_gemini_version")
+        val ALARM_CREATION_STYLE = stringPreferencesKey("alarm_creation_style") // "SIMPLE", "WIZARD"
     }
 
     val locationFlow: Flow<String> = context.dataStore.data.map { preferences ->
@@ -184,6 +191,10 @@ class SettingsManager @Inject constructor(
 
     val workingGeminiVersionFlow: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[WORKING_GEMINI_VERSION]
+    }
+
+    val alarmCreationStyleFlow: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[ALARM_CREATION_STYLE] ?: "WIZARD"
     }
 
     suspend fun saveLocation(location: String) {
@@ -229,6 +240,12 @@ class SettingsManager @Inject constructor(
         context.dataStore.edit { settings ->
             settings[WORKING_GEMINI_MODEL] = model
             settings[WORKING_GEMINI_VERSION] = version
+        }
+    }
+
+    suspend fun saveAlarmCreationStyle(style: String) {
+        context.dataStore.edit { settings ->
+            settings[ALARM_CREATION_STYLE] = style
         }
     }
 
@@ -300,7 +317,10 @@ class SettingsManager @Inject constructor(
             promptCoach = preferences[PROMPT_COACH] ?: "The Drill Sergeant. You are loud, demanding, and use military terms. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
             promptComedian = preferences[PROMPT_COMEDIAN] ?: "The Sarcastic Best Friend. You are witty, dry, and slightly ironic. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
             promptZen = preferences[PROMPT_ZEN] ?: "The Zen Master. You are calm, poetic, and mindful. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
-            promptHypeman = preferences[PROMPT_HYPEMAN] ?: "The Hype-Man. You are extremely energetic, use caps, and over-the-top excited. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text."
+            promptHypeman = preferences[PROMPT_HYPEMAN] ?: "The Hype-Man. You are extremely energetic, use caps, and over-the-top excited. STRICT RULE: You are translating the text. Do NOT change facts, time, or weather. Do NOT add new information. DO NOT combine the final trivia sentence with the rest of the text.",
+            isSmartWakeupEnabled = preferences[DEFAULT_IS_SMART_WAKEUP] ?: false,
+            wakeupCheckDelayMinutes = preferences[DEFAULT_WAKEUP_CHECK_DELAY] ?: 3,
+            wakeupCheckTimeoutSeconds = preferences[DEFAULT_WAKEUP_CHECK_TIMEOUT] ?: 60
         )
     }
 
@@ -332,6 +352,9 @@ class SettingsManager @Inject constructor(
             preferences[PROMPT_COMEDIAN] = defaults.promptComedian
             preferences[PROMPT_ZEN] = defaults.promptZen
             preferences[PROMPT_HYPEMAN] = defaults.promptHypeman
+            preferences[DEFAULT_IS_SMART_WAKEUP] = defaults.isSmartWakeupEnabled
+            preferences[DEFAULT_WAKEUP_CHECK_DELAY] = defaults.wakeupCheckDelayMinutes
+            preferences[DEFAULT_WAKEUP_CHECK_TIMEOUT] = defaults.wakeupCheckTimeoutSeconds
         }
     }
 

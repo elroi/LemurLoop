@@ -1,6 +1,10 @@
 package com.elroi.alarmpal.ui.screen.alarm
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -11,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elroi.alarmpal.R
 import com.elroi.alarmpal.domain.model.Alarm
@@ -35,7 +41,9 @@ import com.elroi.alarmpal.ui.components.BuddySelectionDialog
 import com.elroi.alarmpal.ui.components.ImprovedDaySelector
 import com.elroi.alarmpal.ui.viewmodel.AlarmViewModel
 import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import com.elroi.alarmpal.util.AlarmUtils
 import kotlinx.coroutines.launch
 
 @Immutable
@@ -54,12 +62,13 @@ val personas = listOf(
 fun AlarmCreationWizard(
     onFinished: () -> Unit,
     onBack: () -> Unit,
+    onSwitchToSimple: () -> Unit,
     viewModel: AlarmViewModel = hiltViewModel()
 ) {
     val coroutineScope = rememberCoroutineScope()
     val defaultSettings by viewModel.defaultAlarmSettings.collectAsState()
     var currentPage by remember { mutableIntStateOf(0) }
-    val totalPages = 4
+    val totalPages = 5
 
     // Initial state setup
     var selectedTime by remember { mutableStateOf(LocalTime.now().withSecond(0).withNano(0)) }
@@ -72,17 +81,31 @@ fun AlarmCreationWizard(
     var isSoundEnabled by remember { mutableStateOf(defaultSettings.isSoundEnabled) }
     var isVibrate by remember { mutableStateOf(defaultSettings.isVibrate) }
     var isGentleWake by remember { mutableStateOf(defaultSettings.isGentleWake) }
+    var crescendoDurationMinutes by remember { mutableIntStateOf(defaultSettings.crescendoDurationMinutes) }
+    var snoozeDurationMinutes by remember { mutableIntStateOf(defaultSettings.snoozeDurationMinutes) }
+    var isSmoothFadeOut by remember { mutableStateOf(defaultSettings.isSmoothFadeOut) }
+    var isEvasiveSnooze by remember { mutableStateOf(defaultSettings.isEvasiveSnooze) }
+    var evasiveSnoozesBeforeMoving by remember { mutableIntStateOf(defaultSettings.evasiveSnoozesBeforeMoving) }
 
     var selectedMathDifficulty by remember { mutableIntStateOf(defaultSettings.mathDifficulty) }
     var mathProblemCount by remember { mutableIntStateOf(defaultSettings.mathProblemCount) }
     var mathGraduallyIncreaseDifficulty by remember { mutableStateOf(defaultSettings.mathGraduallyIncreaseDifficulty) }
     var smileToDismiss by remember { mutableStateOf(defaultSettings.smileToDismiss) }
     var smileFallbackMethod by remember { mutableStateOf(defaultSettings.smileFallbackMethod) }
+    var isSmartWakeupEnabled by remember { mutableStateOf(defaultSettings.isSmartWakeupEnabled) }
+    var wakeupCheckDelayMinutes by remember { mutableIntStateOf(defaultSettings.wakeupCheckDelayMinutes) }
+    var wakeupCheckTimeoutSeconds by remember { mutableIntStateOf(defaultSettings.wakeupCheckTimeoutSeconds) }
     
     var buddyPhone by remember { mutableStateOf("") }
     var buddyName by remember { mutableStateOf("") }
+    var buddyUserName by remember { mutableStateOf(defaultSettings.briefingUserName) }
+    var buddyMessage by remember { mutableStateOf("") }
+    var buddyAlertAfterMinutes by remember { mutableIntStateOf(5) }
+    
     var showBuddyDialog by remember { mutableStateOf(false) }
     val globalBuddies by viewModel.globalBuddies.collectAsState()
+    val confirmedNumbers by viewModel.confirmedBuddyNumbers.collectAsState()
+    val pendingCodes by viewModel.pendingBuddyCodes.collectAsState()
 
     // Sync persona with defaults when loaded
     LaunchedEffect(defaultSettings) {
@@ -118,13 +141,24 @@ fun AlarmCreationWizard(
                 mathGraduallyIncreaseDifficulty = mathGraduallyIncreaseDifficulty,
                 buddyPhoneNumber = if (buddyPhone.isBlank()) null else buddyPhone,
                 buddyName = if (buddyName.isBlank()) null else buddyName,
+                buddyMessage = buddyMessage,
+                buddyAlertDelayMinutes = buddyAlertAfterMinutes,
                 smileToDismiss = smileToDismiss,
                 smileFallbackMethod = smileFallbackMethod,
                 isBriefingEnabled = isBriefingEnabled,
                 isTtsEnabled = isTtsEnabled,
                 isSoundEnabled = isSoundEnabled,
                 isVibrate = isVibrate,
-                isGentleWake = isGentleWake
+                isGentleWake = isGentleWake,
+                crescendoDurationMinutes = crescendoDurationMinutes,
+                snoozeDurationMinutes = snoozeDurationMinutes,
+                isSmoothFadeOut = isSmoothFadeOut,
+                isEvasiveSnooze = isEvasiveSnooze,
+                evasiveSnoozesBeforeMoving = evasiveSnoozesBeforeMoving,
+                isSmartWakeupEnabled = isSmartWakeupEnabled,
+                wakeupCheckDelayMinutes = wakeupCheckDelayMinutes,
+                wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
+                userName = buddyUserName
             )
             viewModel.addAlarm(newAlarm)
             onFinished()
@@ -175,6 +209,14 @@ fun AlarmCreationWizard(
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                TextButton(
+                    onClick = { 
+                        viewModel.updateAlarmCreationStyle("SIMPLE")
+                        onSwitchToSimple()
+                    }
+                ) {
+                    Text("Quick Setup", style = MaterialTheme.typography.labelLarge)
+                }
                 TextButton(onClick = { onBack() }) {
                     Text(stringResource(R.string.btn_cancel))
                 }
@@ -199,8 +241,9 @@ fun AlarmCreationWizard(
                     val config = when (targetPage) {
                         0 -> Triple("⏰", stringResource(R.string.wizard_1_title), stringResource(R.string.wizard_1_body))
                         1 -> Triple("🌤️", stringResource(R.string.wizard_2_title), stringResource(R.string.wizard_2_body))
-                        2 -> Triple("🛡️", stringResource(R.string.wizard_3_title), stringResource(R.string.wizard_3_body))
-                        else -> Triple("✨", stringResource(R.string.wizard_4_title), stringResource(R.string.wizard_4_body))
+                        2 -> Triple("🧩", stringResource(R.string.wizard_3_title), stringResource(R.string.wizard_3_body))
+                        3 -> Triple("🤝", stringResource(R.string.wizard_4_title), stringResource(R.string.wizard_4_body))
+                        else -> Triple("✨", stringResource(R.string.wizard_5_title), stringResource(R.string.wizard_5_body))
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -215,9 +258,43 @@ fun AlarmCreationWizard(
 
                     when (targetPage) {
                         0 -> TimeAndDayStep(timePickerState, selectedDays, { selectedDays = it }, defaultSettings.weekendDays)
-                        1 -> WakeUpStyleStep(selectedPersona, { selectedPersona = it }, isBriefingEnabled, { isBriefingEnabled = it }, isTtsEnabled, { isTtsEnabled = it }, isSoundEnabled, { isSoundEnabled = it }, isVibrate, { isVibrate = it })
-                        2 -> AntiSnoozeGuardStep(buddyName, buddyPhone, { showBuddyDialog = true }, selectedMathDifficulty, { selectedMathDifficulty = it }, mathProblemCount, { mathProblemCount = it }, smileToDismiss, { smileToDismiss = it })
-                        3 -> FinalSummaryStep(selectedTime, selectedDays, alarmLabel, { alarmLabel = it }, personas.find { it.id == selectedPersona } ?: personas[0], selectedMathDifficulty, smileToDismiss, buddyName)
+                        1 -> WakeUpStyleStep(
+                            selectedPersona, { selectedPersona = it },
+                            isBriefingEnabled, { isBriefingEnabled = it },
+                            isTtsEnabled, { isTtsEnabled = it },
+                            isSoundEnabled, { isSoundEnabled = it },
+                            isVibrate, { isVibrate = it },
+                            isGentleWake, { isGentleWake = it },
+                            crescendoDurationMinutes, { crescendoDurationMinutes = it },
+                            snoozeDurationMinutes, { snoozeDurationMinutes = it },
+                            isSmoothFadeOut, { isSmoothFadeOut = it },
+                            isEvasiveSnooze, { isEvasiveSnooze = it },
+                            evasiveSnoozesBeforeMoving, { evasiveSnoozesBeforeMoving = it }
+                        )
+                        2 -> WakeUpChallengeStep(
+                            selectedMathDifficulty, { selectedMathDifficulty = it },
+                            mathProblemCount, { mathProblemCount = it },
+                            mathGraduallyIncreaseDifficulty, { mathGraduallyIncreaseDifficulty = it },
+                            smileToDismiss, { smileToDismiss = it },
+                            smileFallbackMethod, { smileFallbackMethod = it },
+                            isSmartWakeupEnabled, { isSmartWakeupEnabled = it },
+                            wakeupCheckDelayMinutes, { wakeupCheckDelayMinutes = it },
+                            wakeupCheckTimeoutSeconds, { wakeupCheckTimeoutSeconds = it }
+                        )
+                        3 -> WakeUpBuddyStep(
+                            buddyName, buddyPhone, buddyMessage, { buddyMessage = it },
+                            buddyAlertAfterMinutes, { buddyAlertAfterMinutes = it },
+                            buddyUserName, { buddyUserName = it },
+                            confirmedNumbers, pendingCodes, { showBuddyDialog = true },
+                            onSendInvite = { viewModel.sendBuddyOptInRequest(buddyPhone, buddyName, buddyUserName) }
+                        )
+                        4 -> FinalSummaryStep(
+                            selectedTime, selectedDays, alarmLabel, { alarmLabel = it },
+                            personas.find { it.id == selectedPersona } ?: personas[0],
+                            selectedMathDifficulty, smileToDismiss, buddyName,
+                            isGentleWake, buddyMessage, buddyAlertAfterMinutes, crescendoDurationMinutes,
+                            snoozeDurationMinutes, isSmoothFadeOut, isEvasiveSnooze, isSmartWakeupEnabled
+                        )
                     }
                     
                     Spacer(modifier = Modifier.height(48.dp))
@@ -244,6 +321,48 @@ fun AlarmCreationWizard(
             },
             globalBuddies = globalBuddies
         )
+    }
+}
+
+@Composable
+fun WizardAdvancedSection(
+    content: @Composable ColumnScope.() -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+        TextButton(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.wizard_advanced_options),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+        
+        AnimatedVisibility(visible = expanded) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    content()
+                }
+            }
+        }
     }
 }
 
@@ -298,7 +417,19 @@ fun WakeUpStyleStep(
     isSoundEnabled: Boolean,
     onSoundEnabledChange: (Boolean) -> Unit,
     isVibrate: Boolean,
-    onVibrateChange: (Boolean) -> Unit
+    onVibrateChange: (Boolean) -> Unit,
+    isGentleWake: Boolean,
+    onGentleWakeChange: (Boolean) -> Unit,
+    crescendoDurationMinutes: Int,
+    onCrescendoDurationChange: (Int) -> Unit,
+    snoozeDurationMinutes: Int,
+    onSnoozeDurationChange: (Int) -> Unit,
+    isSmoothFadeOut: Boolean,
+    onSmoothFadeOutChange: (Boolean) -> Unit,
+    isEvasiveSnooze: Boolean,
+    onEvasiveSnoozeChange: (Boolean) -> Unit,
+    evasiveSnoozesBefore: Int,
+    onEvasiveSnoozesBeforeChange: (Int) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Text(
@@ -375,6 +506,142 @@ fun WakeUpStyleStep(
                 )
             }
         }
+
+        WizardAdvancedSection {
+            // Slick Audio Section
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "🎵", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.wizard_2_slick_audio),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FeatureToggle(
+                title = stringResource(R.string.wizard_2_gentle_wake),
+                desc = stringResource(R.string.wizard_2_gentle_wake_desc),
+                checked = isGentleWake,
+                onCheckedChange = onGentleWakeChange,
+                icon = "🌅"
+            )
+            
+            if (isGentleWake) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                    Text(
+                        text = "${stringResource(R.string.wizard_2_gentle_wake_duration)}: ${stringResource(R.string.wizard_2_gentle_wake_unit_min, crescendoDurationMinutes)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = crescendoDurationMinutes.toFloat(),
+                        onValueChange = { onCrescendoDurationChange(it.toInt()) },
+                        valueRange = 1f..20f,
+                        steps = 19
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            FeatureToggle(
+                title = stringResource(R.string.wizard_2_smooth_fade),
+                desc = stringResource(R.string.wizard_2_smooth_fade_desc),
+                checked = isSmoothFadeOut,
+                onCheckedChange = onSmoothFadeOutChange,
+                icon = "🔉"
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            
+            // Smart Snooze Section
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "💤", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.wizard_2_smart_snooze),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        text = stringResource(R.string.wizard_2_snooze_duration),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = if (snoozeDurationMinutes == 0) stringResource(R.string.wizard_2_snooze_off) else "${snoozeDurationMinutes}m",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Slider(
+                    value = snoozeDurationMinutes.toFloat(),
+                    onValueChange = { onSnoozeDurationChange(it.toInt()) },
+                    valueRange = 0f..60f,
+                    steps = 59
+                )
+            }
+            
+            if (snoozeDurationMinutes > 0) {
+                Spacer(modifier = Modifier.height(16.dp))
+                FeatureToggle(
+                    title = stringResource(R.string.wizard_2_evasive_snooze),
+                    desc = stringResource(R.string.wizard_2_evasive_snooze_desc),
+                    checked = isEvasiveSnooze,
+                    onCheckedChange = onEvasiveSnoozeChange,
+                    icon = "🏃"
+                )
+                
+                if (isEvasiveSnooze) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (evasiveSnoozesBefore == 0) stringResource(R.string.wizard_2_evasive_starts_after, 1) else stringResource(R.string.wizard_2_evasive_starts_after_plural, evasiveSnoozesBefore + 1),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                    Slider(
+                        value = evasiveSnoozesBefore.toFloat(),
+                        onValueChange = { onEvasiveSnoozesBeforeChange(it.toInt()) },
+                        valueRange = 0f..5f,
+                        steps = 4
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -444,7 +711,15 @@ fun FinalSummaryStep(
     persona: Persona,
     mathDifficulty: Int,
     smileToDismiss: Boolean,
-    buddyName: String
+    buddyName: String,
+    isGentleWake: Boolean,
+    buddyMessage: String,
+    buddyAlertAfterMinutes: Int,
+    crescendoDurationMinutes: Int,
+    snoozeDurationMinutes: Int,
+    isSmoothFadeOut: Boolean,
+    isEvasiveSnooze: Boolean,
+    isSmartWakeupEnabled: Boolean
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Text(
@@ -473,15 +748,37 @@ fun FinalSummaryStep(
                             if (selectedDays.isEmpty()) "Once" else "Repeats on ${selectedDays.size} days",
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        
+                        // Time Until Calculation for Wizard Review
+                        val nextOccurrence = remember(selectedTime, selectedDays) {
+                            AlarmUtils.calculateNextOccurrence(
+                                Alarm(time = selectedTime, daysOfWeek = selectedDays)
+                            )
+                        }
+                        Text(
+                            text = "Starts ${AlarmUtils.formatTimeUntil(nextOccurrence)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 
                 SummaryRow("Persona", "${persona.emoji} ${persona.title}")
-                if (mathDifficulty > 0) SummaryRow("Challenge", "🧮 Math (${if(mathDifficulty==1) "Easy" else if(mathDifficulty==2) "Med" else "Hard"})")
+                if (isGentleWake) SummaryRow("Volume", "🌅 Gentle Wake (${crescendoDurationMinutes}m)")
+                if (isSmoothFadeOut) SummaryRow("Fade-Out", "🔉 Smooth")
+                SummaryRow("Snooze", if (snoozeDurationMinutes == 0) "Off" else "${snoozeDurationMinutes}m${if(isEvasiveSnooze) " 🏃" else ""}")
                 if (smileToDismiss) SummaryRow("Challenge", "😊 Smile to Dismiss")
-                if (buddyName.isNotBlank()) SummaryRow("Guardian", "👤 $buddyName")
+                if (mathDifficulty > 0) SummaryRow("Challenge", "🧮 Math (${if(mathDifficulty==1) "Easy" else if(mathDifficulty==2) "Med" else "Hard"})")
+                if (isSmartWakeupEnabled) SummaryRow("Smart Check", "🚨 Enabled")
+                if (buddyName.isNotBlank()) {
+                    SummaryRow("Guardian", "👤 $buddyName")
+                    if (buddyMessage.isNotBlank()) SummaryRow("Message", "✉️ \"$buddyMessage\"")
+                    SummaryRow("Delay", "⏱️ $buddyAlertAfterMinutes min")
+                }
             }
         }
 
@@ -516,29 +813,41 @@ fun SummaryRow(label: String, value: String) {
 }
 
 @Composable
-fun AntiSnoozeGuardStep(
+fun WakeUpBuddyStep(
     buddyName: String,
     buddyPhone: String,
+    buddyMessage: String,
+    onBuddyMessageChange: (String) -> Unit,
+    buddyAlertAfterMinutes: Int,
+    onBuddyAlertAfterMinutesChange: (Int) -> Unit,
+    buddyUserName: String,
+    onBuddyUserNameChange: (String) -> Unit,
+    confirmedNumbers: Set<String>,
+    pendingCodes: Set<String>,
     onBuddyClick: () -> Unit,
-    mathDifficulty: Int,
-    onMathDifficultyChange: (Int) -> Unit,
-    mathProblemCount: Int,
-    onMathProblemCountChange: (Int) -> Unit,
-    smileToDismiss: Boolean,
-    onSmileToDismissChange: (Boolean) -> Unit
+    onSendInvite: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        Text(
-            "Accountability Buddy",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+    val context = LocalContext.current
+    val smsPermission = Manifest.permission.SEND_SMS
+    
+    val isConfirmed = confirmedNumbers.contains(buddyPhone)
+    val isPending = pendingCodes.any { it.endsWith(":$buddyPhone") }
 
+    val smsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onSendInvite()
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Surface(
             onClick = onBuddyClick,
             shape = RoundedCornerShape(16.dp),
             tonalElevation = 1.dp,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            border = if (isConfirmed) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -546,11 +855,14 @@ fun AntiSnoozeGuardStep(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = if (isConfirmed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(if (buddyName.isNotBlank()) buddyName.take(1) else "👤", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            text = if (isConfirmed) "✅" else if (buddyName.isNotBlank()) buddyName.take(1) else "👤", 
+                            style = MaterialTheme.typography.titleLarge
+                        )
                     }
                 }
                 
@@ -563,28 +875,182 @@ fun AntiSnoozeGuardStep(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        if (buddyPhone.isNotBlank()) buddyPhone else "They'll be alerted if you don't wake up",
+                        if (isConfirmed) stringResource(R.string.wizard_4_status_confirmed)
+                        else if (isPending) stringResource(R.string.wizard_4_status_pending)
+                        else if (buddyPhone.isNotBlank()) buddyPhone 
+                        else "They'll be alerted if you don't wake up",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isConfirmed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 
-                Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(if (buddyName.isBlank()) Icons.Default.Add else Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        if (buddyPhone.isNotBlank() && !isConfirmed) {
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Button(
+                onClick = {
+                    if (ContextCompat.checkSelfPermission(context, smsPermission) == PackageManager.PERMISSION_GRANTED) {
+                        onSendInvite()
+                    } else {
+                        smsLauncher.launch(smsPermission)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isPending) MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Icon(
+                    imageVector = if (isPending) Icons.Default.Refresh else Icons.AutoMirrored.Filled.Send, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isPending) stringResource(R.string.wizard_4_btn_resend) 
+                           else stringResource(R.string.wizard_4_btn_invite)
+                )
+            }
+            
+            Text(
+                "Tapping this sends an SMS invite. Your buddy must reply with a code to confirm they'll help you.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            )
+        }
 
-        Text(
-            "Wake-Up Challenges",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+        WizardAdvancedSection {
+            Text(
+                stringResource(R.string.wizard_4_custom_message),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = buddyMessage,
+                onValueChange = onBuddyMessageChange,
+                placeholder = { Text(stringResource(R.string.wizard_4_custom_message_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                "${stringResource(R.string.wizard_4_alert_after)}: $buddyAlertAfterMinutes min",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Slider(
+                value = buddyAlertAfterMinutes.toFloat(),
+                onValueChange = { onBuddyAlertAfterMinutesChange(it.toInt()) },
+                valueRange = 1f..30f,
+                steps = 29
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                stringResource(R.string.wizard_4_user_name),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = buddyUserName,
+                onValueChange = onBuddyUserNameChange,
+                placeholder = { Text(stringResource(R.string.wizard_4_user_name_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true
+            )
+        }
+    }
+}
+
+@Composable
+fun WakeUpChallengeStep(
+    mathDifficulty: Int,
+    onMathDifficultyChange: (Int) -> Unit,
+    mathProblemCount: Int,
+    onMathProblemCountChange: (Int) -> Unit,
+    mathGraduallyIncreaseDifficulty: Boolean,
+    onMathGraduallyIncreaseDifficultyChange: (Boolean) -> Unit,
+    smileToDismiss: Boolean,
+    onSmileToDismissChange: (Boolean) -> Unit,
+    smileFallbackMethod: String,
+    onSmileFallbackMethodChange: (String) -> Unit,
+    isSmartWakeupEnabled: Boolean,
+    onSmartWakeupEnabledChange: (Boolean) -> Unit,
+    wakeupCheckDelayMinutes: Int,
+    onWakeupCheckDelayChange: (Int) -> Unit,
+    wakeupCheckTimeoutSeconds: Int,
+    onWakeupCheckTimeoutChange: (Int) -> Unit
+) {
+    val context = LocalContext.current
+    val cameraPermission = Manifest.permission.CAMERA
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, cameraPermission) == PackageManager.PERMISSION_GRANTED
         )
+    }
 
-        // Math Challenge Card
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+        if (isGranted) {
+            onSmileToDismissChange(true)
+        } else {
+            onSmileToDismissChange(false)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        // Face Challenge Card (Now on top)
         ChallengeCard(
-            title = "Math Challenge",
-            desc = "Solve problems to dismiss",
+            title = stringResource(R.string.wizard_3_face_title),
+            desc = stringResource(R.string.wizard_3_face_desc),
+            icon = "😊",
+            checked = smileToDismiss,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    if (hasCameraPermission) {
+                        onSmileToDismissChange(true)
+                    } else {
+                        cameraPermissionLauncher.launch(cameraPermission)
+                    }
+                } else {
+                    onSmileToDismissChange(false)
+                }
+            }
+        ) {
+            Text(
+                stringResource(R.string.wizard_3_face_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            if (smileToDismiss && !hasCameraPermission) {
+                Text(
+                    "Camera permission is required for this feature.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        }
+
+        // Math Challenge Card (Now below)
+        ChallengeCard(
+            title = stringResource(R.string.wizard_3_math_title),
+            desc = stringResource(R.string.wizard_3_math_desc),
             icon = "➕",
             checked = mathDifficulty > 0,
             onCheckedChange = { if (it) onMathDifficultyChange(1) else onMathDifficultyChange(0) }
@@ -615,20 +1081,142 @@ fun AntiSnoozeGuardStep(
             }
         }
 
-        // Face Challenge Card
-        ChallengeCard(
-            title = "Face Challenge",
-            desc = "Smile to dismiss (AI verified)",
-            icon = "😊",
-            checked = smileToDismiss,
-            onCheckedChange = onSmileToDismissChange
-        ) {
-            Text(
-                "Our AI will use your camera to verify you're truly awake and smiling before dismissing the alarm.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
+        WizardAdvancedSection {
+            // Challenge Dynamics Section
+            Surface(
+                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "🛡️", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.wizard_3_challenge_dynamics),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (mathDifficulty > 0 || smileToDismiss) {
+                if (mathDifficulty > 0) {
+                    FeatureToggle(
+                        title = stringResource(R.string.wizard_3_math_gradual),
+                        desc = stringResource(R.string.wizard_3_math_gradual_desc),
+                        checked = mathGraduallyIncreaseDifficulty,
+                        onCheckedChange = onMathGraduallyIncreaseDifficultyChange,
+                        icon = "📈"
+                    )
+                }
+                
+                if (smileToDismiss) {
+                    if (mathDifficulty > 0) Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                        Text(
+                            stringResource(R.string.wizard_3_face_fallback),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = smileFallbackMethod == "NONE",
+                                onClick = { onSmileFallbackMethodChange("NONE") },
+                                label = { Text(stringResource(R.string.wizard_3_face_fallback_none)) }
+                            )
+                            FilterChip(
+                                selected = smileFallbackMethod == "MATH",
+                                onClick = { onSmileFallbackMethodChange("MATH") },
+                                label = { Text(stringResource(R.string.wizard_3_face_fallback_math)) }
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    "Enable a challenge above to see dynamic settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            
+            // Safety Net Section
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "🚨", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.wizard_3_safety_net),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            FeatureToggle(
+                title = stringResource(R.string.wizard_3_smart_check),
+                desc = stringResource(R.string.wizard_3_smart_check_desc),
+                checked = isSmartWakeupEnabled,
+                onCheckedChange = onSmartWakeupEnabledChange,
+                icon = "🚨"
             )
+            
+            if (isSmartWakeupEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                    Text(
+                        text = stringResource(R.string.wizard_3_smart_delay, wakeupCheckDelayMinutes),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = wakeupCheckDelayMinutes.toFloat(),
+                        onValueChange = { onWakeupCheckDelayChange(it.toInt()) },
+                        valueRange = 1f..10f,
+                        steps = 8
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = stringResource(R.string.wizard_3_smart_timeout, wakeupCheckTimeoutSeconds),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Slider(
+                        value = wakeupCheckTimeoutSeconds.toFloat(),
+                        onValueChange = { onWakeupCheckTimeoutChange(it.toInt()) },
+                        valueRange = 10f..120f,
+                        steps = 10
+                    )
+                }
+            }
         }
     }
 }

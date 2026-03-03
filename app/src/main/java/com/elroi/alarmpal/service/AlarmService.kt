@@ -263,7 +263,7 @@ class AlarmService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Re-create the specific channel.
             // Android does NOT update channel properties after first creation, so we need two distinct channels.
-            val channel = NotificationChannel(channelId, "AlarmPal Alarm ($channelId)", NotificationManager.IMPORTANCE_HIGH).apply {
+            val channel = NotificationChannel(channelId, "LemurLoop Alarm ($channelId)", NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Ringing alarm controls"
                 setSound(null, null)
                 enableVibration(currentIsVibrate)

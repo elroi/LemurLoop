@@ -40,16 +40,16 @@ class AccountabilityManager @Inject constructor(
 
         val name = buddyName?.trim()?.takeIf { it.isNotBlank() } ?: "Hey"
         val user = userName?.trim()?.takeIf { it.isNotBlank() } ?: "Someone"
-        val message = "⏰ $name, $user wants you as their AlarmPal accountability buddy! " +
+        val message = "⏰ $name, $user wants you as their LemurLoop accountability buddy! " +
             "If they miss an alarm, you'll get a quick text to check in. " +
-            "Reply with code $code to confirm. — AlarmPal"
+            "Reply with code $code to confirm. — LemurLoop"
 
         sendSms(phoneNumber, message)
     }
 
     fun sendBuddyConfirmationSuccess(phoneNumber: String) {
-        val message = "✅ Success! You are now confirmed as an AlarmPal accountability buddy. " +
-            "You will only be notified if an alarm is missed. — AlarmPal"
+        val message = "✅ Success! You are now confirmed as a LemurLoop accountability buddy. " +
+            "You will only be notified if an alarm is missed. — LemurLoop"
         sendSms(phoneNumber, message)
     }
 

@@ -13,8 +13,8 @@ class OnboardingViewModel @Inject constructor(
     private val settingsManager: SettingsManager
 ) : ViewModel() {
 
-    val isOnboardingComplete: StateFlow<Boolean> = settingsManager.onboardingCompleteFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val isOnboardingComplete: StateFlow<Boolean?> = settingsManager.onboardingCompleteFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _userName = kotlinx.coroutines.flow.MutableStateFlow("")
     val userName: StateFlow<String> = _userName.asStateFlow()

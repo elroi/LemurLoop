@@ -58,6 +58,9 @@ class SettingsViewModel @Inject constructor(
     private val _draftAiFallbackOrder = MutableStateFlow("CLOUD_THEN_LOCAL")
     val aiFallbackOrder = _draftAiFallbackOrder.asStateFlow()
 
+    private val _draftAlarmCreationStyle = MutableStateFlow("WIZARD")
+    val alarmCreationStyle = _draftAlarmCreationStyle.asStateFlow()
+
     val userName: StateFlow<String> = alarmDefaults.map { it.briefingUserName }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -95,6 +98,7 @@ class SettingsViewModel @Inject constructor(
     private val _originalIsCloudAiEnabled = MutableStateFlow(false)
     private val _originalPreferredAiTier = MutableStateFlow("STANDARD")
     private val _originalAiFallbackOrder = MutableStateFlow("CLOUD_THEN_LOCAL")
+    private val _originalAlarmCreationStyle = MutableStateFlow("WIZARD")
 
     val hasChanges: StateFlow<Boolean> = combine(
         listOf(
@@ -105,7 +109,8 @@ class SettingsViewModel @Inject constructor(
             _draftGeminiApiKey, _originalGeminiApiKey,
             _draftIsCloudAiEnabled, _originalIsCloudAiEnabled,
             _draftPreferredAiTier, _originalPreferredAiTier,
-            _draftAiFallbackOrder, _originalAiFallbackOrder
+            _draftAiFallbackOrder, _originalAiFallbackOrder,
+            _draftAlarmCreationStyle, _originalAlarmCreationStyle
         )
     ) { args ->
         val loc = args[0] as String
@@ -124,7 +129,9 @@ class SettingsViewModel @Inject constructor(
         val oTier = args[13] as String
         val order = args[14] as String
         val oOrder = args[15] as String
-        loc != oLoc || cel != oCel || auto != oAuto || def != oDef || gemini != oGemini || cloud != oCloud || tier != oTier || order != oOrder
+        val style = args[16] as String
+        val oStyle = args[17] as String
+        loc != oLoc || cel != oCel || auto != oAuto || def != oDef || gemini != oGemini || cloud != oCloud || tier != oTier || order != oOrder || style != oStyle
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
@@ -201,6 +208,15 @@ class SettingsViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            settingsManager.alarmCreationStyleFlow.collectLatest { valValue ->
+                val prevOriginal = _originalAlarmCreationStyle.value
+                _originalAlarmCreationStyle.value = valValue
+                if (_draftAlarmCreationStyle.value == prevOriginal) {
+                    _draftAlarmCreationStyle.value = valValue
+                }
+            }
+        }
         
         // Hardware support check for Gemini Nano — use lightweight file check only.
         // DO NOT call localLLMManager.checkStatus() here: it loads the native Gemma model
@@ -268,6 +284,10 @@ class SettingsViewModel @Inject constructor(
 
     fun updateAiFallbackOrder(order: String) {
         _draftAiFallbackOrder.value = order
+    }
+
+    fun updateAlarmCreationStyle(style: String) {
+        _draftAlarmCreationStyle.value = style
     }
 
     fun validateApiKey() {
@@ -352,6 +372,7 @@ class SettingsViewModel @Inject constructor(
         settingsManager.saveIsCloudAiEnabled(_draftIsCloudAiEnabled.value)
         settingsManager.savePreferredAiTier(_draftPreferredAiTier.value)
         settingsManager.saveAiFallbackOrder(_draftAiFallbackOrder.value)
+        settingsManager.saveAlarmCreationStyle(_draftAlarmCreationStyle.value)
 
         // Update original values to reset dirty state
         _originalLocation.value = loc
@@ -362,6 +383,7 @@ class SettingsViewModel @Inject constructor(
         _originalIsCloudAiEnabled.value = _draftIsCloudAiEnabled.value
         _originalPreferredAiTier.value = _draftPreferredAiTier.value
         _originalAiFallbackOrder.value = _draftAiFallbackOrder.value
+        _originalAlarmCreationStyle.value = _draftAlarmCreationStyle.value
     }
 
     private suspend fun fetchAndSaveCurrentLocation(context: android.content.Context) = withContext(Dispatchers.IO) {

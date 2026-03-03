@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +37,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import com.elroi.alarmpal.util.AlarmUtils
+import java.time.LocalDateTime
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AlarmListScreen(
@@ -79,11 +82,13 @@ fun AlarmListScreen(
         )
     }
 
+    val alarmCreationStyle by viewModel.alarmCreationStyle.collectAsState()
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("AlarmPal") },
+                title = { Text("LemurLoop") },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
@@ -92,7 +97,13 @@ fun AlarmListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onNavigateToDetail("WIZARD") }) {
+            FloatingActionButton(onClick = { 
+                if (alarmCreationStyle == "WIZARD") {
+                    onNavigateToDetail("WIZARD") 
+                } else {
+                    onNavigateToDetail(null)
+                }
+            }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Alarm")
             }
         }
@@ -317,12 +328,32 @@ fun AlarmItem(
                     color = if (isDimmed) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) 
                             else MaterialTheme.colorScheme.onSurface
                 )
+                
                 alarm.label?.let {
                     Text(
                         text = if (it.isBlank()) "Alarm" else it, 
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (isDimmed) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f) 
                                 else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                if (alarm.isEnabled) {
+                    var currentTime by remember { mutableStateOf(LocalDateTime.now()) }
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            delay(60000) // Refresh every minute
+                            currentTime = LocalDateTime.now()
+                        }
+                    }
+                    val nextOccurrence = remember(alarm, currentTime) { 
+                        AlarmUtils.calculateNextOccurrence(alarm, currentTime) 
+                    }
+                    Text(
+                        text = AlarmUtils.formatTimeUntil(nextOccurrence, currentTime),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }

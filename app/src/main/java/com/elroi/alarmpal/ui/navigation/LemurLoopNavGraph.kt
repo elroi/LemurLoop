@@ -8,7 +8,7 @@ import com.elroi.alarmpal.ui.screen.alarm.AlarmListScreen
 import com.elroi.alarmpal.ui.screen.onboarding.OnboardingScreen
 
 @Composable
-fun AlarmPalNavGraph(
+fun LemurLoopNavGraph(
     navController: NavHostController,
     startDestination: String = Screen.AlarmList.route
 ) {
@@ -20,9 +20,12 @@ fun AlarmPalNavGraph(
             OnboardingScreen(
                 onFinished = { createAlarm ->
                     if (createAlarm) {
-                        navController.navigate(Screen.AlarmWizard.route) {
+                        // First establishing the AlarmList as the base of the backstack
+                        navController.navigate(Screen.AlarmList.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
+                        // Then navigate to the wizard (or detail if they changed setting)
+                        navController.navigate(Screen.AlarmWizard.route)
                     } else {
                         navController.navigate(Screen.AlarmList.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
@@ -54,7 +57,12 @@ fun AlarmPalNavGraph(
             val alarmId = backStackEntry.arguments?.getString("alarmId")
             com.elroi.alarmpal.ui.screen.alarm.AlarmDetailScreen(
                 alarmId = alarmId,
-                onNavigateUp = { navController.navigateUp() }
+                onNavigateUp = { navController.navigateUp() },
+                onSwitchToWizard = {
+                    navController.navigate(Screen.AlarmWizard.route) {
+                        popUpTo(Screen.AlarmDetail.route) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -63,7 +71,12 @@ fun AlarmPalNavGraph(
                 onFinished = { 
                     navController.popBackStack(Screen.AlarmList.route, false)
                 },
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onSwitchToSimple = {
+                    navController.navigate(Screen.AlarmDetail.createRoute("")) {
+                        popUpTo(Screen.AlarmWizard.route) { inclusive = true }
+                    }
+                }
             )
         }
 

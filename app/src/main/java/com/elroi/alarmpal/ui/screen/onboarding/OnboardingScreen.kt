@@ -55,9 +55,6 @@ fun OnboardingScreen(
 
     val userName by viewModel.userName.collectAsState()
 
-    var buddyName by remember { mutableStateOf("") }
-    var buddyPhone by remember { mutableStateOf("") }
-
     // Permission launchers
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -75,46 +72,13 @@ fun OnboardingScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { /* result shown via permission check */ }
 
-    val contactPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickContact()
-    ) { uri: Uri? ->
-        uri ?: return@rememberLauncherForActivityResult
-        context.contentResolver.query(uri, arrayOf(ContactsContract.Contacts.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) buddyName = cursor.getString(0) ?: ""
-        }
-        context.contentResolver.query(uri, arrayOf(ContactsContract.Contacts._ID), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val contactId = cursor.getString(0)
-                context.contentResolver.query(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                    "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                    arrayOf(contactId), null
-                )?.use { phoneCursor ->
-                    if (phoneCursor.moveToFirst()) {
-                        buddyPhone = phoneCursor.getString(0) ?: ""
-                        if (buddyName.isNotBlank() && buddyPhone.isNotBlank()) {
-                            viewModel.addGlobalBuddy(buddyName, buddyPhone)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    val contactPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) contactPickerLauncher.launch(null)
-    }
-
-    val hasContactPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    
     var grantedCount by remember { mutableStateOf(0) }
     var totalCount by remember { mutableStateOf(0) }
     
     var briefingGrantedCount by remember { mutableStateOf(0) }
     var briefingTotalCount by remember { mutableStateOf(0) }
+    
+    var isSmsPermissionGranted by remember { mutableStateOf(false) }
     
     fun handleBack() {
         if (currentPage > 0) currentPage--
@@ -124,34 +88,36 @@ fun OnboardingScreen(
         when (currentPage) {
             1 -> {
                 // Permissions Page Logic
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val granted = ContextCompat.checkSelfPermission(
-                        context, Manifest.permission.POST_NOTIFICATIONS
-                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    if (!granted) {
-                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        return
+                if (createAlarm) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        val granted = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.POST_NOTIFICATIONS
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        if (!granted) {
+                            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            return
+                        }
                     }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val alarmManager = context.getSystemService(AlarmManager::class.java)
-                    if (!alarmManager.canScheduleExactAlarms()) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val alarmManager = context.getSystemService(AlarmManager::class.java)
+                        if (!alarmManager.canScheduleExactAlarms()) {
+                            context.startActivity(
+                                Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                    .setData(Uri.parse("package:${context.packageName}"))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            )
+                            return
+                        }
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
                         context.startActivity(
-                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                                .setData(Uri.parse("package:${context.packageName}"))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         )
                         return
                     }
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:${context.packageName}")
-                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                    return
                 }
                 currentPage++
             }
@@ -160,7 +126,7 @@ fun OnboardingScreen(
                 val calGranted = ContextCompat.checkSelfPermission(
                     context, Manifest.permission.READ_CALENDAR
                 ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!calGranted) {
+                if (!calGranted && createAlarm) {
                     calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
                     return
                 }
@@ -168,11 +134,23 @@ fun OnboardingScreen(
                 val locGranted = ContextCompat.checkSelfPermission(
                     context, Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!locGranted) {
+                if (!locGranted && createAlarm) {
                     locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     return
                 }
                 
+                currentPage++
+            }
+            3 -> {
+                // Buddy Page
+                val smsGranted = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.SEND_SMS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                
+                if (!smsGranted && createAlarm) {
+                    smsLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS))
+                    return
+                }
                 currentPage++
             }
             totalPages - 1 -> {
@@ -225,6 +203,11 @@ fun OnboardingScreen(
                 
                 briefingGrantedCount = bGranted
                 briefingTotalCount = bTotal
+
+                // Track SMS Permission (Page 4)
+                isSmsPermissionGranted = ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.SEND_SMS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -360,7 +343,7 @@ fun OnboardingScreen(
                                 stringResource(R.string.onboarding_2_primary)
                             onPrimary = { handleNext() }
                             secondaryLabel = stringResource(R.string.onboarding_2_secondary)
-                            onSecondary = { handleNext() }
+                            onSecondary = { handleNext(false) }
                             customContent = {
                                 if (totalCount > 0) {
                                     Column(
@@ -450,7 +433,7 @@ fun OnboardingScreen(
                                 stringResource(R.string.onboarding_3_primary)
                             onPrimary = { handleNext() }
                             secondaryLabel = stringResource(R.string.onboarding_3_secondary)
-                            onSecondary = { handleNext() }
+                            onSecondary = { handleNext(false) }
                             customContent = {
                                 Column(
                                     modifier = Modifier.fillMaxWidth(),
@@ -554,10 +537,29 @@ fun OnboardingScreen(
                             emoji = "🤝"
                             title = stringResource(R.string.onboarding_4_title)
                             body = stringResource(R.string.onboarding_4_body)
-                            primaryLabel = stringResource(R.string.onboarding_4_primary)
-                            onPrimary = { handleNext() }
-                            secondaryLabel = null
-                            onSecondary = null
+                            
+                            val smsGranted = isSmsPermissionGranted
+                            
+                            primaryLabel = if (smsGranted) stringResource(R.string.onboarding_4_primary) else stringResource(R.string.onboarding_4_enable)
+                            onPrimary = { 
+                                if (smsGranted) handleNext() 
+                                else smsLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS))
+                            }
+                            secondaryLabel = if (smsGranted) null else stringResource(R.string.onboarding_4_secondary)
+                            onSecondary = { handleNext(false) }
+                            customContent = {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    PermissionStatusRow(
+                                        icon = "✉️",
+                                        title = stringResource(R.string.onboarding_4_permission_sms),
+                                        desc = stringResource(R.string.onboarding_4_desc_sms),
+                                        isGranted = isSmsPermissionGranted
+                                    )
+                                }
+                            }
                         }
                         else -> {
                             emoji = "🚀"
@@ -606,22 +608,6 @@ fun OnboardingScreen(
                     )
 
                     customContent?.invoke()
-
-                    if (targetPage == 3 && buddyName.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(stringResource(R.string.onboarding_buddy_assigned_prefix), style = MaterialTheme.typography.bodyMedium)
-                                Text(buddyName, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(48.dp))
 

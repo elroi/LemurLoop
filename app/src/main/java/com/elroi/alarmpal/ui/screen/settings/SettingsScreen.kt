@@ -169,6 +169,34 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("General Settings", style = MaterialTheme.typography.titleLarge)
+
+            val creationStyle by viewModel.alarmCreationStyle.collectAsState()
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Alarm Creation Style", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "Choose between a simple one-step setup or a guided wizard.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val styles = listOf("WIZARD", "SIMPLE")
+                    styles.forEachIndexed { index, style ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = styles.size),
+                            onClick = { viewModel.updateAlarmCreationStyle(style) },
+                            selected = creationStyle == style,
+                            label = {
+                                Text(if (style == "WIZARD") "Guided Wizard" else "Simple Setup", fontSize = 12.sp)
+                            }
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
             Text("Wake-Up Briefing", style = MaterialTheme.typography.titleLarge)
 
             Row(
@@ -1282,7 +1310,7 @@ fun IntelligenceHealthView(viewModel: SettingsViewModel, onWipeBrainMemory: () -
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        "How AlarmPal handles your data",
+                        "How LemurLoop handles your data",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

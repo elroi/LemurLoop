@@ -41,7 +41,7 @@ class SleepTrackingService : Service(), SensorEventListener {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AlarmPal:SleepTracking")
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LemurLoop:SleepTracking")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

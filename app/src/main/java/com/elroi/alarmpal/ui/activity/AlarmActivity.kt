@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.elroi.alarmpal.service.AlarmService
-import com.elroi.alarmpal.ui.theme.AlarmPalTheme
+import com.elroi.alarmpal.ui.theme.LemurLoopTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -98,7 +98,7 @@ class AlarmActivity : ComponentActivity() {
         }
         
         setContent {
-            AlarmPalTheme {
+            LemurLoopTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

@@ -53,44 +53,8 @@ class AndroidAlarmScheduler(
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_TIMEOUT, alarm.wakeupCheckTimeoutSeconds)
         }
         
-        // Calculate next alarm time
-        val now = LocalDateTime.now()
-        val alarmTimeToday = now.withHour(alarm.time.hour).withMinute(alarm.time.minute).withSecond(0).withNano(0)
-        var alarmTime: LocalDateTime = alarmTimeToday
-        
-        if (alarm.daysOfWeek.isEmpty()) {
-            // Non-repeating: if past, schedule for tomorrow
-            if (alarmTime.isBefore(now)) {
-                alarmTime = alarmTime.plusDays(1)
-            }
-        } else {
-            // Repeating: find next matching day
-            // 1 = Monday, 7 = Sunday
-            val currentDay = now.dayOfWeek.value 
-            
-            // Check if today is a selected day and time is in future
-            if (alarm.daysOfWeek.contains(currentDay) && alarmTime.isAfter(now)) {
-                // Schedule for today
-                alarmTime = alarmTimeToday
-            } else {
-                // Find next day
-                var daysUntilNext = -1
-                for (i in 1..7) {
-                    val nextDay = (currentDay + i - 1) % 7 + 1
-                    if (alarm.daysOfWeek.contains(nextDay)) {
-                        daysUntilNext = i
-                        break
-                    }
-                }
-                
-                if (daysUntilNext != -1) {
-                     alarmTime = alarmTimeToday.plusDays(daysUntilNext.toLong())
-                } else {
-                    // Should not happen if daysOfWeek is not empty, but fallback
-                    alarmTime = alarmTimeToday.plusDays(1)
-                }
-            }
-        }
+        // Calculate next alarm time using utility
+        val alarmTime = com.elroi.alarmpal.util.AlarmUtils.calculateNextOccurrence(alarm)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,

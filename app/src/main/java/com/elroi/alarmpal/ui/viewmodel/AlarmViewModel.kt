@@ -38,6 +38,9 @@ class AlarmViewModel @Inject constructor(
     val defaultAlarmSettings: StateFlow<AlarmDefaults> = settingsManager.alarmDefaultsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AlarmDefaults())
 
+    val alarmCreationStyle: StateFlow<String> = settingsManager.alarmCreationStyleFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "WIZARD")
+
     fun toggleAlarm(alarm: Alarm, isEnabled: Boolean) {
         viewModelScope.launch {
             repository.updateAlarmToggle(alarm.id, isEnabled)
@@ -84,6 +87,12 @@ class AlarmViewModel @Inject constructor(
     fun updateAlarmDefaults(defaults: AlarmDefaults) {
         viewModelScope.launch {
             settingsManager.saveAlarmDefaults(defaults)
+        }
+    }
+
+    fun updateAlarmCreationStyle(style: String) {
+        viewModelScope.launch {
+            settingsManager.saveAlarmCreationStyle(style)
         }
     }
 }

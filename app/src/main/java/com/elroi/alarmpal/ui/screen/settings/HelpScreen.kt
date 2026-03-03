@@ -38,7 +38,7 @@ fun HelpScreen(navController: NavController) {
         ) {
             HelpSection(
                 title = "Wake-Up Briefing Generation",
-                content = "The AlarmPal intelligence generates your custom wake-up briefing specifically tailored to you. To ensure your briefing is ready to read immediately when you successfully dismiss the alarm, the invisible generation process actually starts in the background the exact moment your alarm begins to ring. By the time you finish your math or face challenges, your briefing is already pre-computed and awaiting your attention!"
+                content = "The LemurLoop intelligence generates your custom wake-up briefing specifically tailored to you. To ensure your briefing is ready to read immediately when you successfully dismiss the alarm, the invisible generation process actually starts in the background the exact moment your alarm begins to ring. By the time you finish your math or face challenges, your briefing is already pre-computed and awaiting your attention!"
             )
             
             HelpSection(
