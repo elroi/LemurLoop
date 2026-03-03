@@ -243,6 +243,25 @@ fun SettingsScreen(
                 enabled = !isAutoLocation
             )
 
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Temperature Unit", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        if (isCelsius) "Celsius (°C)" else "Fahrenheit (°F)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = isCelsius,
+                    onCheckedChange = { viewModel.updateIsCelsius(it) }
+                )
+            }
+
             val userName by viewModel.userName.collectAsState()
             OutlinedTextField(
                 value = userName,
@@ -598,9 +617,6 @@ fun SettingsScreen(
                     }
                 )
             }
-            BuddyManagementSection(viewModel)
-
-            IntelligenceHealthView(viewModel, onWipeBrainMemory = { showWipeConfirmationLocal = true })
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -631,7 +647,43 @@ fun SettingsScreen(
                 }
             }
 
+            var showEditPromptsDialogLocal by remember { mutableStateOf(false) }
+            OutlinedButton(
+                onClick = { showEditPromptsDialogLocal = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Edit Personality Prompts")
+            }
+            
+            if (showEditPromptsDialogLocal) {
+                EditPromptsDialog(
+                    alarmDefaults = alarmDefaults,
+                    onDismiss = { showEditPromptsDialogLocal = false },
+                    onSave = { coach, comedian, zen, hypeman ->
+                        viewModel.updateAlarmDefaults(
+                            alarmDefaults.copy(
+                                promptCoach = coach,
+                                promptComedian = comedian,
+                                promptZen = zen,
+                                promptHypeman = hypeman
+                            )
+                        )
+                        showEditPromptsDialogLocal = false
+                    }
+                )
+            }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+            BuddyManagementSection(viewModel)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            IntelligenceHealthView(viewModel, onWipeBrainMemory = { showWipeConfirmationLocal = true })
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             Text(stringResource(R.string.settings_system_title), style = MaterialTheme.typography.titleLarge)
             
@@ -697,54 +749,6 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            var showEditPromptsDialogLocal by remember { mutableStateOf(false) }
-            OutlinedButton(
-                onClick = { showEditPromptsDialogLocal = true },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Edit Personality Prompts")
-            }
-            
-            if (showEditPromptsDialogLocal) {
-                EditPromptsDialog(
-                    alarmDefaults = alarmDefaults,
-                    onDismiss = { showEditPromptsDialogLocal = false },
-                    onSave = { coach, comedian, zen, hypeman ->
-                        viewModel.updateAlarmDefaults(
-                            alarmDefaults.copy(
-                                promptCoach = coach,
-                                promptComedian = comedian,
-                                promptZen = zen,
-                                promptHypeman = hypeman
-                            )
-                        )
-                        showEditPromptsDialogLocal = false
-                    }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("Temperature Unit", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        if (isCelsius) "Celsius (°C)" else "Fahrenheit (°F)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Switch(
-                    checked = isCelsius,
-                    onCheckedChange = { viewModel.updateIsCelsius(it) }
-                )
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -1319,44 +1323,18 @@ fun IntelligenceHealthView(viewModel: SettingsViewModel, onWipeBrainMemory: () -
                 Text("Generate Test Briefing")
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-            // Privacy Policy link
-            val privacyPolicyContext = androidx.compose.ui.platform.LocalContext.current
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://elroi.github.io/aNewDawnAlarmClock/privacy-policy/")
-                        )
-                        privacyPolicyContext.startActivity(intent)
-                    }
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            OutlinedButton(
+                onClick = onWipeBrainMemory,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
             ) {
-                Column {
-                    Text(
-                        "Privacy Policy",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        "How LemurLoop handles your data",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Icon(
-                    Icons.Default.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Reset brain cache")
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
