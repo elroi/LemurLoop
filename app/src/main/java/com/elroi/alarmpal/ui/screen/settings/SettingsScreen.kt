@@ -70,6 +70,9 @@ fun SettingsScreen(
     val alarmDefaults by viewModel.alarmDefaults.collectAsState()
     val hasChanges by viewModel.hasChanges.collectAsState()
     val expandedSections by viewModel.expandedSections.collectAsState()
+    val isBriefingGenerating by viewModel.isBriefingGenerating.collectAsState()
+    val generatingProgress by viewModel.generatingProgress.collectAsState()
+    val previewBriefingScript by viewModel.previewBriefingScript.collectAsState()
     var showDiscardDialog by remember { mutableStateOf(false) }
     var defaultSoundName by remember { mutableStateOf("Default") }
     val context = LocalContext.current
@@ -95,6 +98,19 @@ fun SettingsScreen(
             val uri: Uri? = result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             viewModel.updateAlarmDefaults(alarmDefaults.copy(defaultSoundUri = uri?.toString()))
         }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.message.collect { msg ->
+            android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    previewBriefingScript?.let { script ->
+        PreviewBriefingDialog(
+            script = script,
+            onDismiss = { viewModel.clearBriefingPreview() }
+        )
     }
 
     LaunchedEffect(alarmDefaults.defaultSoundUri) {
@@ -287,11 +303,20 @@ fun SettingsScreen(
                         viewModel.launchTestBriefing() 
                     },
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = !isBriefingGenerating,
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    if (isBriefingGenerating) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Preview Briefing")
+                    Text(if (isBriefingGenerating) generatingProgress else "Preview Briefing")
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1234,4 +1259,35 @@ fun ExpandableSection(
             }
         }
     }
+}
+
+@Composable
+fun PreviewBriefingDialog(
+    script: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Briefing Preview 📝") },
+        text = {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+            ) {
+                Text(
+                    text = script,
+                    style = MaterialTheme.typography.bodyMedium,
+                    lineHeight = 20.sp
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        },
+        shape = RoundedCornerShape(24.dp)
+    )
 }

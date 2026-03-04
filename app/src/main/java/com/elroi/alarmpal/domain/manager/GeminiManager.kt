@@ -1,8 +1,15 @@
 package com.elroi.alarmpal.domain.manager
 
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.BlockThreshold
+import com.google.ai.client.generativeai.type.HarmCategory
+import com.google.ai.client.generativeai.type.SafetySetting
+import com.google.ai.client.generativeai.type.content
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -13,6 +20,42 @@ import javax.inject.Singleton
 class GeminiManager @Inject constructor(
     private val settingsManager: SettingsManager
 ) {
+    fun generateContentStreaming(prompt: String): Flow<String> = flow {
+        val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
+        if (apiKey.isBlank()) return@flow
+        
+        val cachedModel = settingsManager.workingGeminiModelFlow.first()
+        val modelName = cachedModel ?: "gemini-1.5-flash"
+        
+        val safetySettings = listOf(
+            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
+            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
+        )
+
+        val model = GenerativeModel(
+            modelName = modelName,
+            apiKey = apiKey,
+            safetySettings = safetySettings
+        )
+
+        try {
+            var fullText = ""
+            model.generateContentStream(prompt).collect { chunk ->
+                val text = chunk.text ?: ""
+                fullText += text
+                emit(fullText)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("GeminiManager", "Streaming error with $modelName", e)
+            // If failed and we were using a cached model, maybe the model is deprecated?
+            // Fallback to non-streaming logic for full negotiation if needed, 
+            // but for now we just emit what we have or rethrow.
+            throw e
+        }
+    }
+
     suspend fun generateContent(prompt: String): String? {
         val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
         if (apiKey.isBlank()) return null

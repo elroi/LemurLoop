@@ -11,6 +11,7 @@ import com.elroi.alarmpal.domain.manager.LocalLLMManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -219,7 +220,15 @@ class BriefingGenerator @Inject constructor(
             BriefingStateManager.updateStatus(if (tier == "CLOUD") "Adding persona with Cloud AI..." else "Adding persona locally with Gemma...")
             val finalResult: String? = when (tier) {
                 "CLOUD" -> if (isCloudEnabled) {
-                    try { geminiManager.generateContent(cloudPrompt) } catch (e: Exception) {
+                    try {
+                        var lastResult: String? = null
+                        geminiManager.generateContentStreaming(cloudPrompt).collect { partialText ->
+                            lastResult = partialText
+                            val wordCount = partialText.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }.size
+                            BriefingStateManager.updateStatus("AI is writing... ($wordCount words)")
+                        }
+                        lastResult
+                    } catch (e: Exception) {
                         android.util.Log.e("BriefingGenerator", "Cloud AI error", e); null
                     }
                 } else null

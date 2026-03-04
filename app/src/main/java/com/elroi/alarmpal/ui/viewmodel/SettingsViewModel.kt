@@ -22,6 +22,8 @@ import com.elroi.alarmpal.domain.manager.GeminiManager
 import com.elroi.alarmpal.domain.manager.GeminiNanoStatus
 import android.content.ClipboardManager
 import android.content.Context
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -60,6 +62,12 @@ class SettingsViewModel @Inject constructor(
     private val _draftAiFallbackOrder = MutableStateFlow("CLOUD_THEN_LOCAL")
     val aiFallbackOrder = _draftAiFallbackOrder.asStateFlow()
 
+    private val _message = MutableSharedFlow<String>()
+    val message = _message.asSharedFlow()
+
+    private val _previewBriefingScript = MutableStateFlow<String?>(null)
+    val previewBriefingScript = _previewBriefingScript.asStateFlow()
+
     private val _draftAlarmCreationStyle = MutableStateFlow("WIZARD")
     val alarmCreationStyle = _draftAlarmCreationStyle.asStateFlow()
 
@@ -80,6 +88,10 @@ class SettingsViewModel @Inject constructor(
 
     private val _isBriefingGenerating = MutableStateFlow(false)
     val isBriefingGenerating = _isBriefingGenerating.asStateFlow()
+
+    val generatingProgress = com.elroi.alarmpal.domain.manager.BriefingStateManager.briefingState
+        .map { (it as? com.elroi.alarmpal.domain.manager.BriefingState.Generating)?.message ?: "Generating..." }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Generating...")
 
     val briefingStatus = settingsManager.lastGenStatusFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "waiting:pending")
     val briefingError = settingsManager.lastGenErrorFlow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -347,13 +359,21 @@ class SettingsViewModel @Inject constructor(
             _isBriefingGenerating.value = true
             // Save draft settings so the test briefing reflects the current UI state immediately
             performSaveSettings() 
+            
             val script = briefingGenerator.refreshBriefing()
             _isBriefingGenerating.value = false
             
             if (!script.isNullOrBlank()) {
+                _previewBriefingScript.value = script
                 ttsManager.speak(script)
+            } else {
+                _message.emit("Briefing generation failed. Please check your API key and AI settings.")
             }
         }
+    }
+
+    fun clearBriefingPreview() {
+        _previewBriefingScript.value = null
     }
 
     fun triggerLocalModelDownload() {
@@ -376,31 +396,28 @@ class SettingsViewModel @Inject constructor(
     }
 
     private suspend fun performSaveSettings() {
-        val loc = _draftLocation.value
-        val cel = _draftIsCelsius.value
-        val auto = _draftIsAutoLocation.value
-        val def = _draftAlarmDefaults.value
-
-        settingsManager.saveLocation(loc)
-        settingsManager.saveIsCelsius(cel)
-        settingsManager.saveIsAutoLocation(auto)
-        settingsManager.saveAlarmDefaults(def)
-        settingsManager.saveGeminiApiKey(_draftGeminiApiKey.value.trim())
+        settingsManager.saveLocation(_draftLocation.value)
+        settingsManager.saveIsCelsius(_draftIsCelsius.value)
+        settingsManager.saveIsAutoLocation(_draftIsAutoLocation.value)
+        settingsManager.saveAlarmDefaults(_draftAlarmDefaults.value)
+        settingsManager.saveGeminiApiKey(_draftGeminiApiKey.value)
         settingsManager.saveIsCloudAiEnabled(_draftIsCloudAiEnabled.value)
         settingsManager.savePreferredAiTier(_draftPreferredAiTier.value)
         settingsManager.saveAiFallbackOrder(_draftAiFallbackOrder.value)
         settingsManager.saveAlarmCreationStyle(_draftAlarmCreationStyle.value)
-
-        // Update original values to reset dirty state
-        _originalLocation.value = loc
-        _originalIsCelsius.value = cel
-        _originalIsAutoLocation.value = auto
-        _originalAlarmDefaults.value = def
+        
+        // Update original values
+        _originalLocation.value = _draftLocation.value
+        _originalIsCelsius.value = _draftIsCelsius.value
+        _originalIsAutoLocation.value = _draftIsAutoLocation.value
+        _originalAlarmDefaults.value = _draftAlarmDefaults.value
         _originalGeminiApiKey.value = _draftGeminiApiKey.value
         _originalIsCloudAiEnabled.value = _draftIsCloudAiEnabled.value
         _originalPreferredAiTier.value = _draftPreferredAiTier.value
         _originalAiFallbackOrder.value = _draftAiFallbackOrder.value
         _originalAlarmCreationStyle.value = _draftAlarmCreationStyle.value
+        
+        _message.emit("Settings saved successfully")
     }
 
     private suspend fun fetchAndSaveCurrentLocation(context: android.content.Context) = withContext(Dispatchers.IO) {
