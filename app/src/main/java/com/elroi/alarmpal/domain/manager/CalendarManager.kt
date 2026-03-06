@@ -58,7 +58,7 @@ class CalendarManager @Inject constructor(
         return events.firstOrNull()
     }
 
-    private fun hasPermission(): Boolean {
+    fun hasPermission(): Boolean {
          return androidx.core.content.ContextCompat.checkSelfPermission(
                 context,
                 android.Manifest.permission.READ_CALENDAR

@@ -27,6 +27,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import com.elroi.alarmpal.domain.manager.BriefingLogger
 import com.elroi.alarmpal.domain.manager.BriefingLogEntry
+import com.elroi.alarmpal.domain.manager.CalendarManager
+import com.elroi.alarmpal.domain.manager.BriefingStateManager
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -34,9 +38,11 @@ class SettingsViewModel @Inject constructor(
     private val geminiManager: GeminiManager,
     private val briefingGenerator: com.elroi.alarmpal.domain.generator.BriefingGenerator,
     private val localLLMManager: com.elroi.alarmpal.domain.manager.LocalLLMManager,
+    private val calendarManager: CalendarManager,
     private val database: com.elroi.alarmpal.data.local.AppDatabase,
     private val ttsManager: com.elroi.alarmpal.domain.manager.TextToSpeechManager,
-    private val briefingLogger: BriefingLogger
+    private val briefingLogger: BriefingLogger,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _draftLocation = MutableStateFlow("")
@@ -418,15 +424,87 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _isBriefingGenerating.value = true
             performSaveSettings()
-            
-            val script = briefingGenerator.refreshBriefing()
-            _isBriefingGenerating.value = false
-            
-            if (script.isNullOrBlank()) {
-                _message.emit("Health test failed. Please check your API key and AI settings.")
+
+            BriefingStateManager.startGenerating("Running health checks...")
+            BriefingStateManager.updateStatus("Running health checks...")
+
+            var weatherOk = false
+            var calendarOk = false
+            var aiOk = false
+            var aiError: String? = null
+
+            // ── 1. Weather probe ────────────────────────────────────────────
+            BriefingStateManager.updateStatus("Checking weather connection...")
+            try {
+                weatherOk = withContext(Dispatchers.IO) {
+                    val location = settingsManager.locationFlow.first().ifBlank { "New York" }
+                    val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                    val addresses = geocoder.getFromLocationName(location, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val lat = addresses[0].latitude
+                        val lon = addresses[0].longitude
+                        val conn = java.net.URL("https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true")
+                            .openConnection() as java.net.HttpURLConnection
+                        conn.connectTimeout = 5000
+                        val ok = conn.responseCode == 200
+                        conn.disconnect()
+                        ok
+                    } else false
+                }
+            } catch (e: Exception) { android.util.Log.w("HealthCheck", "Weather probe failed", e) }
+            BriefingStateManager.updateComponentStatus("weather", if (weatherOk) "ok" else "fail")
+
+            // ── 2. Calendar probe ───────────────────────────────────────────
+            BriefingStateManager.updateStatus("Checking calendar access...")
+            try {
+                calendarOk = calendarManager.hasPermission()
+            } catch (e: Exception) { android.util.Log.w("HealthCheck", "Calendar probe failed", e) }
+            BriefingStateManager.updateComponentStatus("calendar", if (calendarOk) "ok" else "fail")
+
+            // ── 3. AI probe ─────────────────────────────────────────────────
+            BriefingStateManager.updateStatus("Checking AI connection...")
+            val isCloudOn = settingsManager.isCloudAiEnabledFlow.first()
+            val isLocalOn = settingsManager.isLocalAiEnabledFlow.first()
+            val preferredTier = settingsManager.preferredAiTierFlow.first()
+
+            when {
+                isCloudOn -> {
+                    try {
+                        val result = geminiManager.generateContent("Reply with exactly one word: Ready")
+                        aiOk = result != null && !result.startsWith("ERROR") && result.isNotBlank()
+                        if (!aiOk) aiError = result ?: "Cloud AI returned blank"
+                    } catch (e: Exception) {
+                        aiError = e.message ?: "Cloud AI error"
+                    }
+                }
+                isLocalOn && preferredTier == "ADVANCED" -> {
+                    try {
+                        val status = localLLMManager.checkStatus()
+                        aiOk = status == com.elroi.alarmpal.domain.manager.GeminiNanoStatus.SUPPORTED
+                        if (!aiOk) aiError = "Local model not ready: $status"
+                    } catch (e: Exception) {
+                        aiError = e.message ?: "Local AI error"
+                    }
+                }
+                isLocalOn -> {
+                    // Standard local mode - always available
+                    aiOk = true
+                }
+                else -> {
+                    aiError = "No AI enabled"
+                }
             }
+            BriefingStateManager.updateComponentStatus("ai", if (aiOk) "ok" else "draft")
+
+            // ── Save results ────────────────────────────────────────────────
+            val healthStatus = "weather:${if (weatherOk) "ok" else "fail"}|calendar:${if (calendarOk) "ok" else "fail"}|ai:${if (aiOk) "ok" else "draft"}"
+            settingsManager.saveHealthStatus(healthStatus, aiError)
+
+            BriefingStateManager.updateStatus(if (aiOk && weatherOk) "All systems ready ✓" else "Health check complete")
+            _isBriefingGenerating.value = false
         }
     }
+
 
     fun clearBriefingPreview() {
         _previewBriefingScript.value = null

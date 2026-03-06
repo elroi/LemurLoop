@@ -724,57 +724,113 @@ fun SettingsScreen(
 
                         // API Credentials (shown when Cloud AI is enabled)
                         AnimatedVisibility(visible = isCloudAiEnabled) {
-                            Column(modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp)) {
-                                HorizontalDivider(modifier = Modifier.padding(bottom = 10.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            Column(
+                                modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                HorizontalDivider(modifier = Modifier.padding(bottom = 2.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                                 val apiKey by viewModel.geminiApiKey.collectAsState()
                                 val isKeyValidating by viewModel.isKeyValidating.collectAsState()
                                 val keyValidationResult by viewModel.keyValidationResult.collectAsState()
                                 val keyValidationError by viewModel.keyValidationError.collectAsState()
 
-                                Row(
+                                // ── Field (full width) ──────────────────────
+                                OutlinedTextField(
+                                    value = apiKey,
+                                    onValueChange = { viewModel.updateGeminiApiKey(it) },
+                                    label = { Text("Gemini API Key") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedTextField(
-                                        value = apiKey,
-                                        onValueChange = { viewModel.updateGeminiApiKey(it) },
-                                        label = { Text("Gemini API Key") },
-                                        modifier = Modifier.weight(1f),
-                                        visualTransformation = PasswordVisualTransformation(),
-                                        singleLine = true,
-                                        trailingIcon = {
-                                            when {
-                                                isKeyValidating -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                                keyValidationResult == true -> Icon(Icons.Default.CheckCircle, "Valid", tint = MaterialTheme.colorScheme.primary)
-                                                keyValidationResult == false -> Icon(Icons.Default.Warning, "Invalid", tint = MaterialTheme.colorScheme.error)
-                                            }
+                                    visualTransformation = PasswordVisualTransformation(),
+                                    singleLine = true,
+                                    trailingIcon = {
+                                        when {
+                                            isKeyValidating -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                            keyValidationResult == true -> Icon(Icons.Default.CheckCircle, "Valid", tint = MaterialTheme.colorScheme.primary)
+                                            keyValidationResult == false -> Icon(Icons.Default.Warning, "Invalid", tint = MaterialTheme.colorScheme.error)
                                         }
-                                    )
-                                    Button(
+                                    }
+                                )
+
+                                // ── Verify button OR status chip ────────────
+                                AnimatedVisibility(
+                                    visible = keyValidationResult != true,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically()
+                                ) {
+                                    OutlinedButton(
                                         onClick = { viewModel.validateApiKey() },
                                         enabled = apiKey.isNotBlank() && !isKeyValidating,
-                                        modifier = Modifier.height(56.dp)
-                                    ) { Text("Test") }
-                                }
-
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                    TextButton(onClick = {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
-                                        context.startActivity(intent)
-                                    }) {
-                                        Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Get free API key")
+                                        modifier = Modifier.fillMaxWidth(),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (apiKey.isNotBlank() && !isKeyValidating)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                        )
+                                    ) {
+                                        if (isKeyValidating) {
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text("Verifying...")
+                                        } else {
+                                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(if (keyValidationResult == false) "Retry Verification" else "Verify API Key")
+                                        }
                                     }
                                 }
 
-                                keyValidationError?.let { error ->
-                                    Text(text = error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 4.dp))
+                                // Status chip after verification
+                                AnimatedVisibility(
+                                    visible = keyValidationResult == true,
+                                    enter = expandVertically(),
+                                    exit = shrinkVertically()
+                                ) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Text("API key verified", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                                            Spacer(Modifier.weight(1f))
+                                            Text("Tap key field to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                        }
+                                    }
+                                }
+
+                                // Error detail
+                                if (keyValidationResult == false) {
+                                    keyValidationError?.let { error ->
+                                        Text(text = error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 4.dp))
+                                    }
+                                }
+
+                                // ── Get free API key ─────────────────────────
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                                    TextButton(
+                                        onClick = {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://aistudio.google.com/app/apikey"))
+                                            context.startActivity(intent)
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                    ) {
+                                        Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Get free API key", style = MaterialTheme.typography.labelMedium)
+                                    }
                                 }
                             }
                         }
+
+
                     }
                 }
 

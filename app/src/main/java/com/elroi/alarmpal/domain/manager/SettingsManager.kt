@@ -290,6 +290,15 @@ class SettingsManager @Inject constructor(
         }
     }
 
+    /** Lightweight write: only persist health status + error, leaves briefing script intact. */
+    suspend fun saveHealthStatus(status: String, error: String?) {
+        context.dataStore.edit { settings ->
+            settings[LAST_GEN_STATUS] = status
+            error?.let { settings[LAST_GEN_ERROR] = it } ?: settings.remove(LAST_GEN_ERROR)
+        }
+    }
+
+
     val lastWeatherCacheFlow: Flow<String?> = context.dataStore.data.map { it[LAST_WEATHER_CACHE] }
     val lastFactCacheFlow: Flow<String?> = context.dataStore.data.map { it[LAST_FACT_CACHE] }
     val lastGenStatusFlow: Flow<String> = context.dataStore.data.map { it[LAST_GEN_STATUS] ?: "waiting:pending" }

@@ -81,34 +81,20 @@ class GeminiManager @Inject constructor(
     fun generateContentStreaming(prompt: String): Flow<String> = flow {
         val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
         if (apiKey.isBlank()) return@flow
-        
-        val config = getWorkingModelConfig(apiKey) ?: return@flow
-        
-        val safetySettings = listOf(
-            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
-        )
 
-        val model = GenerativeModel(
-            modelName = config.first,
-            apiKey = apiKey,
-            safetySettings = safetySettings
-        )
+        val config = getWorkingModelConfig(apiKey) ?: return@flow
 
         try {
-            var fullText = ""
-            model.generateContentStream(prompt).collect { chunk ->
-                val text = chunk.text ?: ""
-                fullText += text
-                emit(fullText)
+            val result = generateWithKey(apiKey, prompt, config.first, config.second)
+            if (!result.isNullOrBlank()) {
+                emit(result)
             }
         } catch (e: Exception) {
-            android.util.Log.e("GeminiManager", "Streaming error with ${config.first}", e)
+            android.util.Log.e("GeminiManager", "Generation error with ${config.first}", e)
             throw e
         }
     }
+
 
     suspend fun generateContent(prompt: String): String? {
         val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
