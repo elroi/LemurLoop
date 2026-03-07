@@ -105,7 +105,9 @@ class AccountabilityManager @Inject constructor(
             Log.d("AccountabilityManager", "SMS sent to $phoneNumber: $message")
         } catch (e: Exception) {
             Log.e("AccountabilityManager", "Failed to send SMS", e)
-            Toast.makeText(context, "Accountability SMS failed: ${e.message}", Toast.LENGTH_LONG).show()
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Toast.makeText(context, "Accountability SMS failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
         }
     }
 }

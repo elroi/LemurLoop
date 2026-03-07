@@ -299,7 +299,7 @@ class SettingsManager @Inject constructor(
             snoozeDurationMinutes = preferences[DEFAULT_SNOOZE_DURATION] ?: 5,
             isGentleWake = preferences[DEFAULT_IS_GENTLE_WAKE] ?: false,
             crescendoDurationMinutes = preferences[DEFAULT_CRESCENDO_DURATION] ?: 1,
-            mathDifficulty = preferences[DEFAULT_MATH_DIFFICULTY] ?: 1,
+            mathDifficulty = preferences[DEFAULT_MATH_DIFFICULTY] ?: 0,
             mathProblemCount = preferences[DEFAULT_MATH_PROBLEM_COUNT] ?: 3,
             mathGraduallyIncreaseDifficulty = preferences[DEFAULT_MATH_GRADUAL_DIFFICULTY] ?: false,
             smileToDismiss = preferences[DEFAULT_SMILE_TO_DISMISS] ?: false,

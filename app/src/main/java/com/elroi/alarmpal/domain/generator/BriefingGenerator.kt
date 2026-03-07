@@ -123,7 +123,7 @@ class BriefingGenerator @Inject constructor(
                         val temp = current.getDouble("temperature")
                         val code = current.getInt("weathercode")
                         val weatherDesc = getWeatherDescription(code)
-                        val displayTemp = if (isCelsius) "${temp}°C" else "${(temp * 9/5) + 32}°F"
+                        val displayTemp = if (isCelsius) "${temp}°C" else "${"%.1f".format((temp * 9.0 / 5.0) + 32.0)}°F"
                         weatherStatus = "ok"
                         "$weatherDesc, $displayTemp"
                     } else "Weather unavailable."

@@ -203,6 +203,8 @@ class AlarmService : Service() {
         }
 
         serviceScope.launch {
+            // BUG-3 FIX: fetch alarm once and reuse — the previous code had a shadowed
+            // `val alarm` inside the `if (isVibrate)` block causing a redundant DB call.
             val alarm = repository.getAlarmById(alarmId)
             
             if (isSoundEnabled) {
@@ -214,7 +216,6 @@ class AlarmService : Service() {
             }
             
             if (isVibrate) {
-                val alarm = repository.getAlarmById(alarmId)
                 startVibration(
                     isGentleWake = alarm?.isGentleWake ?: false,
                     crescendoMinutes = alarm?.crescendoDurationMinutes ?: 1
@@ -455,6 +456,12 @@ class AlarmService : Service() {
                 putExtra(EXTRA_IS_VIBRATE, currentIsVibrate)
                 putExtra(EXTRA_IS_SOUND_ENABLED, currentIsSoundEnabled)
                 putExtra(EXTRA_IS_SNOOZE_ENABLED, currentIsSnoozeEnabled)
+                // BUG-8 FIX: forward smart-wakeup and briefing extras so snoozed alarms
+                // preserve these settings instead of silently resetting to defaults.
+                putExtra(EXTRA_IS_SMART_WAKEUP_ENABLED, currentIsSmartWakeupEnabled)
+                putExtra(EXTRA_WAKEUP_CHECK_DELAY, currentWakeupCheckDelayMinutes)
+                putExtra(EXTRA_WAKEUP_CHECK_TIMEOUT, currentWakeupCheckTimeoutSeconds)
+                putExtra(EXTRA_BRIEFING_ENABLED, currentBriefingEnabled)
             }
             val pi = PendingIntent.getBroadcast(
                 this,
@@ -617,6 +624,16 @@ class AlarmService : Service() {
         super.onDestroy()
         stopVibration()
         ringtone?.stop()
+
+        // BUG-4 FIX: When TTS completes naturally (user doesn't tap Stop), the service
+        // self-destructs via stopSelf() but scheduleWakeupCheck() was never called.
+        // We schedule it here in onDestroy() so it fires regardless of the dismissal path.
+        // Guard: only schedule if smart-wakeup is enabled AND briefing was active
+        // (handleStopTts already calls this when user manually stops TTS).
+        if (currentIsSmartWakeupEnabled && currentBriefingEnabled && ttsJob?.isCancelled == false) {
+            scheduleWakeupCheck()
+        }
+
         serviceScope.cancel()
         ttsManager.shutdown()
         accountabilityJob?.cancel()

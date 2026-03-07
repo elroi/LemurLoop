@@ -47,6 +47,9 @@ data class AlarmEntity(
     @ColumnInfo(defaultValue = "1")
     val isSoundEnabled: Boolean = true,
     @ColumnInfo(defaultValue = "0")
+    // BUG-11: isVibrateOnly has no domain model counterpart and is always stored as false.
+    // Keeping the column to avoid a schema migration in this PR; remove in a future DB version bump.
+    @Deprecated("Always false — has no domain model counterpart. Schedule for removal with next DB migration.")
     val isVibrateOnly: Boolean = false,
     @ColumnInfo(defaultValue = "1")
     val isSnoozeEnabled: Boolean = true,

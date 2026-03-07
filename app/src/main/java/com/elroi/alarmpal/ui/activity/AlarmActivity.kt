@@ -82,7 +82,7 @@ class AlarmActivity : ComponentActivity() {
         val smileFallbackMethod = intent.getStringExtra("ALARM_SMILE_FALLBACK_METHOD") ?: "MATH"
         val isPreview      = intent.getBooleanExtra("IS_PREVIEW", false)
         val isEvasiveSnooze = intent.getBooleanExtra("ALARM_IS_EVASIVE_SNOOZE", false)
-        val evasiveSnoozesBeforeMoving = intent.getIntExtra("ALARM_EVASIVE_SNOOZE_BEFORE_MOVING", 0)
+        val evasiveSnoozesBeforeMoving = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, 0)
         val isSnoozeEnabled = intent.getBooleanExtra("ALARM_IS_SNOOZE_ENABLED", true)
         
         // Pre-request CAMERA permission so SmileDismissScreen can use it immediately
@@ -633,23 +633,32 @@ fun AlarmFiringScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // BUG-12 FIX: update clock every second instead of using a static snapshot
+            var currentTime by remember { mutableStateOf(LocalTime.now()) }
+            LaunchedEffect(Unit) {
+                while (true) {
+                    currentTime = LocalTime.now()
+                    kotlinx.coroutines.delay(1000L)
+                }
+            }
+
             Row(verticalAlignment = Alignment.Bottom) {
                 val context = androidx.compose.ui.platform.LocalContext.current
                 val is24Hour = android.text.format.DateFormat.is24HourFormat(context)
                 if (is24Hour) {
                     Text(
-                        text = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
+                        text = currentTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = 80.sp,
                         fontWeight = FontWeight.Bold
                     )
                 } else {
                     Text(
-                        text = LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm")),
+                        text = currentTime.format(DateTimeFormatter.ofPattern("hh:mm")),
                         fontSize = 80.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = LocalTime.now().format(DateTimeFormatter.ofPattern(" a")),
+                        text = currentTime.format(DateTimeFormatter.ofPattern(" a")),
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp)

@@ -29,8 +29,14 @@ class MathProblemGenerator @Inject constructor() {
         val a = Random.nextInt(10, 50)
         val b = Random.nextInt(10, 50)
         val op = if (Random.nextBoolean()) "+" else "-"
-        val answer = if (op == "+") a + b else a - b
-        return MathProblem("$a $op $b", answer)
+        return if (op == "+") {
+            MathProblem("$a $op $b", a + b)
+        } else {
+            // Ensure the minuend >= subtrahend so the answer is never negative
+            val hi = maxOf(a, b)
+            val lo = minOf(a, b)
+            MathProblem("$hi $op $lo", hi - lo)
+        }
     }
 
     private fun generateHard(): MathProblem {
