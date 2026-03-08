@@ -52,7 +52,8 @@
             android:turnScreenOn="true"
             android:theme="@style/Theme.LemurLoop"
             android:taskAffinity=".alarm"
-            android:launchMode="singleTask" />
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance" />
         
         <activity
             android:name=".ui.activity.WakeupCheckActivity"

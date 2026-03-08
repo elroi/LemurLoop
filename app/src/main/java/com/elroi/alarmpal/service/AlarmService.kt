@@ -196,7 +196,7 @@ class AlarmService : Service() {
             putExtra(EXTRA_TTS_ENABLED, ttsEnabled)
             putExtra(EXTRA_BRIEFING_TIMEOUT, briefingTimeout)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or 
-                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or 
+                     Intent.FLAG_ACTIVITY_CLEAR_TOP or 
                      Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         // With SYSTEM_ALERT_WINDOW (Display over other apps) permission, we can launch from the background.
