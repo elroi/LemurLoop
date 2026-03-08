@@ -55,4 +55,19 @@ class AlarmServiceExtrasTest {
         // Consistency check: all components use the same string key
         assertEquals("ALARM_ID", AlarmService.EXTRA_ALARM_ID)
     }
+
+    @Test
+    fun `EXTRA_SOUND_URI constant exists and has expected value`() {
+        assertEquals("ALARM_SOUND_URI", AlarmService.EXTRA_SOUND_URI)
+    }
+
+    @Test
+    fun `EXTRA_DAYS_OF_WEEK constant exists and has expected value`() {
+        assertEquals("ALARM_DAYS_OF_WEEK", AlarmService.EXTRA_DAYS_OF_WEEK)
+    }
+
+    @Test
+    fun `EXTRA_SMILE_FALLBACK_METHOD constant exists and has expected value`() {
+        assertEquals("ALARM_SMILE_FALLBACK_METHOD", AlarmService.EXTRA_SMILE_FALLBACK_METHOD)
+    }
 }

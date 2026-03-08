@@ -24,8 +24,8 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val alarmId = intent.getStringExtra("ALARM_ID") ?: return
-        val alarmLabel = intent.getStringExtra("ALARM_LABEL")
+        val alarmId = intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_ID) ?: return
+        val alarmLabel = intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_LABEL)
 
         Log.d("AlarmReceiver", "Alarm triggered: $alarmId - $alarmLabel")
 
@@ -33,25 +33,26 @@ class AlarmReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(context, com.elroi.alarmpal.service.AlarmService::class.java).apply {
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_ID, alarmId)
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_LABEL, alarmLabel)
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_DIFFICULTY, intent.getIntExtra("ALARM_MATH_DIFFICULTY", 0))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_PROBLEM_COUNT, intent.getIntExtra("ALARM_MATH_PROBLEM_COUNT", 1))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_GRADUAL_DIFFICULTY, intent.getBooleanExtra("ALARM_MATH_GRADUAL_DIFFICULTY", false))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_DURATION, intent.getIntExtra("ALARM_SNOOZE_DURATION", 5))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_COUNT, intent.getIntExtra("ALARM_SNOOZE_COUNT", 0))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_TO_DISMISS, intent.getBooleanExtra("ALARM_SMILE_TO_DISMISS", false))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_BRIEFING_ENABLED, intent.getBooleanExtra("ALARM_BRIEFING_ENABLED", true))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_TTS_ENABLED, intent.getBooleanExtra("ALARM_TTS_ENABLED", true))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_EVASIVE_SNOOZE, intent.getBooleanExtra("ALARM_IS_EVASIVE_SNOOZE", false))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, intent.getIntExtra("ALARM_EVASIVE_SNOOZES_BEFORE_MOVING", 0))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SOUND_URI, intent.getStringExtra("ALARM_SOUND_URI"))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SMOOTH_FADE_OUT, intent.getBooleanExtra("ALARM_IS_SMOOTH_FADE_OUT", true))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_VIBRATE, intent.getBooleanExtra("ALARM_IS_VIBRATE", true))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SOUND_ENABLED, intent.getBooleanExtra("ALARM_IS_SOUND_ENABLED", true))
-            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SNOOZE_ENABLED, intent.getBooleanExtra("ALARM_IS_SNOOZE_ENABLED", true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_DIFFICULTY, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_DIFFICULTY, 0))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_PROBLEM_COUNT, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_PROBLEM_COUNT, 1))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_GRADUAL_DIFFICULTY, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_GRADUAL_DIFFICULTY, false))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_DURATION, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_DURATION, 5))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_COUNT, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_COUNT, 0))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_TO_DISMISS, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_TO_DISMISS, false))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_BRIEFING_ENABLED, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_BRIEFING_ENABLED, true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_TTS_ENABLED, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_TTS_ENABLED, true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_EVASIVE_SNOOZE, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_EVASIVE_SNOOZE, false))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, 0))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SOUND_URI, intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SOUND_URI))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SMOOTH_FADE_OUT, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SMOOTH_FADE_OUT, true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_VIBRATE, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_VIBRATE, true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SOUND_ENABLED, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SOUND_ENABLED, true))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SNOOZE_ENABLED, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SNOOZE_ENABLED, true))
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SMART_WAKEUP_ENABLED, intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SMART_WAKEUP_ENABLED, false))
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_DELAY, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_DELAY, 3))
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_TIMEOUT, intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_TIMEOUT, 60))
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_DAYS_OF_WEEK, intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_DAYS_OF_WEEK))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_FALLBACK_METHOD, intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_FALLBACK_METHOD))
         }
         context.startForegroundService(serviceIntent)
 

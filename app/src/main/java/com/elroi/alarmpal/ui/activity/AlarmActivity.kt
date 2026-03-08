@@ -83,19 +83,19 @@ class AlarmActivity : ComponentActivity() {
     }
 
     private fun handleIntent(intent: Intent) {
-        val alarmId = intent.getStringExtra("ALARM_ID")
-        val alarmLabel = intent.getStringExtra("ALARM_LABEL")
-        val mathDifficulty = intent.getIntExtra("ALARM_MATH_DIFFICULTY", 0)
-        val mathProblemCount = intent.getIntExtra("ALARM_MATH_PROBLEM_COUNT", 1)
-        val mathGradualDifficulty = intent.getBooleanExtra("ALARM_MATH_GRADUAL_DIFFICULTY", false)
-        val snoozeDuration = intent.getIntExtra("ALARM_SNOOZE_DURATION", 5)
-        val snoozeCount = intent.getIntExtra("ALARM_SNOOZE_COUNT", 0)
-        val smileToDismiss = intent.getBooleanExtra("ALARM_SMILE_TO_DISMISS", false)
-        val smileFallbackMethod = intent.getStringExtra("ALARM_SMILE_FALLBACK_METHOD") ?: "MATH"
+        val alarmId = intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_ID)
+        val alarmLabel = intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_ALARM_LABEL)
+        val mathDifficulty = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_DIFFICULTY, 0)
+        val mathProblemCount = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_PROBLEM_COUNT, 1)
+        val mathGradualDifficulty = intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_MATH_GRADUAL_DIFFICULTY, false)
+        val snoozeDuration = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_DURATION, 5)
+        val snoozeCount = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SNOOZE_COUNT, 0)
+        val smileToDismiss = intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_TO_DISMISS, false)
+        val smileFallbackMethod = intent.getStringExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_SMILE_FALLBACK_METHOD) ?: "MATH"
         val isPreview      = intent.getBooleanExtra("IS_PREVIEW", false)
-        val isEvasiveSnooze = intent.getBooleanExtra("ALARM_IS_EVASIVE_SNOOZE", false)
+        val isEvasiveSnooze = intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_EVASIVE_SNOOZE, false)
         val evasiveSnoozesBeforeMoving = intent.getIntExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, 0)
-        val isSnoozeEnabled = intent.getBooleanExtra("ALARM_IS_SNOOZE_ENABLED", true)
+        val isSnoozeEnabled = intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_IS_SNOOZE_ENABLED, true)
         val isBriefingEnabled = intent.getBooleanExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_BRIEFING_ENABLED, true)
         
         // Pre-request CAMERA permission so SmileDismissScreen can use it immediately

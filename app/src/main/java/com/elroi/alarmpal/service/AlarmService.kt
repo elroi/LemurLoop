@@ -66,6 +66,8 @@ class AlarmService : Service() {
     private var currentMathGraduallyIncreaseDifficulty: Boolean = false
     private var currentSmileToDismiss: Boolean = false
     private var currentSmileFallbackMethod: String = "MATH"
+    private var currentSoundUri: String? = null
+    private var currentDaysOfWeek: String? = null
     private var currentBriefingEnabled: Boolean = true
     private var currentTtsEnabled: Boolean = true
     private var currentSnoozeCount: Int = 0
@@ -141,6 +143,8 @@ class AlarmService : Service() {
         val isSmartWakeupEnabled = intent.getBooleanExtra(EXTRA_IS_SMART_WAKEUP_ENABLED, false)
         val wakeupCheckDelay = intent.getIntExtra(EXTRA_WAKEUP_CHECK_DELAY, 3)
         val wakeupCheckTimeout = intent.getIntExtra(EXTRA_WAKEUP_CHECK_TIMEOUT, 60)
+        val soundUriStr = intent.getStringExtra(EXTRA_SOUND_URI)
+        val daysOfWeekStr = intent.getStringExtra(EXTRA_DAYS_OF_WEEK)
 
         // Stash for later use in snooze/dismiss helpers
         currentAlarmId = alarmId
@@ -152,6 +156,8 @@ class AlarmService : Service() {
         currentMathGraduallyIncreaseDifficulty = mathGradualDifficulty
         currentSmileToDismiss = smileToDismiss
         currentSmileFallbackMethod = smileFallbackMethod
+        currentSoundUri = soundUriStr
+        currentDaysOfWeek = daysOfWeekStr
         currentBriefingEnabled = briefingEnabled
         currentTtsEnabled = ttsEnabled
         currentSnoozeCount = snoozeCount
@@ -402,6 +408,9 @@ class AlarmService : Service() {
             putExtra(EXTRA_TTS_ENABLED, currentTtsEnabled)
             putExtra(EXTRA_IS_EVASIVE_SNOOZE, currentIsEvasiveSnooze)
             putExtra(EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, currentEvasiveSnoozesBeforeMoving)
+            putExtra(EXTRA_SOUND_URI, currentSoundUri)
+            putExtra(EXTRA_DAYS_OF_WEEK, currentDaysOfWeek)
+            putExtra(EXTRA_SMILE_FALLBACK_METHOD, currentSmileFallbackMethod)
             putExtra(EXTRA_IS_SMOOTH_FADE_OUT, currentIsSmoothFadeOut)
             putExtra(EXTRA_IS_VIBRATE, currentIsVibrate)
             putExtra(EXTRA_IS_SOUND_ENABLED, currentIsSoundEnabled)
@@ -478,6 +487,9 @@ class AlarmService : Service() {
                 putExtra(EXTRA_TTS_ENABLED, currentTtsEnabled)
                 putExtra(EXTRA_IS_EVASIVE_SNOOZE, currentIsEvasiveSnooze)
                 putExtra(EXTRA_EVASIVE_SNOOZES_BEFORE_MOVING, currentEvasiveSnoozesBeforeMoving)
+                putExtra(EXTRA_SOUND_URI, currentSoundUri)
+                putExtra(EXTRA_DAYS_OF_WEEK, currentDaysOfWeek)
+                putExtra(EXTRA_SMILE_FALLBACK_METHOD, currentSmileFallbackMethod)
                 putExtra(EXTRA_IS_SMOOTH_FADE_OUT, currentIsSmoothFadeOut)
                 putExtra(EXTRA_IS_VIBRATE, currentIsVibrate)
                 putExtra(EXTRA_IS_SOUND_ENABLED, currentIsSoundEnabled)
