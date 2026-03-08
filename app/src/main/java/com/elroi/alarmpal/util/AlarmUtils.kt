@@ -48,7 +48,12 @@ object AlarmUtils {
 
     fun formatTimeUntil(target: LocalDateTime?, now: LocalDateTime = LocalDateTime.now()): String {
         if (target == null) return "One-time"
-        val duration = Duration.between(now, target)
+        
+        // Truncate both to minutes to handle the "off by 1 min" truncation issue
+        val nowTruncated = now.truncatedTo(ChronoUnit.MINUTES)
+        val targetTruncated = target.truncatedTo(ChronoUnit.MINUTES)
+        
+        val duration = Duration.between(nowTruncated, targetTruncated)
         val totalMinutes = duration.toMinutes()
         
         if (totalMinutes <= 0) return "now"

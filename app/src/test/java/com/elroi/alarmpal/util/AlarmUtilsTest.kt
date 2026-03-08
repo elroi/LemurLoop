@@ -120,4 +120,20 @@ class AlarmUtilsTest {
         val now = LocalDateTime.of(2026, 3, 7, 10, 0, 0)
         assertEquals("One-time", AlarmUtils.formatTimeUntil(null, now))
     }
+
+    @Test
+    fun `formatTimeUntil reproduction - almost 1 minute but less than 60s shows now instead of in 1m`() {
+        val now = LocalDateTime.of(2026, 3, 7, 10, 0, 59)
+        val target = LocalDateTime.of(2026, 3, 7, 10, 1, 0)
+        // Currently this returns "now" because totalMinutes = 0
+        assertEquals("in 1m", AlarmUtils.formatTimeUntil(target, now))
+    }
+
+    @Test
+    fun `formatTimeUntil reproduction - almost 2 minutes but less than 120s shows in 1m instead of in 2m`() {
+        val now = LocalDateTime.of(2026, 3, 7, 10, 0, 59)
+        val target = LocalDateTime.of(2026, 3, 7, 10, 2, 0)
+        // Currently this returns "in 1m" because totalMinutes = 1
+        assertEquals("in 2m", AlarmUtils.formatTimeUntil(target, now))
+    }
 }
