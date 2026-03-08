@@ -543,37 +543,37 @@ fun AlarmDetailScreen(
                     Switch(checked = isVibrate, onCheckedChange = { isVibrate = it })
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-
                 // Sound Selection (Only if sound enabled)
                 AnimatedVisibility(visible = isSoundEnabled) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
-                                val existingUri = soundUri?.let { Uri.parse(it) } ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, existingUri)
+                    Column {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                                    val existingUri = soundUri?.let { Uri.parse(it) } ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, existingUri)
+                                }
+                                ringtonePickerLauncher.launch(intent)
+                            }.padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Select Sound", fontWeight = FontWeight.Medium)
+                                Text(soundName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                             }
-                            ringtonePickerLauncher.launch(intent)
-                        }.padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Select Sound", fontWeight = FontWeight.Medium)
-                            Text(soundName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.Default.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-
-                if (isSoundEnabled) Divider(modifier = Modifier.padding(bottom = 8.dp))
 
                 // Unified Gentle Wake (Visible if either sound OR vibrate is enabled)
                 AnimatedVisibility(visible = isSoundEnabled || isVibrate) {
                     Column {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -607,27 +607,27 @@ fun AlarmDetailScreen(
                                 )
                             }
                         }
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
                     }
                 }
-
-                Divider()
 
                 AnimatedVisibility(visible = isSoundEnabled || isVibrate) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Smooth Fade-Out", fontWeight = FontWeight.Medium)
-                            Text("Gradually fade sound on dismiss or snooze", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Smooth Fade-Out", fontWeight = FontWeight.Medium)
+                                Text("Gradually fade sound on dismiss or snooze", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(checked = isSmoothFadeOut, onCheckedChange = { isSmoothFadeOut = it })
                         }
-                        Switch(checked = isSmoothFadeOut, onCheckedChange = { isSmoothFadeOut = it })
                     }
                 }
 
-                Divider()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -767,7 +767,7 @@ fun AlarmDetailScreen(
                     }
                 }
 
-                Divider()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -836,7 +836,7 @@ fun AlarmDetailScreen(
                     }
                 }
 
-                Divider()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Smart Wakeup Check row
                 Row(
@@ -909,20 +909,21 @@ fun AlarmDetailScreen(
                 }
                 
                 AnimatedVisibility(visible = isBriefingEnabled, enter = expandVertically(), exit = shrinkVertically()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Read Aloud (TTS)", fontWeight = FontWeight.Medium)
-                            Text("Speak the briefing out loud", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Read Aloud (TTS)", fontWeight = FontWeight.Medium)
+                                Text("Speak the briefing out loud", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(checked = isTtsEnabled, onCheckedChange = { isTtsEnabled = it })
                         }
-                        Switch(checked = isTtsEnabled, onCheckedChange = { isTtsEnabled = it })
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     }
                 }
-
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
 
                 val confirmedBuddies by viewModel.confirmedBuddyNumbers.collectAsState()
                 val pendingCodes by viewModel.pendingBuddyCodes.collectAsState()
