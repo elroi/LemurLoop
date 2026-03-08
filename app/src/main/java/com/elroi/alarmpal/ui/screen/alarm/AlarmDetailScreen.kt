@@ -421,7 +421,8 @@ fun AlarmDetailScreen(
                             soundUri = soundUri,
                             isSmartWakeupEnabled = isSmartWakeupEnabled,
                             wakeupCheckDelayMinutes = wakeupCheckDelayMinutes,
-                            wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds
+                            wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
+                            isEnabled = true
                         )
                         viewModel.addAlarm(updatedAlarm)
                         onNavigateUp()
