@@ -440,6 +440,7 @@ class AlarmActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+            (getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager)?.requestDismissKeyguard(this, null)
         }
         // Apply legacy flags as a fallback for all versions, as some OEMs ignore the newer APIs
         @Suppress("DEPRECATION")
@@ -766,6 +767,15 @@ fun ChallengeSuccessScreen(
     onContinue: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    var timeLeft by remember { mutableIntStateOf(10) }
+
+    LaunchedEffect(Unit) {
+        while (timeLeft > 0) {
+            kotlinx.coroutines.delay(1000)
+            timeLeft--
+        }
+        onContinue()
+    }
     
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -805,7 +815,11 @@ fun ChallengeSuccessScreen(
                 modifier = Modifier.fillMaxWidth().height(64.dp),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
             ) {
-                Text("Continue", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Continue (${timeLeft}s)", 
+                    fontSize = 24.sp, 
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

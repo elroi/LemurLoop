@@ -185,7 +185,7 @@ class AlarmService : Service() {
             putExtra(EXTRA_WAKEUP_CHECK_DELAY, wakeupCheckDelay)
             putExtra(EXTRA_WAKEUP_CHECK_TIMEOUT, wakeupCheckTimeout)
             putExtra(EXTRA_BRIEFING_ENABLED, briefingEnabled)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         }
         // With SYSTEM_ALERT_WINDOW (Display over other apps) permission, we can launch from the background.
         // We catch any potential exception just in case the permission was revoked,
