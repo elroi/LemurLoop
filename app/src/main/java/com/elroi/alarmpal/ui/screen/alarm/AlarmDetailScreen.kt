@@ -613,16 +613,18 @@ fun AlarmDetailScreen(
 
                 Divider()
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Smooth Fade-Out", fontWeight = FontWeight.Medium)
-                        Text("Gradually fade sound on dismiss or snooze", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                AnimatedVisibility(visible = isSoundEnabled || isVibrate) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Smooth Fade-Out", fontWeight = FontWeight.Medium)
+                            Text("Gradually fade sound on dismiss or snooze", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = isSmoothFadeOut, onCheckedChange = { isSmoothFadeOut = it })
                     }
-                    Switch(checked = isSmoothFadeOut, onCheckedChange = { isSmoothFadeOut = it })
                 }
 
                 Divider()

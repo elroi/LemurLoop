@@ -661,13 +661,15 @@ fun WakeUpStyleStep(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            FeatureToggle(
-                title = stringResource(R.string.wizard_2_smooth_fade),
-                desc = stringResource(R.string.wizard_2_smooth_fade_desc),
-                checked = isSmoothFadeOut,
-                onCheckedChange = onSmoothFadeOutChange,
-                icon = "🔉"
-            )
+            AnimatedVisibility(visible = isSoundEnabled || isVibrate) {
+                FeatureToggle(
+                    title = stringResource(R.string.wizard_2_smooth_fade),
+                    desc = stringResource(R.string.wizard_2_smooth_fade_desc),
+                    checked = isSmoothFadeOut,
+                    onCheckedChange = onSmoothFadeOutChange,
+                    icon = "🔉"
+                )
+            }
             
             Spacer(modifier = Modifier.height(24.dp))
             HorizontalDivider(modifier = Modifier.padding(bottom = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))

@@ -466,9 +466,11 @@ fun SettingsScreen(
                         )
                     }
                 }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Smooth Fade-Out", style = MaterialTheme.typography.bodyLarge)
-                    Switch(checked = alarmDefaults.isSmoothFadeOut, onCheckedChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(isSmoothFadeOut = it)) })
+                AnimatedVisibility(visible = alarmDefaults.isSoundEnabled || alarmDefaults.isVibrate) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Smooth Fade-Out", style = MaterialTheme.typography.bodyLarge)
+                        Switch(checked = alarmDefaults.isSmoothFadeOut, onCheckedChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(isSmoothFadeOut = it)) })
+                    }
                 }
 
                 // Snooze & Dismissal
