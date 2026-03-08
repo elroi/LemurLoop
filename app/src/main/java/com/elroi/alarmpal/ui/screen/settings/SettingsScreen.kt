@@ -53,6 +53,7 @@ import com.elroi.alarmpal.domain.manager.GeminiNanoStatus
 import com.elroi.alarmpal.ui.screen.alarm.MathDifficultyChips
 import com.elroi.alarmpal.ui.components.BuddySelectionDialog
 import com.elroi.alarmpal.ui.components.SettingHelpIcon
+import com.elroi.alarmpal.ui.components.VibrationPatternGallery
 import com.elroi.alarmpal.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -449,6 +450,31 @@ fun SettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("Vibrate", style = MaterialTheme.typography.bodyLarge)
                     Switch(checked = alarmDefaults.isVibrate, onCheckedChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(isVibrate = it)) })
+                }
+                AnimatedVisibility(visible = alarmDefaults.isVibrate) {
+                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                        Text(
+                            stringResource(R.string.vibration_advanced_title),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        VibrationPatternGallery(
+                            selectedPattern = alarmDefaults.vibrationPattern,
+                            onPatternSelected = { viewModel.updateAlarmDefaults(alarmDefaults.copy(vibrationPattern = it)) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(stringResource(R.string.vibration_initial_gap_label), style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.vibration_initial_gap_unit, alarmDefaults.vibrationCrescendoStartGapSeconds), color = MaterialTheme.colorScheme.primary)
+                        }
+                        Slider(
+                            value = alarmDefaults.vibrationCrescendoStartGapSeconds.toFloat(),
+                            onValueChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(vibrationCrescendoStartGapSeconds = it.toInt())) },
+                            valueRange = 1f..60f,
+                            steps = 59
+                        )
+                    }
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     val isOutputEnabled = alarmDefaults.isSoundEnabled || alarmDefaults.isVibrate

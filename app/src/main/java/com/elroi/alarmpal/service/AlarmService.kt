@@ -56,7 +56,6 @@ class AlarmService : Service() {
     private var ttsJob: kotlinx.coroutines.Job? = null
     private var precomputedBriefing: kotlinx.coroutines.Deferred<String>? = null
     private var vibrator: android.os.Vibrator? = null
-    private val vibrationPattern = longArrayOf(0, 500, 500) // 0 delay, 0.5s on, 0.5s off
     private var vibrationJob: kotlinx.coroutines.Job? = null
 
     // Retained for use in snooze action
@@ -647,64 +646,53 @@ class AlarmService : Service() {
         val vibratorService = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
         vibrator = vibratorService
         
-        if (!isGentleWake || Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !vibratorService.hasAmplitudeControl()) {
-            // Default legacy vibration
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(android.os.VibrationEffect.createWaveform(vibrationPattern, 0))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(vibrationPattern, 0)
-            }
-            return
-        }
-
         if (!currentIsVibrate) return
 
-        // Gentle Wake: Intensity ramping + Pulse manipulation
+        val hasAdvancedControl = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && vibratorService.hasAmplitudeControl()
+        
         vibrationJob = serviceScope.launch {
-            // 0 minutes = jump straight to full pattern immediately
-            val durationMs = if (crescendoMinutes <= 0) 1L else crescendoMinutes * 60_000L
+            val durationMs = if (!isGentleWake || crescendoMinutes <= 0) 1L else crescendoMinutes * 60_000L
             val startTime = System.currentTimeMillis()
             
             while (true) {
                 val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed >= durationMs) {
-                    // Constant max intensity after crescendo
-                    vibrator?.vibrate(android.os.VibrationEffect.createWaveform(vibrationPattern, 0))
-                    break
-                }
+                // If not gentle wake, progress is 1.0 immediately -> Full intensity
+                val progress = if (durationMs <= 1L) 1.0f else (elapsed.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
                 
-                val progress = elapsed.toFloat() / durationMs.toFloat()
-                
-                // Interpolate variables:
-                // Amplitude: 50 -> 255
-                val amplitude = (50 + (205 * progress)).toInt().coerceIn(0, 255)
-                // Pulse duration: 100ms -> 800ms
-                val pulseLen = (100 + (700 * progress)).toLong()
-                // Pause duration: startGap -> 400ms
+                // Whisper-Start Algorithm (Progressive intensity)
+                val amplitude = (25 + (230 * progress)).toInt().coerceIn(0, 255)
+                val pulseLen = (50 + (750 * progress)).toLong()
                 val pauseLen = (startGapSeconds * 1000L - ((startGapSeconds * 1000L - 400L) * progress)).toLong().coerceAtLeast(100L)
                 
-                Log.d("AlarmService", "Vibration ramping: amp=$amplitude, pLen=$pulseLen, gap=$pauseLen, pattern=$pattern")
-
-                when (pattern) {
-                    "PULSE" -> {
-                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen / 2, amplitude))
-                        delay((pulseLen / 4).coerceAtLeast(50L))
-                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen / 2, amplitude))
-                    }
-                    "HEARTBEAT" -> {
-                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen / 3, (amplitude * 0.7f).toInt().coerceIn(0, 255)))
-                        delay(150L)
-                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen / 2, amplitude))
-                    }
-                    "STACCATO" -> {
-                        repeat(3) {
-                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot(80, amplitude))
+                if (hasAdvancedControl) {
+                    when (pattern) {
+                        "RAPID_PULSE" -> {
+                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot((pulseLen / 4).coerceAtLeast(30L), amplitude))
+                            delay((pulseLen / 8).coerceAtLeast(30L))
+                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot((pulseLen / 4).coerceAtLeast(30L), amplitude))
+                        }
+                        "HEARTBEAT" -> {
+                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot((pulseLen / 5).coerceAtLeast(30L), (amplitude * 0.6f).toInt().coerceIn(0, 255)))
                             delay(120L)
+                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot((pulseLen / 3).coerceAtLeast(40L), amplitude))
+                        }
+                        "STACCATO" -> {
+                            repeat(3) {
+                                vibrator?.vibrate(android.os.VibrationEffect.createOneShot((pulseLen / 10).coerceAtLeast(25L), amplitude))
+                                delay((pulseLen / 10).coerceAtLeast(30L))
+                            }
+                        }
+                        else -> { // BASIC
+                            vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen, amplitude))
                         }
                     }
-                    else -> { // BASIC
-                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(pulseLen, amplitude))
+                } else {
+                    // Fallback for devices without amplitude control
+                    @Suppress("DEPRECATION")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator?.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, pulseLen, 100), -1))
+                    } else {
+                        vibrator?.vibrate(longArrayOf(0, pulseLen, 100), -1)
                     }
                 }
                 

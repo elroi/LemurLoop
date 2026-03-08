@@ -43,6 +43,7 @@ import com.elroi.alarmpal.R
 import com.elroi.alarmpal.domain.model.Alarm
 import com.elroi.alarmpal.ui.components.BuddySelectionDialog
 import com.elroi.alarmpal.ui.components.ImprovedDaySelector
+import com.elroi.alarmpal.ui.components.VibrationPatternGallery
 import com.elroi.alarmpal.ui.viewmodel.AlarmViewModel
 import java.time.LocalTime
 import java.time.LocalDateTime
@@ -95,6 +96,8 @@ fun AlarmCreationWizard(
     var isSmoothFadeOut by remember { mutableStateOf<Boolean>(defaultSettings.isSmoothFadeOut) }
     var isEvasiveSnooze by remember { mutableStateOf<Boolean>(defaultSettings.isEvasiveSnooze) }
     var evasiveSnoozesBeforeMoving by remember { mutableIntStateOf(defaultSettings.evasiveSnoozesBeforeMoving) }
+    var vibrationPattern by remember { mutableStateOf<String>(defaultSettings.vibrationPattern) }
+    var vibrationCrescendoStartGapSeconds by remember { mutableIntStateOf(defaultSettings.vibrationCrescendoStartGapSeconds) }
 
     var selectedMathDifficulty by remember { mutableIntStateOf(defaultSettings.mathDifficulty) }
     var mathProblemCount by remember { mutableIntStateOf(defaultSettings.mathProblemCount) }
@@ -176,7 +179,9 @@ fun AlarmCreationWizard(
                 isSmartWakeupEnabled = isSmartWakeupEnabled,
                 wakeupCheckDelayMinutes = wakeupCheckDelayMinutes,
                 wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
-                userName = buddyUserName
+                userName = buddyUserName,
+                vibrationPattern = vibrationPattern,
+                vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds
             )
             viewModel.addAlarm(newAlarm)
             onFinished()
@@ -295,6 +300,8 @@ fun AlarmCreationWizard(
                             isSmoothFadeOut, { isSmoothFadeOut = it },
                             isEvasiveSnooze, { isEvasiveSnooze = it },
                             evasiveSnoozesBeforeMoving, { evasiveSnoozesBeforeMoving = it },
+                            vibrationPattern, { vibrationPattern = it },
+                            vibrationCrescendoStartGapSeconds, { vibrationCrescendoStartGapSeconds = it },
                             isCloudAiEnabled, { enabled -> 
                                 if (enabled && geminiApiKey.isBlank()) {
                                     showCloudAiSetupDialog = true
@@ -485,6 +492,10 @@ fun WakeUpStyleStep(
     onEvasiveSnoozeChange: (Boolean) -> Unit,
     evasiveSnoozesBefore: Int,
     onEvasiveSnoozesBeforeChange: (Int) -> Unit,
+    vibrationPattern: String,
+    onVibrationPatternChange: (String) -> Unit,
+    vibrationStartGap: Int,
+    onVibrationStartGapChange: (Int) -> Unit,
     isCloudAiEnabled: Boolean,
     onCloudAiEnabledChange: (Boolean) -> Unit
 ) {
@@ -655,6 +666,42 @@ fun WakeUpStyleStep(
                         onValueChange = { onCrescendoDurationChange(it.toInt()) },
                         valueRange = 1f..20f,
                         steps = 19
+                    )
+                }
+
+                if (isVibrate) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        stringResource(R.string.vibration_advanced_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    VibrationPatternGallery(
+                        selectedPattern = vibrationPattern,
+                        onPatternSelected = onVibrationPatternChange
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            stringResource(R.string.vibration_initial_gap_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            stringResource(R.string.vibration_initial_gap_unit, vibrationStartGap),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Slider(
+                        value = vibrationStartGap.toFloat(),
+                        onValueChange = { onVibrationStartGapChange(it.toInt()) },
+                        valueRange = 1f..60f,
+                        steps = 59
                     )
                 }
             }

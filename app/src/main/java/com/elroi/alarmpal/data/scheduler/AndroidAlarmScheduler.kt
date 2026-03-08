@@ -54,6 +54,8 @@ class AndroidAlarmScheduler(
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_WAKEUP_CHECK_TIMEOUT, alarm.wakeupCheckTimeoutSeconds)
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_BRIEFING_TIMEOUT, alarm.briefingTimeoutSeconds)
             putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_DAYS_OF_WEEK, alarm.daysOfWeek.joinToString(","))
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_VIBRATION_PATTERN, alarm.vibrationPattern)
+            putExtra(com.elroi.alarmpal.service.AlarmService.EXTRA_VIBRATION_START_GAP, alarm.vibrationCrescendoStartGapSeconds)
         }
         
         // Calculate next alarm time using utility

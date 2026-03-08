@@ -104,11 +104,18 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     }
 }
 
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN vibrationPattern TEXT NOT NULL DEFAULT 'BASIC'")
+        db.execSQL("ALTER TABLE alarms ADD COLUMN vibrationCrescendoStartGapSeconds INTEGER NOT NULL DEFAULT 30")
+    }
+}
+
 @Database(entities = [
     AlarmEntity::class, 
     com.elroi.alarmpal.data.local.entity.SleepRecordEntity::class,
     com.elroi.alarmpal.data.local.entity.DiagnosticLogEntity::class
-], version = 20, exportSchema = false)
+], version = 21, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

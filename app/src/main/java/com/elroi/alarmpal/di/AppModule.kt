@@ -38,7 +38,8 @@ object AppModule {
                 com.elroi.alarmpal.data.local.MIGRATION_16_17,
                 com.elroi.alarmpal.data.local.MIGRATION_17_18,
                 com.elroi.alarmpal.data.local.MIGRATION_18_19,
-                com.elroi.alarmpal.data.local.MIGRATION_19_20
+                com.elroi.alarmpal.data.local.MIGRATION_19_20,
+                com.elroi.alarmpal.data.local.MIGRATION_20_21
             )
             .build()
     }
