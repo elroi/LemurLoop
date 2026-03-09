@@ -82,6 +82,16 @@ fun SettingsScreen(
     var showAdvancedMath by remember { mutableStateOf(false) }
     var showEditPrompts by remember { mutableStateOf(false) }
 
+    val versionDisplay = remember(context) {
+        try {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val suffix = com.elroi.lemurloop.BuildConfig.VERSION_SUFFIX
+            "${pInfo.versionName}$suffix"
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -769,7 +779,7 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("About LemurLoop", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Text("Version 1.2.0 • Credits • Legal", style = MaterialTheme.typography.bodySmall)
+                                Text("Version $versionDisplay • Credits • Legal", style = MaterialTheme.typography.bodySmall)
                             }
                             Icon(Icons.Default.ArrowForward, contentDescription = null)
                         }
