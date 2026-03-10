@@ -29,9 +29,11 @@ fun AboutScreen(
     
     val versionInfo = remember {
         try {
-            val pInfo: PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${pInfo.versionName} (${pInfo.versionCode})"
-        } catch (e: PackageManager.NameNotFoundException) {
+            val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val suffix = com.elroi.lemurloop.BuildConfig.VERSION_SUFFIX
+            val date = com.elroi.lemurloop.BuildConfig.BUILD_DATE
+            "${pInfo.versionName}$suffix (${pInfo.versionCode})\nBuilt on $date"
+        } catch (e: Exception) {
             "Unknown"
         }
     }

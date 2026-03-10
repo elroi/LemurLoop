@@ -806,7 +806,7 @@ fun SettingsScreen(
                         val privacyPolicyContextInside = androidx.compose.ui.platform.LocalContext.current
                         Row(
                             modifier = Modifier.clickable { 
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://elroi.github.io/aNewDawnAlarmClock/privacy-policy/"))
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://elroi.github.io/LemurLoop/privacy-policy/"))
                                 privacyPolicyContextInside.startActivity(intent)
                             }.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically

@@ -50,5 +50,6 @@ ksp_fail.log
 # Android key stores (sensitive)
 *.jks
 *.keystore
+.signing.properties
 google-services.json
 *.orig

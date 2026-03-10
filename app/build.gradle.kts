@@ -1,3 +1,7 @@
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Properties
+
 fun getGitCommitCount(): Int {
     return try {
         val process = Runtime.getRuntime().exec("git rev-list --count HEAD")
@@ -15,6 +19,20 @@ fun getGitSha(): String {
         process.inputStream.bufferedReader().readText().trim()
     } catch (e: Exception) {
         "unknown"
+    }
+}
+
+fun getBuildDate(): String {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm").format(Date())
+}
+
+
+val signingPropsFile = rootProject.file(".signing.properties")
+if (signingPropsFile.exists()) {
+    val props = Properties()
+    signingPropsFile.inputStream().use { props.load(it) }
+    props.forEach { key, value ->
+        project.extensions.extraProperties.set(key.toString(), value.toString())
     }
 }
 
@@ -36,8 +54,11 @@ android {
         applicationId = "com.elroi.lemurloop"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 1
+        versionName = "1.0.0"
+
+        buildConfigField("String", "BUILD_DATE", "\"${getBuildDate()}\"")
+        buildConfigField("String", "VERSION_SUFFIX", "\"-stable\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -45,9 +66,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(project.findProperty("RELEASE_STORE_FILE") as String? ?: "lemurloop.jks")
+            storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+            keyAlias = project.findProperty("RELEASE_KEY_ALIAS") as String?
+            keyPassword = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
