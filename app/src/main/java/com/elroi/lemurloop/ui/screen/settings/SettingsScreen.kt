@@ -764,6 +764,9 @@ fun SettingsScreen(
                 isExpanded = expandedSections.contains("HELP"),
                 onToggle = { viewModel.toggleSection("HELP") }
             ) {
+                var showDangerZone by remember { mutableStateOf(false) }
+                var showDemoDialog by remember { mutableStateOf(false) }
+
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(16.dp),
@@ -772,7 +775,9 @@ fun SettingsScreen(
                     Column {
                         // About
                         Row(
-                            modifier = Modifier.clickable { onNavigateToAbout() }.padding(16.dp),
+                            modifier = Modifier
+                                .clickable { onNavigateToAbout() }
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -784,11 +789,16 @@ fun SettingsScreen(
                             Icon(Icons.Default.ArrowForward, contentDescription = null)
                         }
                         
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                                        
                         // Replay Tutorial
                         Row(
-                            modifier = Modifier.clickable { onNavigateToOnboarding() }.padding(16.dp),
+                            modifier = Modifier
+                                .clickable { onNavigateToOnboarding() }
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -800,15 +810,44 @@ fun SettingsScreen(
                             Icon(Icons.Default.ArrowForward, contentDescription = null)
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Create Demo Alarms
+                        Row(
+                            modifier = Modifier
+                                .clickable { showDemoDialog = true }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Alarm, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Create Demo Alarms", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(
+                                    "Add rich example alarms to explore LemurLoop. Existing alarms are kept.",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Icon(Icons.Default.ArrowForward, contentDescription = null)
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
 
                         // Privacy Policy
                         val privacyPolicyContextInside = androidx.compose.ui.platform.LocalContext.current
                         Row(
-                            modifier = Modifier.clickable { 
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://elroi.github.io/LemurLoop/privacy-policy/"))
-                                privacyPolicyContextInside.startActivity(intent)
-                            }.padding(16.dp),
+                            modifier = Modifier
+                                .clickable { 
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://elroi.github.io/LemurLoop/privacy-policy/"))
+                                    privacyPolicyContextInside.startActivity(intent)
+                                }
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -820,11 +859,16 @@ fun SettingsScreen(
                             Icon(Icons.Default.ArrowForward, contentDescription = null)
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
 
                         // Diagnostic Logs
                         Row(
-                            modifier = Modifier.clickable { onNavigateToLogs() }.padding(16.dp),
+                            modifier = Modifier
+                                .clickable { onNavigateToLogs() }
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(24.dp))
@@ -841,7 +885,6 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Danger Zone
-                var showDangerZone by remember { mutableStateOf(false) }
                 OutlinedButton(
                     onClick = { showDangerZone = !showDangerZone },
                     modifier = Modifier.fillMaxWidth(),
@@ -870,6 +913,32 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+
+                if (showDemoDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showDemoDialog = false },
+                        title = { Text("Create Demo Alarms") },
+                        text = {
+                            Text(
+                                "We’ll add a small set of rich example alarms (weekday, weekend, gym, and smart wake-up). " +
+                                "Your existing alarms will not be changed, and you can edit or delete the demos anytime."
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showDemoDialog = false
+                                viewModel.seedDemoAlarms()
+                            }) {
+                                Text("Create Demo Alarms")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDemoDialog = false }) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
             }
 

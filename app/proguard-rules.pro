@@ -18,3 +18,12 @@
 -keepattributes *Annotation*, InnerClasses
 -keep class kotlin.Metadata { *; }
 -dontwarn kotlin.**
+
+# Suppress R8 warnings for compile-time-only javax.lang.model types
+-dontwarn javax.lang.model.SourceVersion
+-dontwarn javax.lang.model.element.Element
+-dontwarn javax.lang.model.element.ElementKind
+-dontwarn javax.lang.model.element.Modifier
+-dontwarn javax.lang.model.type.TypeMirror
+-dontwarn javax.lang.model.type.TypeVisitor
+-dontwarn javax.lang.model.util.SimpleTypeVisitor8

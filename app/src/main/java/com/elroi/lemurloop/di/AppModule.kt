@@ -70,4 +70,13 @@ object AppModule {
     ): com.elroi.lemurloop.domain.scheduler.AlarmScheduler {
         return com.elroi.lemurloop.data.scheduler.AndroidAlarmScheduler(app, briefingGenerator)
     }
+
+    @Provides
+    @Singleton
+    fun provideDemoAlarmSeeder(
+        alarmRepository: AlarmRepository,
+        alarmScheduler: com.elroi.lemurloop.domain.scheduler.AlarmScheduler
+    ): com.elroi.lemurloop.domain.manager.DemoAlarmSeeder {
+        return com.elroi.lemurloop.domain.manager.DemoAlarmSeeder(alarmRepository, alarmScheduler)
+    }
 }
