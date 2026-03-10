@@ -20,6 +20,7 @@ import java.util.Locale
 import javax.inject.Inject
 import com.elroi.lemurloop.domain.manager.GeminiManager
 import com.elroi.lemurloop.domain.manager.GeminiNanoStatus
+import com.elroi.lemurloop.domain.manager.DemoAlarmSeeder
 import android.content.ClipboardManager
 import android.content.Context
 import com.elroi.lemurloop.util.BriefingUtils
@@ -33,7 +34,8 @@ class SettingsViewModel @Inject constructor(
     private val briefingGenerator: com.elroi.lemurloop.domain.generator.BriefingGenerator,
     private val localLLMManager: com.elroi.lemurloop.domain.manager.LocalLLMManager,
     private val database: com.elroi.lemurloop.data.local.AppDatabase,
-    private val ttsManager: com.elroi.lemurloop.domain.manager.TextToSpeechManager
+    private val ttsManager: com.elroi.lemurloop.domain.manager.TextToSpeechManager,
+    private val demoAlarmSeeder: DemoAlarmSeeder
 ) : ViewModel() {
 
     private val _draftLocation = MutableStateFlow("")
@@ -515,6 +517,18 @@ class SettingsViewModel @Inject constructor(
             _draftLocation.value = "New York"
             _draftIsCelsius.value = true
             _draftIsAutoLocation.value = false
+        }
+    }
+
+    fun seedDemoAlarms() {
+        viewModelScope.launch {
+            val inserted = demoAlarmSeeder.seedDemoAlarms()
+            val text = if (inserted > 0) {
+                "Created $inserted demo alarms. You can edit or delete them anytime."
+            } else {
+                "Demo alarms already exist. No new demo alarms were added."
+            }
+            _message.emit(text)
         }
     }
 }
