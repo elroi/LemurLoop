@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -20,8 +21,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,9 +35,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elroi.lemurloop.R
@@ -45,13 +48,11 @@ import com.elroi.lemurloop.ui.components.BuddySelectionDialog
 import com.elroi.lemurloop.ui.components.ImprovedDaySelector
 import com.elroi.lemurloop.ui.components.VibrationPatternGallery
 import com.elroi.lemurloop.ui.viewmodel.AlarmViewModel
-import java.time.LocalTime
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import com.elroi.lemurloop.util.AlarmUtils
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.window.Dialog
 import android.content.Intent
 import android.net.Uri
 @Immutable
@@ -64,6 +65,10 @@ val personas = listOf(
     Persona("HYPEMAN", "Hype-Man", "🚀"),
     Persona("SURPRISE", "Surprise Me", "🎲")
 )
+
+@VisibleForTesting
+internal fun previousWizardPage(currentPage: Int): Int =
+    if (currentPage > 0) currentPage - 1 else 0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -207,8 +212,13 @@ fun AlarmCreationWizard(
             )
             .pointerInput(Unit) {
                 detectHorizontalDragGestures { _, dragAmount ->
-                    if (dragAmount > 50) coroutineScope.launch { handleBack() }
-                    else if (dragAmount < -50) coroutineScope.launch { handleNext() }
+                    if (dragAmount > 50) {
+                        coroutineScope.launch {
+                            currentPage = previousWizardPage(currentPage)
+                        }
+                    } else if (dragAmount < -50) {
+                        coroutineScope.launch { handleNext() }
+                    }
                 }
             }
     ) {
