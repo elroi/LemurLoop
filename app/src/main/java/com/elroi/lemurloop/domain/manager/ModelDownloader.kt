@@ -3,7 +3,9 @@ package com.elroi.lemurloop.domain.manager
 import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Firebase
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,15 +24,19 @@ class ModelDownloader @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     // Repository URL for Gemma 2B optimized for CPU
-    private val MODEL_URL = "https://huggingface.co/google/gemma-2b-it-tflite/resolve/main/gemma-2b-it-cpu-int4.bin" 
+    private val MODEL_URL = "https://huggingface.co/google/gemma-2b-it-tflite/resolve/main/gemma-2b-it-cpu-int4.bin"
     private val MODEL_FILE_NAME = "gemma-2b-it-cpu-int4.bin"
 
-    init {
-        val remoteConfig = Firebase.remoteConfig
+    private val remoteConfig: FirebaseRemoteConfig by lazy {
+        if (FirebaseApp.getApps(context).isEmpty()) {
+            FirebaseApp.initializeApp(context)
+        }
+        val rc = Firebase.remoteConfig
         val configSettings = remoteConfigSettings {
             minimumFetchIntervalInSeconds = 0 // Force fetch every time for debugging
         }
-        remoteConfig.setConfigSettingsAsync(configSettings)
+        rc.setConfigSettingsAsync(configSettings)
+        rc
     }
 
     val modelFile: File
@@ -41,8 +47,7 @@ class ModelDownloader @Inject constructor(
             return@withContext true
         }
 
-        // Fetch the secure token from Firebase
-        val remoteConfig = Firebase.remoteConfig
+        // Fetch the secure token from Firebase (lazy init ensures FirebaseApp is ready)
         var hfToken = ""
         try {
             val activated = remoteConfig.fetchAndActivate().await()

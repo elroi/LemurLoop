@@ -2,6 +2,7 @@ package com.elroi.lemurloop
 
 import android.app.Application
 import androidx.work.Configuration
+import com.google.firebase.FirebaseApp
 import com.elroi.lemurloop.domain.worker.BriefingWorker
 import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
@@ -26,6 +27,7 @@ class LemurLoopApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        FirebaseApp.initializeApp(this)
         setupCrashHandler()
     }
 

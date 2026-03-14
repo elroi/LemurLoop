@@ -5,9 +5,9 @@
     <string name="onboarding_back">Back</string>
     <string name="onboarding_1_title">Meet Your New Wake-Up Companion</string>
     <string name="onboarding_1_body">LemurLoop is the alarm that doesn\'t just wake you up — it makes it fun! \nIt briefs you on the weather, your calendar, and a morning mission, all configurable and delivered in the voice of a character you choose.</string>
-    <string name="onboarding_1_primary">Let\'s Go</string>
+    <string name="onboarding_1_primary">Get started</string>
 
-    <!-- Onboarding - Page 2 (Permissions) -->
+    <!-- Onboarding - Page 2 (Core permissions only) -->
     <string name="onboarding_2_title">Allow Notifications &amp; Alarms</string>
     <string name="onboarding_2_body">LemurLoop needs permission to send notifications and schedule exact alarms. Without these, your alarms cannot fire.\n\nThis is required for the app to work.</string>
     <string name="onboarding_2_primary">Grant Permissions</string>
@@ -19,8 +19,10 @@
     <string name="onboarding_2_desc_alarms">Allows the app to wake you up at the precise minute you set.</string>
     <string name="onboarding_2_permission_overlay">Screen Overlay</string>
     <string name="onboarding_2_desc_overlay">Lets the alarm appear over other apps or on your lock screen.</string>
+    <string name="onboarding_core_all_set">All set! Tap below to continue.</string>
+    <string name="onboarding_core_grant_hint">Grant permissions to proceed.</string>
 
-    <!-- Onboarding - Page 3 (Briefing) -->
+    <!-- Onboarding - Page 3 (Briefing) - kept for Settings/Replay reference -->
     <string name="onboarding_3_title">Personas &amp; Personalization</string>
     <string name="onboarding_3_body">Choose your wake-up style! Our AI personas deliver your briefing with a unique twist:</string>
     <string name="onboarding_3_personas">\n• 🎖️ The Drill Sergeant: Tough love only.\n• 🎭 The Sarcastic Friend: Witty and dry.\n• 🧘 The Zen Master: Calm and mindful.\n• ⚡ The Hype-Man: High energy flow.</string>
@@ -53,9 +55,10 @@
     <string name="onboarding_4_secondary_next">Next</string>
     <string name="onboarding_buddy_assigned_prefix">Buddy assigned: </string>
 
-    <!-- Onboarding - Page 5 (Finished) -->
+    <!-- Onboarding - Done (screen 3) -->
     <string name="onboarding_5_title">You\'re All Set!</string>
-    <string name="onboarding_5_body">Create your first alarm with the + button.\n\nChoose a wake-up persona in Settings to personalise your morning briefing.</string>
+    <string name="onboarding_5_body">Create your first alarm with the + button — then discover what makes mornings fun:</string>
+    <string name="onboarding_5_hint_settings">😊 Smile to dismiss • 🏃 A snooze button that runs away • 🧠 A rich AI briefing every morning • 🤝 An accountability buddy when you need one • and more in Settings</string>
     <string name="onboarding_5_primary">Create My First Alarm</string>
     <string name="onboarding_5_secondary">Maybe Later</string>
     <!-- Alarm Wizard -->

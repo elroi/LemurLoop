@@ -377,6 +377,16 @@ class SettingsViewModel @Inject constructor(
         _draftAlarmDefaults.value = defaults
     }
 
+    /** Call after calendar permission is granted to enable Include calendar in briefing. */
+    fun enableBriefingIncludeCalendar() {
+        _draftAlarmDefaults.value = _draftAlarmDefaults.value.copy(briefingIncludeCalendar = true)
+    }
+
+    /** Call after location permission is granted to enable Include weather in briefing. */
+    fun enableBriefingIncludeWeather() {
+        _draftAlarmDefaults.value = _draftAlarmDefaults.value.copy(briefingIncludeWeather = true)
+    }
+
     fun updateUserName(name: String) {
         updateAlarmDefaults(alarmDefaults.value.copy(briefingUserName = name))
     }

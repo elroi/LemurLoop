@@ -105,14 +105,34 @@ fun SettingsScreen(
         }
     }
 
+    var pendingWeatherEnable by remember { mutableStateOf(false) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
                 viewModel.updateIsAutoLocation(true, context)
+                if (pendingWeatherEnable) {
+                    viewModel.enableBriefingIncludeWeather()
+                    pendingWeatherEnable = false
+                }
             } else {
                 viewModel.updateIsAutoLocation(false)
-                android.widget.Toast.makeText(context, "Location permission is required for auto-detect", android.widget.Toast.LENGTH_SHORT).show()
+                if (pendingWeatherEnable) {
+                    android.widget.Toast.makeText(context, "Location permission is required for weather in your briefing", android.widget.Toast.LENGTH_SHORT).show()
+                    pendingWeatherEnable = false
+                } else {
+                    android.widget.Toast.makeText(context, "Location permission is required for auto-detect", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    )
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                viewModel.enableBriefingIncludeCalendar()
+            } else {
+                android.widget.Toast.makeText(context, "Calendar access is required to include events in your briefing", android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     )
@@ -466,11 +486,38 @@ fun SettingsScreen(
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Weather Report", style = MaterialTheme.typography.bodyLarge)
-                            Switch(checked = alarmDefaults.briefingIncludeWeather, onCheckedChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeWeather = it)) })
+                            Switch(
+                                checked = alarmDefaults.briefingIncludeWeather,
+                                onCheckedChange = { enabled ->
+                                    if (enabled) {
+                                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                            viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeWeather = true))
+                                        } else {
+                                            pendingWeatherEnable = true
+                                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                                        }
+                                    } else {
+                                        viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeWeather = false))
+                                    }
+                                }
+                            )
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Calendar Events", style = MaterialTheme.typography.bodyLarge)
-                            Switch(checked = alarmDefaults.briefingIncludeCalendar, onCheckedChange = { viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeCalendar = it)) })
+                            Switch(
+                                checked = alarmDefaults.briefingIncludeCalendar,
+                                onCheckedChange = { enabled ->
+                                    if (enabled) {
+                                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
+                                            viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeCalendar = true))
+                                        } else {
+                                            calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+                                        }
+                                    } else {
+                                        viewModel.updateAlarmDefaults(alarmDefaults.copy(briefingIncludeCalendar = false))
+                                    }
+                                }
+                            )
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Fun Fact", style = MaterialTheme.typography.bodyLarge)
