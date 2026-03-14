@@ -16,24 +16,36 @@ fun LemurLoopNavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
-        composable(
-            route = Screen.Onboarding.route,
-            arguments = Screen.Onboarding.arguments
-        ) { backStackEntry ->
-            val isReplay = backStackEntry.arguments?.getBoolean("isReplay") ?: false
+        composable(route = Screen.Onboarding.route) {
             OnboardingScreen(
-                isReplay = isReplay,
+                isReplay = false,
                 onFinished = { createAlarm ->
                     if (createAlarm) {
-                        // First establishing the AlarmList as the base of the backstack
                         navController.navigate(Screen.AlarmList.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
-                        // Then navigate to the wizard (or detail if they changed setting)
                         navController.navigate(Screen.AlarmWizard.route)
                     } else {
                         navController.navigate(Screen.AlarmList.route) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(route = Screen.Onboarding.OnboardingReplay.route) {
+            OnboardingScreen(
+                isReplay = true,
+                onFinished = { createAlarm ->
+                    if (createAlarm) {
+                        navController.navigate(Screen.AlarmList.route) {
+                            popUpTo(Screen.Onboarding.OnboardingReplay.route) { inclusive = true }
+                        }
+                        navController.navigate(Screen.AlarmWizard.route)
+                    } else {
+                        navController.navigate(Screen.AlarmList.route) {
+                            popUpTo(Screen.Onboarding.OnboardingReplay.route) { inclusive = true }
                         }
                     }
                 }
@@ -93,7 +105,7 @@ fun LemurLoopNavGraph(
             com.elroi.lemurloop.ui.screen.settings.SettingsScreen(
                 onNavigateUp = { navController.navigateUp() },
                 onNavigateToHelp = { navController.navigate(Screen.Help.route) },
-                onNavigateToOnboarding = { navController.navigate(Screen.Onboarding.createRoute(isReplay = true)) },
+                onNavigateToOnboarding = { navController.navigate(Screen.Onboarding.OnboardingReplay.route) },
                 onNavigateToAbout = { navController.navigate(Screen.About.route) },
                 onNavigateToLogs = { navController.navigate(Screen.DiagnosticLogs.route) }
             )

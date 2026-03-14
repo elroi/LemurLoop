@@ -15,14 +15,12 @@ sealed class Screen(val route: String) {
     object SleepTracking : Screen("sleep_tracking")
     object Settings : Screen("settings")
     object Help : Screen("help")
-    object Onboarding : Screen("onboarding?isReplay={isReplay}") {
-        fun createRoute(isReplay: Boolean = false) = "onboarding?isReplay=$isReplay"
-        val arguments = listOf(
-            androidx.navigation.navArgument("isReplay") {
-                type = androidx.navigation.NavType.BoolType
-                defaultValue = false
-            }
-        )
+    /** Route for initial app load (no args). Use this as startDestination. */
+    object Onboarding : Screen("onboarding") {
+        /** Route with isReplay for replay-from-settings. Use navigate(OnboardingReplay) for replay. */
+        object OnboardingReplay : Screen("onboarding_replay")
+        fun createRoute(isReplay: Boolean = false) =
+            if (isReplay) OnboardingReplay.route else Onboarding.route
     }
     object AlarmWizard : Screen("alarm_wizard")
     object About : Screen("about")

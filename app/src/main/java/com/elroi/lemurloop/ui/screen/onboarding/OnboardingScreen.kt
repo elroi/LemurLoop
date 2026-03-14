@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -32,10 +31,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -61,38 +58,15 @@ fun OnboardingScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var currentPage by remember { mutableStateOf(0) }
-    val totalPages = 6
+    val totalPages = 3
 
-    val userName by viewModel.userName.collectAsState()
-
-    // Permission launchers
+    // Permission launchers (core only: notifications, exact alarms, overlay)
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* result shown via permission check on re-enter */ }
 
-    val calendarLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { /* no-op */ }
-
-    val locationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted -> 
-        if (isGranted) {
-            viewModel.setAutoLocation(true)
-        }
-    }
-
-    val smsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* result shown via permission check */ }
-
     var grantedCount by remember { mutableStateOf(0) }
     var totalCount by remember { mutableStateOf(0) }
-    
-    var briefingGrantedCount by remember { mutableStateOf(0) }
-    var briefingTotalCount by remember { mutableStateOf(0) }
-    
-    var isSmsPermissionGranted by remember { mutableStateOf(false) }
     
     fun handleBack() {
         if (currentPage > 0) currentPage--
@@ -132,42 +106,6 @@ fun OnboardingScreen(
                         )
                         return
                     }
-                }
-                currentPage++
-            }
-            2 -> {
-                // Name & Extras Page - Request permissions sequentially
-                val calGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.READ_CALENDAR
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!calGranted && createAlarm) {
-                    calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
-                    return
-                }
-
-                val locGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                if (!locGranted && createAlarm) {
-                    locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                    return
-                }
-                
-                currentPage++
-            }
-            3 -> {
-                // AI Features Page - no special permissions needed
-                currentPage++
-            }
-            4 -> {
-                // Buddy Page
-                val smsGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.SEND_SMS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                
-                if (!smsGranted && createAlarm) {
-                    smsLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS))
-                    return
                 }
                 currentPage++
             }
@@ -211,21 +149,6 @@ fun OnboardingScreen(
                 
                 grantedCount = granted
                 totalCount = total
-
-                // Track Briefing Permissions (Page 3)
-                var bGranted = 0
-                var bTotal = 2 // Calendar and Weather (Location)
-                
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == android.content.pm.PackageManager.PERMISSION_GRANTED) bGranted++
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) bGranted++
-                
-                briefingGrantedCount = bGranted
-                briefingTotalCount = bTotal
-
-                // Track SMS Permission (Page 4)
-                isSmsPermissionGranted = ContextCompat.checkSelfPermission(
-                    context, Manifest.permission.SEND_SMS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -452,166 +375,20 @@ fun OnboardingScreen(
                                         
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
-                                            text = if (grantedCount == totalCount) "All set! Click below to continue." else "Grant permissions to proceed",
+                                            text = if (grantedCount == totalCount) stringResource(R.string.onboarding_core_all_set) else stringResource(R.string.onboarding_core_grant_hint),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = TextAlign.Center
                                         )
                                     }
-                                }
-                            }
-                        }
-                        2 -> {
-                            emoji = "🌤️"
-                            title = stringResource(R.string.onboarding_3_title)
-                            body = stringResource(R.string.onboarding_3_body) + "\n" + stringResource(R.string.onboarding_3_personas)
-                            primaryLabel = if (briefingGrantedCount == briefingTotalCount)
-                                stringResource(R.string.onboarding_3_continue)
-                            else
-                                stringResource(R.string.onboarding_3_primary)
-                            onPrimary = { handleNext() }
-                            secondaryLabel = stringResource(R.string.onboarding_3_secondary)
-                            onSecondary = { handleNext(false) }
-                            customContent = {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                    Text(
-                                        stringResource(R.string.onboarding_3_label_name),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        textAlign = TextAlign.Center
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    
-                                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                        OutlinedTextField(
-                                            value = userName,
-                                            onValueChange = { viewModel.updateUserName(it) },
-                                            placeholder = { 
-                                                Text(
-                                                    stringResource(R.string.onboarding_3_hint_name),
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    textAlign = TextAlign.Center
-                                                ) 
-                                            },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                    }
-
-                                    // Briefing Setup Progress Card
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.onboarding_3_setup_progress, briefingGrantedCount, briefingTotalCount),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            textAlign = TextAlign.Center
-                                        )
-                                        
-                                        Spacer(modifier = Modifier.height(16.dp))
-
-                                        // Permission Checklist
-                                        val calGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                        val locGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                                        PermissionStatusRow(
-                                            icon = "📅",
-                                            title = stringResource(R.string.onboarding_3_permission_calendar),
-                                            desc = stringResource(R.string.onboarding_3_desc_calendar),
-                                            isGranted = calGranted
-                                        )
-                                        PermissionStatusRow(
-                                            icon = "🌤️",
-                                            title = stringResource(R.string.onboarding_3_permission_weather),
-                                            desc = stringResource(R.string.onboarding_3_desc_weather),
-                                            isGranted = locGranted
-                                        )
-
-                                        Spacer(modifier = Modifier.height(16.dp))
-                                        
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth(0.6f)
-                                                .height(8.dp)
-                                                .background(
-                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), 
-                                                    CircleShape
-                                                )
-                                                .clip(CircleShape)
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth(if (briefingTotalCount > 0) briefingGrantedCount.toFloat() / briefingTotalCount else 0f)
-                                                    .fillMaxHeight()
-                                                    .background(MaterialTheme.colorScheme.primary)
-                                            )
-                                        }
-                                        
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = if (briefingGrantedCount == briefingTotalCount) 
-                                                stringResource(R.string.onboarding_3_setup_complete) 
-                                            else 
-                                                stringResource(R.string.onboarding_3_setup_instructions),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        3 -> {
-                            emoji = "🧠"
-                            title = stringResource(R.string.onboarding_ai_title)
-                            body = stringResource(R.string.onboarding_ai_body)
-                            primaryLabel = stringResource(R.string.onboarding_ai_primary)
-                            onPrimary = { handleNext() }
-                            secondaryLabel = null
-                            onSecondary = null
-                        }
-                        4 -> {
-                            emoji = "🤝"
-                            title = stringResource(R.string.onboarding_4_title)
-                            body = stringResource(R.string.onboarding_4_body)
-                            
-                            val smsGranted = isSmsPermissionGranted
-                            
-                            primaryLabel = if (smsGranted) stringResource(R.string.onboarding_4_primary) else stringResource(R.string.onboarding_4_enable)
-                            onPrimary = { 
-                                if (smsGranted) handleNext() 
-                                else smsLauncher.launch(arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.RECEIVE_SMS))
-                            }
-                            secondaryLabel = if (smsGranted) null else stringResource(R.string.onboarding_4_secondary)
-                            onSecondary = { handleNext(false) }
-                            customContent = {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    PermissionStatusRow(
-                                        icon = "✉️",
-                                        title = stringResource(R.string.onboarding_4_permission_sms),
-                                        desc = stringResource(R.string.onboarding_4_desc_sms),
-                                        isGranted = isSmsPermissionGranted
-                                    )
                                 }
                             }
                         }
                         else -> {
+                            // Page 2: Done
                             emoji = "🚀"
                             title = stringResource(R.string.onboarding_5_title)
-                            body = stringResource(R.string.onboarding_5_body)
+                            body = stringResource(R.string.onboarding_5_body) + "\n\n" + stringResource(R.string.onboarding_5_hint_settings)
                             primaryLabel = stringResource(R.string.onboarding_5_primary)
                             onPrimary = { handleNext(true) }
                             secondaryLabel = stringResource(R.string.onboarding_5_secondary)
@@ -724,14 +501,3 @@ private fun PermissionStatusRow(icon: String, title: String, desc: String, isGra
         }
     }
 }
-
-private data class OnboardingPage(
-    val emoji: String,
-    val title: String,
-    val body: String,
-    val primaryLabel: String,
-    val onPrimary: () -> Unit,
-    val secondaryLabel: String?,
-    val onSecondary: (() -> Unit)? = null,
-    val customContent: (@Composable () -> Unit)? = null
-)
