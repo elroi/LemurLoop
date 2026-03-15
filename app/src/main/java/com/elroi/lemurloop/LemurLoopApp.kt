@@ -1,6 +1,11 @@
 package com.elroi.lemurloop
 
 import android.app.Application
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.work.Configuration
 import com.google.firebase.FirebaseApp
 import com.elroi.lemurloop.domain.worker.BriefingWorker
@@ -13,10 +18,18 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+
+/** Same store name as SettingsManager so we read the app's chosen language before Hilt is available. */
+private val Context.localeDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_settings")
+
+private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
 
 @HiltAndroidApp
 class LemurLoopApp : Application(), Configuration.Provider {
-    
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -24,6 +37,31 @@ class LemurLoopApp : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+
+    override fun attachBaseContext(base: Context) {
+        val wrapped = runCatching {
+            val lang = runBlocking(Dispatchers.IO) {
+                base.localeDataStore.data.first()[APP_LANGUAGE_KEY] ?: ""
+            }
+            val langNorm = if (lang == "iw") "he" else lang
+            if (langNorm in listOf("he", "iw", "en")) {
+                // Use "iw" for Hebrew so resources load from values-iw (works reliably on all devices).
+                val tagForLocale = if (langNorm == "he") "iw" else langNorm
+                val locale = Locale.forLanguageTag(tagForLocale)
+                Locale.setDefault(locale)
+                val config = android.content.res.Configuration(base.resources.configuration).apply {
+                    setLocale(locale)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                        setLocales(android.os.LocaleList(locale))
+                    }
+                }
+                base.createConfigurationContext(config)
+            } else {
+                base
+            }
+        }.getOrElse { base }
+        super.attachBaseContext(wrapped)
+    }
 
     override fun onCreate() {
         super.onCreate()

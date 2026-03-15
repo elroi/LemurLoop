@@ -935,7 +935,7 @@ fun SettingsScreen(
                                     shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                                     onClick = { viewModel.updateAlarmDefaults(alarmDefaults.copy(smileFallbackMethod = opt)) },
                                     selected = alarmDefaults.smileFallbackMethod == opt,
-                                    label = { Text(if (opt == "NONE") "None" else "Math", fontSize = 12.sp) }
+                                    label = { Text(if (opt == "NONE") stringResource(R.string.wizard_3_face_fallback_none) else stringResource(R.string.wizard_fallback_math_short), fontSize = 12.sp) }
                                 )
                             }
                         }
@@ -1191,8 +1191,8 @@ fun SettingsScreen(
                         trailingIcon = {
                             when {
                                 isKeyValidating -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                keyValidationResult == true -> Icon(Icons.Default.CheckCircle, "Valid", tint = MaterialTheme.colorScheme.primary)
-                                keyValidationResult == false -> Icon(Icons.Default.Warning, "Invalid", tint = MaterialTheme.typography.bodySmall.color)
+                                keyValidationResult == true -> Icon(Icons.Default.CheckCircle, stringResource(R.string.content_desc_valid), tint = MaterialTheme.colorScheme.primary)
+                                keyValidationResult == false -> Icon(Icons.Default.Warning, stringResource(R.string.content_desc_invalid), tint = MaterialTheme.typography.bodySmall.color)
                             }
                         }
                     )
@@ -1364,8 +1364,9 @@ fun SettingsScreen(
                                                         viewModel.setAppLanguageAndAwait(value)
                                                         debugLog(context, "Settings", "language_after_setAppLanguageAndAwait", mapOf("value" to value))
                                                         withContext(Dispatchers.Main) {
+                                                            // Use "iw" for Hebrew so resources load from values-iw.
                                                             val tag = when (value) {
-                                                                "he" -> "he"
+                                                                "he" -> "iw"
                                                                 "en" -> "en"
                                                                 else -> ""
                                                             }
@@ -2158,9 +2159,9 @@ fun PreviewBriefingDialog(
     val paragraphs = script.split(Regex("\n+")).filter { it.isNotBlank() }
     val firstLine = paragraphs.firstOrNull() ?: ""
     val sourceLabel = when {
-        firstLine.contains("☁️") -> "Source: Cloud AI"
-        firstLine.contains("✈") -> "Source: Local AI (offline)"
-        firstLine.contains("✅") -> "Source: Simple (no AI)"
+        firstLine.contains("☁️") -> stringResource(R.string.briefing_source_cloud)
+        firstLine.contains("✈") -> stringResource(R.string.briefing_source_local)
+        firstLine.contains("✅") -> stringResource(R.string.briefing_source_simple)
         else -> null
     }
     AlertDialog(

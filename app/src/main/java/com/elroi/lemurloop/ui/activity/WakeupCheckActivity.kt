@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -38,17 +41,21 @@ class WakeupCheckActivity : ComponentActivity() {
         turnScreenOnAndKeyguardOff()
         
         setContent {
-            LemurLoopTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val timeoutSeconds = intent.getIntExtra(AlarmIntentExtras.EXTRA_WAKEUP_CHECK_TIMEOUT, 60)
-                    WakeupCheckScreen(
-                        timeoutSeconds = timeoutSeconds,
-                        onConfirmed = { finish() },
-                        onExpired = { retriggerAlarm() }
-                    )
+            CompositionLocalProvider(
+                LocalConfiguration provides resources.configuration
+            ) {
+                LemurLoopTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        val timeoutSeconds = intent.getIntExtra(AlarmIntentExtras.EXTRA_WAKEUP_CHECK_TIMEOUT, 60)
+                        WakeupCheckScreen(
+                            timeoutSeconds = timeoutSeconds,
+                            onConfirmed = { finish() },
+                            onExpired = { retriggerAlarm() }
+                        )
+                    }
                 }
             }
         }

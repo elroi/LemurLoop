@@ -25,6 +25,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -153,11 +154,14 @@ class AlarmActivity : ComponentActivity() {
         }
         
         setContent {
-            LemurLoopTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+            CompositionLocalProvider(
+                LocalConfiguration provides resources.configuration
+            ) {
+                LemurLoopTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
                     var showMathDialog by remember { mutableStateOf(false) }
                     var showSmileScreen by remember { mutableStateOf(false) }
                     var successMessage by remember { mutableStateOf<String?>(null) }
@@ -488,6 +492,7 @@ class AlarmActivity : ComponentActivity() {
                 }
             }
         }
+        }
     }
 
     private fun triggerDismissLogic(isPreview: Boolean, isBriefingEnabled: Boolean, showBriefingScreen: () -> Unit) {
@@ -567,7 +572,7 @@ fun MathChallengeDialog(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.alarm_activity_math_challenge), fontWeight = FontWeight.Bold)
                 if (problemCount > 1) {
-                    Text("${solvedCount + 1} / $problemCount", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.alarm_activity_math_progress, solvedCount + 1, problemCount), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }
         },
@@ -773,7 +778,7 @@ fun AlarmFiringScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = if (label.isNullOrBlank()) "Alarm" else label,
+                text = if (label.isNullOrBlank()) stringResource(R.string.alarm_default_label) else label,
                 fontSize = 32.sp
             )
 
@@ -801,8 +806,8 @@ fun AlarmFiringScreen(
                         modifier = Modifier.weight(1f).padding(start = 8.dp)
                     ) {
                         Text(
-                            "☀️ Dismiss", 
-                            fontSize = 22.sp, 
+                            stringResource(R.string.alarm_dismiss_with_emoji),
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(vertical = 12.dp)
                         )
@@ -815,8 +820,8 @@ fun AlarmFiringScreen(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 ) {
                     Text(
-                        "☀️ Dismiss", 
-                        fontSize = 22.sp, 
+                        stringResource(R.string.alarm_dismiss_with_emoji),
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(vertical = 12.dp)
                     )
@@ -896,8 +901,8 @@ fun ChallengeSuccessScreen(
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
             ) {
                 Text(
-                    text = "Continue (${timeLeft}s)", 
-                    fontSize = 24.sp, 
+                    text = stringResource(R.string.alarm_activity_continue_seconds, timeLeft),
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -951,7 +956,7 @@ fun BriefingScreen(
         verticalArrangement = Arrangement.Top
     ) {
         if (!hasStarted) {
-            val displayMessage = generatingMessage ?: "Initializing brain..."
+            val displayMessage = generatingMessage ?: stringResource(R.string.briefing_initializing)
             
             androidx.compose.material3.CircularProgressIndicator(
                 modifier = Modifier.size(64.dp),
@@ -969,10 +974,10 @@ fun BriefingScreen(
             // Add a mini "sub-status" to make it look even more active
             var subStatusIdx by remember { mutableStateOf(0) }
             val subStatuses = listOf(
-                "Loading personality modules...", 
-                "Squeezing pixels...", 
-                "Calibrating wit...", 
-                "Brewing digital coffee..."
+                stringResource(R.string.briefing_loading_personality),
+                stringResource(R.string.briefing_squeezing_pixels),
+                stringResource(R.string.briefing_calibrating),
+                stringResource(R.string.briefing_brewing)
             )
             LaunchedEffect(Unit) {
                 while(true) {
@@ -1060,17 +1065,17 @@ fun BriefingScreen(
                         ) {
                             Icon(
                                 imageVector = if (isPaused) androidx.compose.material.icons.Icons.Filled.PlayArrow else androidx.compose.material.icons.Icons.Filled.Pause,
-                                contentDescription = if (isPaused) "Resume" else "Pause",
+                                contentDescription = if (isPaused) stringResource(R.string.content_desc_resume) else stringResource(R.string.content_desc_pause),
                                 modifier = Modifier.size(20.dp),
                                 tint = if (isPaused) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             
                             val statusText = when {
-                                isPaused -> "Paused"
-                                closingSeconds >= 0 -> "Closing in ${closingSeconds}s"
-                                isTtsEnabled -> "Reading aloud..."
-                                else -> "Reading..."
+                                isPaused -> stringResource(R.string.briefing_paused)
+                                closingSeconds >= 0 -> stringResource(R.string.briefing_closing_in, closingSeconds)
+                                isTtsEnabled -> stringResource(R.string.briefing_reading_aloud)
+                                else -> stringResource(R.string.briefing_reading)
                             }
                             
                             Text(

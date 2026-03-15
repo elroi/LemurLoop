@@ -91,6 +91,7 @@
     <string name="wizard_2_smooth_fade">עמעום חלק</string>
     <string name="wizard_2_smooth_fade_desc">עמעום הדרגתי בכיבוי</string>
     <string name="wizard_2_snooze_duration">משך איחור</string>
+    <string name="wizard_2_snooze_min_short">%1$d דק׳</string>
     <string name="wizard_2_snooze_off">כבוי</string>
     <string name="wizard_2_evasive_snooze">איחור מתחמק</string>
     <string name="wizard_2_smart_snooze">איחור חכם</string>
@@ -602,4 +603,61 @@
     <string name="search_diagnostic_logs_desc">צפה באירועי מערכת ומידע דיבאג</string>
     <string name="search_danger_zone_title">אזור סכנה</string>
     <string name="search_danger_zone_desc">איפוס או מחיקת נתוני האפליקציה</string>
+
+    <!-- Alarm Activity - Math challenge &amp; briefing -->
+    <string name="alarm_activity_math_progress">%1$d / %2$d</string>
+    <string name="alarm_activity_continue_seconds">המשך (%1$d ש׳)</string>
+    <string name="briefing_initializing">מאתחל מוח…</string>
+    <string name="briefing_loading_personality">טוען מודולי אישיות…</string>
+    <string name="briefing_squeezing_pixels">סוחט פיקסלים…</string>
+    <string name="briefing_calibrating">מכייל שנינות…</string>
+    <string name="briefing_brewing">מבשל קפה דיגיטלי…</string>
+    <string name="content_desc_resume">המשך</string>
+    <string name="content_desc_pause">השהה</string>
+    <string name="briefing_paused">מושהה</string>
+    <string name="briefing_closing_in">נסגר בעוד %1$d ש׳</string>
+    <string name="briefing_reading_aloud">קורא בקול…</string>
+    <string name="briefing_reading">קורא…</string>
+    <string name="alarm_dismiss_with_emoji">☀️ בטל</string>
+
+    <!-- Alarm Detail - Snooze &amp; fallback -->
+    <string name="alarm_detail_snooze_min_value">%1$d דק׳</string>
+    <string name="alarm_detail_evasive_1st_snooze">איחור ראשון</string>
+    <string name="alarm_detail_evasive_snoozes">%1$d איחורים</string>
+    <string name="alarm_detail_fallback_method_label">שיטת גיבוי</string>
+    <string name="alarm_detail_fallback_hint">אם זיהוי הפנים נכשל, השתמש בשיטה הזו:</string>
+    <string name="wizard_fallback_math_short">חשבון</string>
+
+    <!-- Settings - API key validation &amp; briefing source -->
+    <string name="content_desc_valid">תקין</string>
+    <string name="content_desc_invalid">לא תקין</string>
+    <string name="briefing_source_cloud">מקור: Cloud AI</string>
+    <string name="briefing_source_local">מקור: Local AI (מנותק)</string>
+    <string name="briefing_source_simple">מקור: פשוט (ללא AI)</string>
+
+    <!-- Settings ViewModel - TTS &amp; Gemini test results -->
+    <string name="settings_tts_test_phrase">בודק את קול דמות LemurLoop שלך.</string>
+    <string name="settings_cloud_tts_testing">בודק את מפתח Google Cloud TTS…</string>
+    <string name="settings_cloud_tts_success">הכל מוכן – מפתח ה-Cloud TTS עובד. אפשר להפעיל קולות דמות מאיכות ענן למעלה.</string>
+    <string name="settings_cloud_tts_no_audio">בדיקת Cloud TTS לא החזירה אודיו. ב-Google Cloud Console וודא שהמפתח שייך לפרויקט שבו Text-to-Speech API מופעל והחיוב/מכסה פעילים.</string>
+    <string name="settings_cloud_tts_failed">בדיקת Cloud TTS נכשלה: %1$s</string>
+    <string name="settings_no_key_configured">לא הוגדר מפתח.</string>
+    <string name="settings_gemini_success">Gemini הגיב בהצלחה.</string>
+    <string name="settings_gemini_error">שגיאת Gemini: %1$s</string>
+
+    <!-- Demo alarm labels -->
+    <string name="demo_alarm_weekday">השכמה בימי השבוע</string>
+    <string name="demo_alarm_gym">משימת כושר</string>
+    <string name="demo_alarm_weekend">שינה מאוחרת בסוף שבוע</string>
+    <string name="demo_alarm_smart">בדיקת השכמה חכמה</string>
+    <string name="demo_alarm_face">אתגר משחק פנים</string>
+
+    <!-- Accountability SMS -->
+    <string name="buddy_invite_sms">⏰ %1$s, %2$s רוצה אותך כחבר אחריות ב-LemurLoop! אם הם יפספסו אזעקה, תקבל הודעה לבדיקה. ענה עם הקוד %3$s לאישור. — LemurLoop</string>
+    <string name="buddy_confirm_sms">✅ הצלחה! אושרת כחבר אחריות ב-LemurLoop. תקבל התראה רק אם אזעקה תיפספס. — LemurLoop</string>
+    <string name="buddy_invite_default_name">היי</string>
+    <string name="buddy_invite_default_user">מישהו</string>
+    <string name="buddy_missed_alarm_sms">⏰ %1$s פספס/ה %2$s! בדוק/י בבקשה — אולי צריך השכמה אמיתית.</string>
+    <string name="buddy_missed_alarm_an_alarm">אזעקה</string>
+    <string name="buddy_missed_alarm_they">הוא/היא</string>
 </resources>

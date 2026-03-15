@@ -76,8 +76,12 @@ class MainActivity : AppCompatActivity() {
                     MainActivityEntryPoint::class.java
                 ).settingsManager().appLanguageFlow.first()
             }
-            // AppCompat/Android can return "iw" (legacy) for Hebrew; we store and use "he". Normalize so we apply locale.
+            // We store "he" in settings; use "iw" for locale so resources load from values-iw (reliable on all devices).
             val lang = if (langRaw == "iw") "he" else langRaw
+            val tagForLocale = when (lang) {
+                "he" -> "iw"
+                else -> lang
+            }
             debugLog(
                 newBase.applicationContext,
                 "MainActivity",
@@ -85,12 +89,13 @@ class MainActivity : AppCompatActivity() {
                 mapOf(
                     "langFromAppCompat" to (langFromAppCompat ?: "<null>"),
                     "langUsed" to lang,
-                    "willApplyLocale" to (lang in listOf("he", "en")).toString()
+                    "tagForLocale" to tagForLocale,
+                    "willApplyLocale" to (tagForLocale in listOf("iw", "en")).toString()
                 )
             )
-            when (lang) {
-                "he", "en" -> {
-                    val locale = Locale.forLanguageTag(lang)
+            when (tagForLocale) {
+                "iw", "en" -> {
+                    val locale = Locale.forLanguageTag(tagForLocale)
                     Locale.setDefault(locale)
                     val appResources = newBase.applicationContext.resources
                     val config = Configuration(appResources.configuration).apply {
@@ -196,8 +201,9 @@ class MainActivity : AppCompatActivity() {
                 val lang = withContext(Dispatchers.IO) {
                     settingsManager.appLanguageFlow.first()
                 }
+                // Use "iw" for Hebrew so resources load from values-iw.
                 val tag = when (lang) {
-                    "he" -> "he"
+                    "he", "iw" -> "iw"
                     "en" -> "en"
                     else -> ""
                 }
