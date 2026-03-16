@@ -41,6 +41,20 @@ interface MainActivityEntryPoint {
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    companion object {
+        @Volatile
+        private var skipNextSplashDelayForLanguageSwitch: Boolean = false
+
+        fun markNextRecreationAsLanguageSwitch() {
+            skipNextSplashDelayForLanguageSwitch = true
+        }
+
+        private fun consumeSkipNextSplashDelayFlag(): Boolean {
+            val shouldSkip = skipNextSplashDelayForLanguageSwitch
+            skipNextSplashDelayForLanguageSwitch = false
+            return shouldSkip
+        }
+    }
 
     @Inject
     lateinit var settingsManager: SettingsManager
@@ -155,6 +169,7 @@ class MainActivity : AppCompatActivity() {
         val splashScreen = installSplashScreen()
         var keepSplash = true
         splashScreen.setKeepOnScreenCondition { keepSplash }
+        val skipSplashDelay = consumeSkipNextSplashDelayFlag()
 
         super.onCreate(savedInstanceState)
 
@@ -170,10 +185,15 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        // Artificial delay for branding
-        lifecycleScope.launch {
-            delay(1500)
+        // Keep the branded splash only on cold/normal opens.
+        // For language switches, skip the delay for a smoother transition.
+        if (skipSplashDelay) {
             keepSplash = false
+        } else {
+            lifecycleScope.launch {
+                delay(1500)
+                keepSplash = false
+            }
         }
 
         // Do not provide LocalContext with a wrapped context: Hilt's hiltViewModel() requires

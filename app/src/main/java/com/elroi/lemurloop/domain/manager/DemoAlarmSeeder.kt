@@ -18,13 +18,15 @@ class DemoAlarmSeeder @Inject constructor(
      * This is additive: it never deletes existing alarms, and it skips inserting
      * demo alarms that match an existing alarm with the same label, time, and daysOfWeek.
      *
+     * @param labels Localized labels for the 5 demo alarms, in order: weekday, gym, weekend, smart, face.
      * @return the number of demo alarms that were inserted.
      */
-    suspend fun seedDemoAlarms(): Int {
+    suspend fun seedDemoAlarms(labels: List<String>): Int {
+        require(labels.size >= 5) { "seedDemoAlarms requires 5 labels" }
         val existing = alarmRepository.getAllAlarms().first()
         val existingKeys = existing.map { it.demoKey() }.toMutableSet()
 
-        val demoAlarms = buildDemoAlarms()
+        val demoAlarms = buildDemoAlarms(labels)
 
         var inserted = 0
         for (demo in demoAlarms) {
@@ -38,12 +40,13 @@ class DemoAlarmSeeder @Inject constructor(
         return inserted
     }
 
-    private fun buildDemoAlarms(): List<Alarm> {
+    private fun buildDemoAlarms(labels: List<String>): List<Alarm> {
+        val (labelWeekday, labelGym, labelWeekend, labelSmart, labelFace) = labels.take(5)
         return listOf(
             // Classic weekday alarm showcasing full briefing + gentle wake
             Alarm(
                 time = LocalTime.of(7, 0),
-                label = "Weekday Wake-Up",
+                label = labelWeekday,
                 daysOfWeek = listOf(1, 2, 3, 4, 5), // Mon–Fri
                 isGentleWake = true,
                 crescendoDurationMinutes = 5,
@@ -58,7 +61,7 @@ class DemoAlarmSeeder @Inject constructor(
             // Early gym mission with math and evasive snooze
             Alarm(
                 time = LocalTime.of(6, 0),
-                label = "Gym Mission",
+                label = labelGym,
                 daysOfWeek = listOf(1, 3, 5), // Mon, Wed, Fri
                 mathDifficulty = 2, // Medium
                 mathProblemCount = 3,
@@ -72,7 +75,7 @@ class DemoAlarmSeeder @Inject constructor(
             // Weekend sleep-in with extra-gentle wakeup, no briefing
             Alarm(
                 time = LocalTime.of(9, 30),
-                label = "Weekend Sleep-In",
+                label = labelWeekend,
                 daysOfWeek = listOf(6, 7), // Sat, Sun
                 isGentleWake = true,
                 crescendoDurationMinutes = 12,
@@ -86,7 +89,7 @@ class DemoAlarmSeeder @Inject constructor(
             // Smart wake-up accountability style alarm with spoken briefing only (no on-screen TTS)
             Alarm(
                 time = LocalTime.of(7, 30),
-                label = "Smart Wake-Up Check",
+                label = labelSmart,
                 daysOfWeek = listOf(1, 2, 3, 4, 5),
                 isSmartWakeupEnabled = true,
                 wakeupCheckDelayMinutes = 8,
@@ -101,7 +104,7 @@ class DemoAlarmSeeder @Inject constructor(
             // Face challenge alarm, vibration-focused with snooze disabled
             Alarm(
                 time = LocalTime.of(8, 15),
-                label = "Face Game Challenge",
+                label = labelFace,
                 daysOfWeek = listOf(2, 4), // Tue, Thu
                 isVibrate = true,
                 isSoundEnabled = false,

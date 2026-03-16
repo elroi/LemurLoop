@@ -780,7 +780,7 @@ fun WakeUpStyleStep(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "${snoozeDurationMinutes}m",
+                            text = stringResource(R.string.wizard_2_snooze_min_short, snoozeDurationMinutes),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
                         )

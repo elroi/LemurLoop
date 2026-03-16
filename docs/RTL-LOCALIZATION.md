@@ -12,6 +12,7 @@ Language is stored in DataStore (`user_settings`) under the key `app_language`; 
 
 ## Intentional LTR or direction-specific behavior
 
+- **Alarm list title (app name):** The main screen uses `CenterAlignedTopAppBar` so the app name "LemurLoop" is centered instead of start-aligned. In RTL, a start-aligned title would sit on the far right and look odd with an LTR brand name; centering avoids that and keeps the settings icon on the correct side (left in RTL).
 - **Math challenge (AlarmActivity):** The math problem and numeric input (e.g. `3 + 5 =`) are left-to-right for readability. The surrounding layout (buttons, labels) still follows RTL when the app is in Hebrew.
 - **Time display:** Times (e.g. `10:30`) are typically shown in the system/default format; they are not forced to RTL. Time pickers follow platform behavior.
 - **Numeric and formula content:** Any `Text` or `TextField` that shows only digits or arithmetic may be left-to-right. No code currently forces `LayoutDirection.Ltr` on these; if added for clarity, it should be documented here.

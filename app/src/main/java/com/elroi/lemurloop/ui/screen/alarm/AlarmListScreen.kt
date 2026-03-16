@@ -89,7 +89,9 @@ fun AlarmListScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            // CenterAlignedTopAppBar keeps the app name centered in both LTR and RTL,
+            // avoiding the awkward "title on far right" look when the app is in Hebrew.
+            CenterAlignedTopAppBar(
                 title = { Text(stringResource(R.string.alarm_list_title)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {

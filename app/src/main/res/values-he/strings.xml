@@ -223,6 +223,8 @@
     <string name="settings_language_system">ברירת מחדל של המערכת</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_hebrew">עברית</string>
+    <string name="settings_language_restart_warning">שינוי שפת האפליקציה יגרום להפעלה מחדש.</string>
+    <string name="settings_language_applying">מעדכן שפה…</string>
 
     <!-- Settings - Search &amp; sections -->
     <string name="settings_search_hint">חיפוש בהגדרות</string>

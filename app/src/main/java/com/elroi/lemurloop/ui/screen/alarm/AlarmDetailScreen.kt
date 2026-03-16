@@ -705,7 +705,7 @@ fun AlarmDetailScreen(
                         ) {
                             Text(stringResource(R.string.alarm_detail_snooze_duration), style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                text     = "$snoozeDuration min",
+                                text     = stringResource(R.string.alarm_detail_snooze_min_value, snoozeDuration),
                                 style    = MaterialTheme.typography.labelLarge,
                                 color    = MaterialTheme.colorScheme.primary
                             )
@@ -748,7 +748,7 @@ fun AlarmDetailScreen(
                                 ) {
                                     Text(stringResource(R.string.alarm_detail_starts_moving_after), style = MaterialTheme.typography.bodyMedium)
                                     Text(
-                                        if (evasiveSnoozesBeforeMoving == 0) "1st snooze" else "${evasiveSnoozesBeforeMoving + 1} snoozes",
+                                        if (evasiveSnoozesBeforeMoving == 0) stringResource(R.string.alarm_detail_evasive_1st_snooze) else stringResource(R.string.alarm_detail_evasive_snoozes, evasiveSnoozesBeforeMoving + 1),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -853,12 +853,12 @@ fun AlarmDetailScreen(
                 AnimatedVisibility(visible = smileToDismiss, enter = expandVertically(), exit = shrinkVertically()) {
                     Column(modifier = Modifier.padding(top = 8.dp)) {
                         Text(
-                            text = "Fallback Method",
+                            text = stringResource(R.string.alarm_detail_fallback_method_label),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "If face detection fails, use this method:",
+                            text = stringResource(R.string.alarm_detail_fallback_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -875,7 +875,7 @@ fun AlarmDetailScreen(
                                         }
                                     },
                                     selected = smileFallbackMethod == option,
-                                    label = { Text(if (option == "NONE") "None" else "Math") }
+                                    label = { Text(if (option == "NONE") stringResource(R.string.wizard_3_face_fallback_none) else stringResource(R.string.wizard_fallback_math_short)) }
                                 )
                             }
                         }
@@ -1515,7 +1515,7 @@ fun AccountabilityBuddyContent(
                                 enabled = cooldownRemaining == 0,
                                 modifier = Modifier.padding(start = 12.dp)
                             ) {
-                                Text(if (cooldownRemaining > 0) "Wait ${cooldownRemaining}s" else stringResource(R.string.btn_add))
+                                Text(if (cooldownRemaining > 0) stringResource(R.string.wizard_wait_seconds, cooldownRemaining) else stringResource(R.string.btn_add))
                             }
                         } else if (pendingCode != null) {
                             TextButton(
@@ -1528,7 +1528,7 @@ fun AccountabilityBuddyContent(
                                 enabled = cooldownRemaining == 0,
                                 modifier = Modifier.padding(start = 12.dp)
                             ) {
-                                Text(if (cooldownRemaining > 0) "Wait ${cooldownRemaining}s" else stringResource(R.string.alarm_detail_buddy_btn_resend), style = MaterialTheme.typography.labelMedium)
+                                Text(if (cooldownRemaining > 0) stringResource(R.string.wizard_wait_seconds, cooldownRemaining) else stringResource(R.string.alarm_detail_buddy_btn_resend), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }

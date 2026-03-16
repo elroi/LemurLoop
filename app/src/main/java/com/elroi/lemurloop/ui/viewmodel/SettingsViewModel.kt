@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elroi.lemurloop.domain.manager.SettingsManager
 import com.elroi.lemurloop.domain.manager.AlarmDefaults
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,6 +42,7 @@ data class ToastMessage(val resId: Int, val formatArgs: Array<out Any> = emptyAr
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settingsManager: SettingsManager,
     private val geminiManager: GeminiManager,
     private val briefingGenerator: com.elroi.lemurloop.domain.generator.BriefingGenerator,
@@ -586,7 +588,7 @@ class SettingsViewModel @Inject constructor(
             _isPreviewingPersonaVoice.value = true
             performSaveSettings()
             ttsManager.stop()
-            val shortPhrase = "Testing your LemurLoop persona voice."
+            val shortPhrase = context.getString(R.string.settings_tts_test_phrase)
             val useCloud = isCloudTtsEnabled.value && cloudTtsApiKey.value.isNotBlank()
             if (useCloud) {
                 val persona = _draftAlarmDefaults.value.aiPersona
@@ -609,23 +611,23 @@ class SettingsViewModel @Inject constructor(
 
         viewModelScope.launch {
             _isCloudTtsKeyTesting.value = true
-            _cloudTtsKeyTestResult.value = "Testing your Google Cloud TTS key..."
+            _cloudTtsKeyTestResult.value = context.getString(R.string.settings_cloud_tts_testing)
             try {
                 val persona = _draftAlarmDefaults.value.aiPersona
                 val uiLanguage = java.util.Locale.getDefault().language
                 val ok = cloudTtsEngine.testKey(
-                    text = "Testing your LemurLoop persona voice.",
+                    text = context.getString(R.string.settings_tts_test_phrase),
                     personaId = persona,
                     uiLanguage = uiLanguage,
                     apiKey = key
                 )
                 _cloudTtsKeyTestResult.value = if (ok) {
-                    "All set – your Google Cloud TTS key is working. You can now enable cloud-quality persona voices above."
+                    context.getString(R.string.settings_cloud_tts_success)
                 } else {
-                    "Cloud TTS test did not return audio. In Google Cloud Console, confirm this key belongs to a project where the Text-to-Speech API is enabled and billing/quota are active."
+                    context.getString(R.string.settings_cloud_tts_no_audio)
                 }
             } catch (e: Exception) {
-                _cloudTtsKeyTestResult.value = "Cloud TTS test failed: ${e.message ?: "unknown error"}"
+                _cloudTtsKeyTestResult.value = context.getString(R.string.settings_cloud_tts_failed, e.message ?: "unknown error")
             } finally {
                 _isCloudTtsKeyTesting.value = false
             }
@@ -650,7 +652,7 @@ class SettingsViewModel @Inject constructor(
         val key = _draftGeminiApiKey.value.trim()
         if (key.isBlank()) {
             viewModelScope.launch {
-                _briefingBrainTestResult.value = "No key configured."
+                _briefingBrainTestResult.value = context.getString(R.string.settings_no_key_configured)
             }
             return
         }
@@ -660,9 +662,9 @@ class SettingsViewModel @Inject constructor(
             _briefingBrainTestResult.value = null
             val error = geminiManager.testApiKey(key)
             _briefingBrainTestResult.value = if (error == null) {
-                "Gemini responded successfully."
+                context.getString(R.string.settings_gemini_success)
             } else {
-                "Gemini error: ${error.take(80)}"
+                context.getString(R.string.settings_gemini_error, error.take(80))
             }
             _briefingBrainTesting.value = false
         }
@@ -785,7 +787,14 @@ class SettingsViewModel @Inject constructor(
 
     fun seedDemoAlarms() {
         viewModelScope.launch {
-            val inserted = demoAlarmSeeder.seedDemoAlarms()
+            val labels = listOf(
+                context.getString(R.string.demo_alarm_weekday),
+                context.getString(R.string.demo_alarm_gym),
+                context.getString(R.string.demo_alarm_weekend),
+                context.getString(R.string.demo_alarm_smart),
+                context.getString(R.string.demo_alarm_face)
+            )
+            val inserted = demoAlarmSeeder.seedDemoAlarms(labels)
             val msg = if (inserted > 0) {
                 ToastMessage(R.string.settings_toast_demo_created, arrayOf(inserted))
             } else {

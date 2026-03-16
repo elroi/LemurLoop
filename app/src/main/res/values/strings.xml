@@ -89,6 +89,7 @@
     <string name="wizard_2_smooth_fade">Smooth Fade-Out</string>
     <string name="wizard_2_smooth_fade_desc">Gradually fade sound on dismiss</string>
     <string name="wizard_2_snooze_duration">Snooze Duration</string>
+    <string name="wizard_2_snooze_min_short">%1$dm</string>
     <string name="wizard_2_snooze_off">Off</string>
     <string name="wizard_2_evasive_snooze">Evasive Snooze</string>
     <string name="wizard_2_smart_snooze">Smart Snooze</string>
@@ -220,6 +221,8 @@
     <string name="settings_language_system">System default</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_hebrew">עברית</string>
+    <string name="settings_language_restart_warning">Changing the app language will restart the app.</string>
+    <string name="settings_language_applying">Applying language…</string>
 
     <!-- Settings - Search &amp; sections -->
     <string name="settings_search_hint">Search settings</string>
@@ -600,4 +603,61 @@
     <string name="search_diagnostic_logs_desc">View system events and debug info</string>
     <string name="search_danger_zone_title">Danger zone</string>
     <string name="search_danger_zone_desc">Reset or wipe app data</string>
+
+    <!-- Alarm Activity - Math challenge & briefing -->
+    <string name="alarm_activity_math_progress">%1$d / %2$d</string>
+    <string name="alarm_activity_continue_seconds">Continue (%1$ds)</string>
+    <string name="briefing_initializing">Initializing brain…</string>
+    <string name="briefing_loading_personality">Loading personality modules…</string>
+    <string name="briefing_squeezing_pixels">Squeezing pixels…</string>
+    <string name="briefing_calibrating">Calibrating wit…</string>
+    <string name="briefing_brewing">Brewing digital coffee…</string>
+    <string name="content_desc_resume">Resume</string>
+    <string name="content_desc_pause">Pause</string>
+    <string name="briefing_paused">Paused</string>
+    <string name="briefing_closing_in">Closing in %1$ds</string>
+    <string name="briefing_reading_aloud">Reading aloud…</string>
+    <string name="briefing_reading">Reading…</string>
+    <string name="alarm_dismiss_with_emoji">☀️ Dismiss</string>
+
+    <!-- Alarm Detail - Snooze & fallback -->
+    <string name="alarm_detail_snooze_min_value">%1$d min</string>
+    <string name="alarm_detail_evasive_1st_snooze">1st snooze</string>
+    <string name="alarm_detail_evasive_snoozes">%1$d snoozes</string>
+    <string name="alarm_detail_fallback_method_label">Fallback Method</string>
+    <string name="alarm_detail_fallback_hint">If face detection fails, use this method:</string>
+    <string name="wizard_fallback_math_short">Math</string>
+
+    <!-- Settings - API key validation & briefing source -->
+    <string name="content_desc_valid">Valid</string>
+    <string name="content_desc_invalid">Invalid</string>
+    <string name="briefing_source_cloud">Source: Cloud AI</string>
+    <string name="briefing_source_local">Source: Local AI (offline)</string>
+    <string name="briefing_source_simple">Source: Simple (no AI)</string>
+
+    <!-- Settings ViewModel - TTS & Gemini test results (used by UI from sealed state) -->
+    <string name="settings_tts_test_phrase">Testing your LemurLoop persona voice.</string>
+    <string name="settings_cloud_tts_testing">Testing your Google Cloud TTS key…</string>
+    <string name="settings_cloud_tts_success">All set – your Google Cloud TTS key is working. You can now enable cloud-quality persona voices above.</string>
+    <string name="settings_cloud_tts_no_audio">Cloud TTS test did not return audio. In Google Cloud Console, confirm this key belongs to a project where the Text-to-Speech API is enabled and billing/quota are active.</string>
+    <string name="settings_cloud_tts_failed">Cloud TTS test failed: %1$s</string>
+    <string name="settings_no_key_configured">No key configured.</string>
+    <string name="settings_gemini_success">Gemini responded successfully.</string>
+    <string name="settings_gemini_error">Gemini error: %1$s</string>
+
+    <!-- Demo alarm labels (for DemoAlarmSeeder) -->
+    <string name="demo_alarm_weekday">Weekday Wake-Up</string>
+    <string name="demo_alarm_gym">Gym Mission</string>
+    <string name="demo_alarm_weekend">Weekend Sleep-In</string>
+    <string name="demo_alarm_smart">Smart Wake-Up Check</string>
+    <string name="demo_alarm_face">Face Game Challenge</string>
+
+    <!-- Accountability SMS (templates; user-facing text in messages) -->
+    <string name="buddy_invite_sms">⏰ %1$s, %2$s wants you as their LemurLoop accountability buddy! If they miss an alarm, you\'ll get a quick text to check in. Reply with code %3$s to confirm. — LemurLoop</string>
+    <string name="buddy_confirm_sms">✅ Success! You are now confirmed as a LemurLoop accountability buddy. You will only be notified if an alarm is missed. — LemurLoop</string>
+    <string name="buddy_invite_default_name">Hey</string>
+    <string name="buddy_invite_default_user">Someone</string>
+    <string name="buddy_missed_alarm_sms">⏰ %1$s missed %2$s! Please check in — they might need a wake-up call.</string>
+    <string name="buddy_missed_alarm_an_alarm">an alarm</string>
+    <string name="buddy_missed_alarm_they">they</string>
 </resources>

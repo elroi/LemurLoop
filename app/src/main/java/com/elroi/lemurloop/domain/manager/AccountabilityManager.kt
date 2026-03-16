@@ -7,6 +7,7 @@ import android.telephony.SubscriptionManager
 import android.util.Log
 import android.widget.Toast
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.elroi.lemurloop.R
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -38,18 +39,15 @@ class AccountabilityManager @Inject constructor(
         val code = generateBuddyCode()
         settingsManager.addPendingBuddyCode(code, phoneNumber)
 
-        val name = buddyName?.trim()?.takeIf { it.isNotBlank() } ?: "Hey"
-        val user = userName?.trim()?.takeIf { it.isNotBlank() } ?: "Someone"
-        val message = "⏰ $name, $user wants you as their LemurLoop accountability buddy! " +
-            "If they miss an alarm, you'll get a quick text to check in. " +
-            "Reply with code $code to confirm. — LemurLoop"
+        val name = buddyName?.trim()?.takeIf { it.isNotBlank() } ?: context.getString(R.string.buddy_invite_default_name)
+        val user = userName?.trim()?.takeIf { it.isNotBlank() } ?: context.getString(R.string.buddy_invite_default_user)
+        val message = context.getString(R.string.buddy_invite_sms, name, user, code)
 
         sendSms(phoneNumber, message)
     }
 
     fun sendBuddyConfirmationSuccess(phoneNumber: String) {
-        val message = "✅ Success! You are now confirmed as a LemurLoop accountability buddy. " +
-            "You will only be notified if an alarm is missed. — LemurLoop"
+        val message = context.getString(R.string.buddy_confirm_sms)
         sendSms(phoneNumber, message)
     }
 
@@ -76,11 +74,11 @@ class AccountabilityManager @Inject constructor(
         }
 
         val message = if (!customMessage.isNullOrBlank()) {
-            customMessage.replace("{name}", userName ?: "they")
+            customMessage.replace("{name}", userName ?: context.getString(R.string.buddy_missed_alarm_they))
         } else {
-            val alarmDesc = if (!alarmLabel.isNullOrBlank()) "\"$alarmLabel\"" else "an alarm"
-            val whoText = if (!userName.isNullOrBlank()) "$userName" else "Someone"
-            "⏰ $whoText missed $alarmDesc! Please check in — they might need a wake-up call."
+            val alarmDesc = if (!alarmLabel.isNullOrBlank()) "\"$alarmLabel\"" else context.getString(R.string.buddy_missed_alarm_an_alarm)
+            val whoText = if (!userName.isNullOrBlank()) userName else context.getString(R.string.buddy_invite_default_user)
+            context.getString(R.string.buddy_missed_alarm_sms, whoText, alarmDesc)
         }
 
         sendSms(phoneNumber, message)

@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.ui.res.painterResource
 import android.Manifest
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color as AndroidColor
@@ -31,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.elroi.lemurloop.MainActivity
 import com.elroi.lemurloop.R
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.platform.LocalContext
@@ -1315,6 +1315,7 @@ fun SettingsScreen(
                 var showDangerZone by remember { mutableStateOf(false) }
                 var showDemoDialog by remember { mutableStateOf(false) }
                 var showLanguageDialog by remember { mutableStateOf(false) }
+                var isApplyingLanguage by remember { mutableStateOf(false) }
                 val activity = (context as? android.app.Activity) ?: (context as? android.content.ContextWrapper)?.baseContext as? android.app.Activity
 
                 Surface(
@@ -1331,7 +1332,10 @@ fun SettingsScreen(
                         }
                         Row(
                             modifier = Modifier
-                                .clickable { showLanguageDialog = true }
+                                .clickable {
+                                    isApplyingLanguage = false
+                                    showLanguageDialog = true
+                                }
                                 .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -1349,57 +1353,146 @@ fun SettingsScreen(
                             debugLog(context, "E", "language dialog opened", mapOf("currentAppLanguage" to appLanguage))
                             // #endregion
                             AlertDialog(
-                                onDismissRequest = { showLanguageDialog = false },
+                                onDismissRequest = {
+                                    if (!isApplyingLanguage) showLanguageDialog = false
+                                },
                                 title = { Text(stringResource(R.string.settings_language)) },
                                 text = {
-                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                         listOf("system" to R.string.settings_language_system, "en" to R.string.settings_language_english, "he" to R.string.settings_language_hebrew).forEach { (value, labelRes) ->
                                             val isSelected = appLanguage == value
-                                            TextButton(
-                                                onClick = {
-                                                    showLanguageDialog = false
-                                                    coroutineScope.launch {
-                                                        debugLog(context, "Settings", "language_option_clicked", mapOf("value" to value, "activityNonNull" to (activity != null).toString()))
-                                                        debugLog(context, "Settings", "language_before_setAppLanguageAndAwait", mapOf("value" to value))
-                                                        viewModel.setAppLanguageAndAwait(value)
-                                                        debugLog(context, "Settings", "language_after_setAppLanguageAndAwait", mapOf("value" to value))
-                                                        withContext(Dispatchers.Main) {
-                                                            // Use "iw" for Hebrew so resources load from values-iw.
-                                                            val tag = when (value) {
-                                                                "he" -> "iw"
-                                                                "en" -> "en"
-                                                                else -> ""
-                                                            }
-                                                            debugLog(context, "Settings", "language_before_setApplicationLocales", mapOf("tag" to tag))
-                                                            AppCompatDelegate.setApplicationLocales(
-                                                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
-                                                            )
-                                                            val act = activity
-                                                            debugLog(context, "Settings", "language_before_restart_activity", mapOf("tag" to tag, "activityNonNull" to (act != null).toString()))
-                                                            if (act != null) {
-                                                                val component = ComponentName(act, com.elroi.lemurloop.MainActivity::class.java)
-                                                                act.startActivity(Intent.makeRestartActivityTask(component))
-                                                                act.finish()
-                                                                debugLog(context, "Settings", "language_after_finish", mapOf("tag" to tag))
-                                                                // Force process kill so the next launch is a single cold start; avoids double
-                                                                // MainActivity creation and ensures the visible UI uses our localized resources.
-                                                                android.os.Process.killProcess(android.os.Process.myPid())
-                                                            }
-                                                        }
-                                                    }
-                                                },
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(
+                                                    1.dp,
+                                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant
+                                                ),
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                Text(stringResource(labelRes))
-                                                if (isSelected) {
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .clickable(enabled = !isApplyingLanguage) {
+                                                            if (value == appLanguage) return@clickable
+                                                            isApplyingLanguage = true
+                                                            coroutineScope.launch {
+                                                                debugLog(context, "Settings", "language_option_clicked", mapOf("value" to value, "activityNonNull" to (activity != null).toString()))
+                                                                debugLog(context, "Settings", "language_before_setAppLanguageAndAwait", mapOf("value" to value))
+                                                                viewModel.setAppLanguageAndAwait(value)
+                                                                debugLog(context, "Settings", "language_after_setAppLanguageAndAwait", mapOf("value" to value))
+                                                                withContext(Dispatchers.Main) {
+                                                                    // Use "iw" for Hebrew so resources load from values-iw.
+                                                                    val tag = when (value) {
+                                                                        "he" -> "iw"
+                                                                        "en" -> "en"
+                                                                        else -> ""
+                                                                    }
+                                                                    debugLog(context, "Settings", "language_before_setApplicationLocales", mapOf("tag" to tag))
+                                                                    MainActivity.markNextRecreationAsLanguageSwitch()
+                                                                    AppCompatDelegate.setApplicationLocales(
+                                                                        if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)
+                                                                    )
+                                                                    val act = activity
+                                                                    debugLog(context, "Settings", "language_before_recreate_activity", mapOf("tag" to tag, "activityNonNull" to (act != null).toString()))
+                                                                    if (act != null) {
+                                                                        // AppCompat usually recreates activities for locale change.
+                                                                        // Only force recreate as a fallback if it did not start.
+                                                                        delay(350)
+                                                                        if (!act.isChangingConfigurations && !act.isFinishing && !act.isDestroyed) {
+                                                                            act.recreate()
+                                                                            debugLog(context, "Settings", "language_after_recreate_fallback", mapOf("tag" to tag))
+                                                                        } else {
+                                                                            debugLog(context, "Settings", "language_recreate_handled_by_appcompat", mapOf("tag" to tag))
+                                                                        }
+                                                                    } else {
+                                                                        isApplyingLanguage = false
+                                                                        showLanguageDialog = false
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    RadioButton(
+                                                        selected = isSelected,
+                                                        onClick = null
+                                                    )
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Text(
+                                                        text = stringResource(labelRes),
+                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        modifier = Modifier.weight(1f)
+                                                    )
+                                                    if (isSelected) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.CheckCircle,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(18.dp),
+                                                            tint = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        if (isApplyingLanguage) {
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        strokeWidth = 2.dp
+                                                    )
                                                     Spacer(modifier = Modifier.width(8.dp))
-                                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                                                    Text(
+                                                        text = stringResource(R.string.settings_language_applying),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Surface(
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Info,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp),
+                                                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        text = stringResource(R.string.settings_language_restart_warning),
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
                                                 }
                                             }
                                         }
                                     }
                                 },
-                                confirmButton = { TextButton(onClick = { showLanguageDialog = false }) { Text(stringResource(R.string.btn_cancel)) } }
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = { showLanguageDialog = false },
+                                        enabled = !isApplyingLanguage
+                                    ) {
+                                        Text(stringResource(R.string.btn_cancel))
+                                    }
+                                }
                             )
                         }
 
