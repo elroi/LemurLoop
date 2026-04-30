@@ -111,11 +111,18 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN notifyBuddyOnSet INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE alarms ADD COLUMN notifyBuddyOnChangeOrDismiss INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Database(entities = [
     AlarmEntity::class, 
     com.elroi.lemurloop.data.local.entity.SleepRecordEntity::class,
     com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class
-], version = 21, exportSchema = false)
+], version = 22, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

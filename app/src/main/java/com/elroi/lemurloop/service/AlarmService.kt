@@ -54,6 +54,9 @@ class AlarmService : Service() {
     lateinit var accountabilityManager: com.elroi.lemurloop.domain.manager.AccountabilityManager
 
     @Inject
+    lateinit var buddyLifecycleNotifier: com.elroi.lemurloop.domain.buddy.AlarmBuddyLifecycleNotifier
+
+    @Inject
     lateinit var diagnosticLogger: com.elroi.lemurloop.domain.manager.DiagnosticLogger
 
     private var ringtone: Ringtone? = null
@@ -405,7 +408,17 @@ class AlarmService : Service() {
 
     private fun handleDismiss() {
         Log.d("TTS_DEBUG", "handleDismiss called")
-        
+
+        val dismissAlarmId = currentAlarmId
+        if (dismissAlarmId != null) {
+            serviceScope.launch {
+                val forBuddy = repository.getAlarmById(dismissAlarmId)
+                if (forBuddy != null) {
+                    buddyLifecycleNotifier.onAlarmDismissed(forBuddy)
+                }
+            }
+        }
+
         // Fetch the alarm directly to verify if it's repeating, rather than just relying on the intent.
         serviceScope.launch(kotlinx.coroutines.NonCancellable) {
             val alarmId = currentAlarmId ?: return@launch

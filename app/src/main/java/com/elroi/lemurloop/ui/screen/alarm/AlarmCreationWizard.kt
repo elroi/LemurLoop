@@ -128,7 +128,9 @@ fun AlarmCreationWizard(
     var buddyUserName by remember { mutableStateOf<String>(defaultSettings.briefingUserName) }
     var buddyMessage by remember { mutableStateOf<String>("") }
     var buddyAlertAfterMinutes by remember { mutableIntStateOf(5) }
-    
+    var notifyBuddyOnSet by remember { mutableStateOf(false) }
+    var notifyBuddyOnChangeOrDismiss by remember { mutableStateOf(false) }
+
     var showBuddyDialog by remember { mutableStateOf<Boolean>(false) }
     var showCloudAiSetupDialog by remember { mutableStateOf<Boolean>(false) }
     val globalBuddies by viewModel.globalBuddies.collectAsState()
@@ -197,7 +199,9 @@ fun AlarmCreationWizard(
                 wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
                 userName = buddyUserName,
                 vibrationPattern = vibrationPattern,
-                vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds
+                vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds,
+                notifyBuddyOnSet = notifyBuddyOnSet,
+                notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss
             )
             try {
                 viewModel.addAlarm(newAlarm)
@@ -353,6 +357,8 @@ fun AlarmCreationWizard(
                                 buddyUserName = it
                                 viewModel.updateUserName(it)
                             },
+                            notifyBuddyOnSet, { notifyBuddyOnSet = it },
+                            notifyBuddyOnChangeOrDismiss, { notifyBuddyOnChangeOrDismiss = it },
                             confirmedNumbers, pendingCodes, { showBuddyDialog = true },
                             onSendInvite = { 
                                 viewModel.sendBuddyOptInRequest(buddyPhone, buddyName, buddyUserName)
@@ -1003,6 +1009,10 @@ fun WakeUpBuddyStep(
     onBuddyAlertAfterMinutesChange: (Int) -> Unit,
     buddyUserName: String,
     onBuddyUserNameChange: (String) -> Unit,
+    notifyBuddyOnSet: Boolean,
+    onNotifyBuddyOnSetChange: (Boolean) -> Unit,
+    notifyBuddyOnChangeOrDismiss: Boolean,
+    onNotifyBuddyOnChangeOrDismissChange: (Boolean) -> Unit,
     confirmedNumbers: Set<String>,
     pendingCodes: Set<String>,
     onBuddyClick: () -> Unit,
@@ -1166,6 +1176,32 @@ fun WakeUpBuddyStep(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
+            if (buddyPhone.isNotBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.buddy_notify_on_set), fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.buddy_notify_on_set_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = notifyBuddyOnSet, onCheckedChange = onNotifyBuddyOnSetChange)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.buddy_notify_on_change_dismiss), fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.buddy_notify_on_change_dismiss_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = notifyBuddyOnChangeOrDismiss, onCheckedChange = onNotifyBuddyOnChangeOrDismissChange)
+                }
+            }
         }
     }
 }

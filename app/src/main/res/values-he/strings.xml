@@ -115,7 +115,7 @@
     <string name="wizard_3_smart_delay">בדיקה אחרי %1$d דק׳</string>
     <string name="wizard_3_smart_timeout">זמן המתנה לתגובה: %1$d שניות</string>
     <string name="wizard_4_title">חבר ההשכמה שלך</string>
-    <string name="wizard_4_body">בחר מישהו שיגבה אותך. הוא יקבל הודעה אם אתה נתקע בדחיות.</string>
+    <string name="wizard_4_body">בחר מישהו שיגבה אותך. הוא יקבל הודעה אם אתה נתקע בדחיות. אפשר גם לשלוח SMS כששומרים את השעון או כשמשנים את הלוח או כשמכבים אזעקה מצלצלת.</string>
     <string name="wizard_4_btn_invite">שלח הזמנת הצטרפות</string>
     <string name="wizard_4_btn_resend">שלח שוב</string>
     <string name="wizard_4_status_confirmed">חבר אושר ✅</string>
@@ -662,4 +662,12 @@
     <string name="buddy_missed_alarm_sms">⏰ %1$s פספס/ה %2$s! בדוק/י בבקשה — אולי צריך השכמה אמיתית.</string>
     <string name="buddy_missed_alarm_an_alarm">שעון</string>
     <string name="buddy_missed_alarm_they">הוא/היא</string>
+    <string name="buddy_lifecycle_alarm_set">⏰ %1$s הגדיר/ה שעון ב-LemurLoop \"%2$s\" ל-%3$s (%4$s). — LemurLoop</string>
+    <string name="buddy_lifecycle_alarm_changed">⏰ %1$s עדכן/ה את שעון ה-LemurLoop \"%2$s\" — כעת %3$s (%4$s). — LemurLoop</string>
+    <string name="buddy_lifecycle_alarm_dismissed">✅ %1$s כיבה/ה את האזעקה \"%2$s\". — LemurLoop</string>
+    <string name="buddy_lifecycle_repeat_once">חד פעמי</string>
+    <string name="buddy_notify_on_set">שליחת SMS לגיבוי כשאני שומר את השעון</string>
+    <string name="buddy_notify_on_set_desc">מתריע על השעה וימי החזרה (רק לגיבויים מאושרים).</string>
+    <string name="buddy_notify_on_change_dismiss">שליחת SMS בעדכון לוח זמנים או כיבוי אזעקה</string>
+    <string name="buddy_notify_on_change_dismiss_desc">כשמשתנה השעה, הימים או הפעלה, או כשמכבים אזעקה מצלצלת.</string>
 </resources>

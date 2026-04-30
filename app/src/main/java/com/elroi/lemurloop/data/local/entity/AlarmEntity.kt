@@ -64,7 +64,11 @@ data class AlarmEntity(
     @ColumnInfo(defaultValue = "BASIC")
     val vibrationPattern: String = "BASIC",
     @ColumnInfo(defaultValue = "30")
-    val vibrationCrescendoStartGapSeconds: Int = 30
+    val vibrationCrescendoStartGapSeconds: Int = 30,
+    @ColumnInfo(defaultValue = "0")
+    val notifyBuddyOnSet: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val notifyBuddyOnChangeOrDismiss: Boolean = false
 ) {
     fun toDomain(): Alarm {
         return Alarm(
@@ -100,7 +104,9 @@ data class AlarmEntity(
             wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
             briefingTimeoutSeconds = briefingTimeoutSeconds,
             vibrationPattern = vibrationPattern,
-            vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds
+            vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds,
+            notifyBuddyOnSet = notifyBuddyOnSet,
+            notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss
             // isVibrateOnly is ignored in domain
         )
     }
@@ -142,7 +148,9 @@ data class AlarmEntity(
                 wakeupCheckTimeoutSeconds = alarm.wakeupCheckTimeoutSeconds,
                 briefingTimeoutSeconds = alarm.briefingTimeoutSeconds,
                 vibrationPattern = alarm.vibrationPattern,
-                vibrationCrescendoStartGapSeconds = alarm.vibrationCrescendoStartGapSeconds
+                vibrationCrescendoStartGapSeconds = alarm.vibrationCrescendoStartGapSeconds,
+                notifyBuddyOnSet = alarm.notifyBuddyOnSet,
+                notifyBuddyOnChangeOrDismiss = alarm.notifyBuddyOnChangeOrDismiss
             )
         }
     }
