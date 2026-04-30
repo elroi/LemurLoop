@@ -89,6 +89,8 @@ fun AlarmDetailScreen(
     var buddyMessage   by remember { mutableStateOf<String>("") }
     var buddyEnabled   by remember { mutableStateOf<Boolean>(false) }
     var buddyAlertDelay by remember { mutableStateOf<Int>(5) }
+    var notifyBuddyOnSet by remember { mutableStateOf(false) }
+    var notifyBuddyOnChangeOrDismiss by remember { mutableStateOf(false) }
     var daysOfWeek     by remember { mutableStateOf<List<Int>>(emptyList<Int>()) }
     var mathDifficulty by remember { mutableStateOf<Int>(defaultSettings.mathDifficulty) }
     var mathProblemCount by remember { mutableIntStateOf(defaultSettings.mathProblemCount) }
@@ -122,14 +124,17 @@ fun AlarmDetailScreen(
     val hasChanges = remember(
         initialState, time, label, isGentleWake, buddyPhone, buddyName,
         buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+        notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
         daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
         snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
         evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
-        wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds
+        wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds,
+        vibrationPattern, vibrationCrescendoStartGapSeconds
     ) {
         val current = AlarmStateSnapshot(
             time, label, isGentleWake, buddyPhone, buddyName,
             buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+            notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
             snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
             evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
@@ -257,6 +262,8 @@ fun AlarmDetailScreen(
                     buddyMessage  = it.buddyMessage ?: ""
                     buddyEnabled  = !it.buddyPhoneNumber.isNullOrBlank()
                     buddyAlertDelay = it.buddyAlertDelayMinutes
+                    notifyBuddyOnSet = it.notifyBuddyOnSet
+                    notifyBuddyOnChangeOrDismiss = it.notifyBuddyOnChangeOrDismiss
                     daysOfWeek    = it.daysOfWeek
                     smileToDismiss = it.smileToDismiss
                     smileFallbackMethod = it.smileFallbackMethod
@@ -284,6 +291,7 @@ fun AlarmDetailScreen(
                         initialState = AlarmStateSnapshot(
                             time, label, isGentleWake, buddyPhone, buddyName,
                             buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+                            notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
                             snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
                             evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
@@ -317,6 +325,7 @@ fun AlarmDetailScreen(
                 initialState = AlarmStateSnapshot(
                     time, label, isGentleWake, buddyPhone, buddyName,
                     buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+                    notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                     daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
                     snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
                     evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
@@ -416,6 +425,8 @@ fun AlarmDetailScreen(
                             userName = if (buddyEnabled) buddyUserName else null,
                             buddyMessage = if (buddyEnabled) buddyMessage else null,
                             buddyAlertDelayMinutes = buddyAlertDelay,
+                            notifyBuddyOnSet = buddyEnabled && notifyBuddyOnSet,
+                            notifyBuddyOnChangeOrDismiss = buddyEnabled && notifyBuddyOnChangeOrDismiss,
                             daysOfWeek = daysOfWeek,
                             mathDifficulty = if (smileToDismiss && smileFallbackMethod == "NONE") 0 else mathDifficulty,
                             mathProblemCount = mathProblemCount,
@@ -1015,6 +1026,10 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                     onCustomMessageChange = { buddyMessage = it },
                     alertDelayMinutes     = buddyAlertDelay,
                     onAlertDelayChange    = { buddyAlertDelay = it },
+                    notifyBuddyOnSet      = notifyBuddyOnSet,
+                    onNotifyBuddyOnSetChange      = { notifyBuddyOnSet = it },
+                    notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss,
+                    onNotifyBuddyOnChangeDismissChange = { notifyBuddyOnChangeOrDismiss = it },
                     alarmLabel            = label.ifBlank { "your alarm" },
                     confirmedBuddyNumbers = confirmedBuddies,
                     pendingBuddyCodes     = pendingCodes,
@@ -1039,6 +1054,8 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         crescendoDurationMinutes = crescendoDuration,
                         buddyPhoneNumber      = if (buddyEnabled) buddyPhone else null,
                         buddyAlertDelayMinutes = buddyAlertDelay,
+                        notifyBuddyOnSet      = buddyEnabled && notifyBuddyOnSet,
+                        notifyBuddyOnChangeOrDismiss = buddyEnabled && notifyBuddyOnChangeOrDismiss,
                         buddyName             = if (buddyEnabled) buddyName.ifBlank { null } else null,
                         userName              = buddyUserName.ifBlank { null },
                         buddyMessage          = buddyMessage.ifBlank { null },
@@ -1065,6 +1082,8 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         crescendoDurationMinutes = crescendoDuration,
                         buddyPhoneNumber      = if (buddyEnabled) buddyPhone else null,
                         buddyAlertDelayMinutes = buddyAlertDelay,
+                        notifyBuddyOnSet      = buddyEnabled && notifyBuddyOnSet,
+                        notifyBuddyOnChangeOrDismiss = buddyEnabled && notifyBuddyOnChangeOrDismiss,
                         buddyName             = if (buddyEnabled) buddyName.ifBlank { null } else null,
                         userName              = buddyUserName.ifBlank { null },
                         buddyMessage          = buddyMessage.ifBlank { null },
@@ -1081,7 +1100,8 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         isSoundEnabled        = isSoundEnabled,
                         isSmartWakeupEnabled  = isSmartWakeupEnabled,
                         wakeupCheckDelayMinutes = wakeupCheckDelayMinutes,
-                        wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds
+                        wakeupCheckTimeoutSeconds = wakeupCheckTimeoutSeconds,
+                        briefingTimeoutSeconds = briefingTimeoutSeconds
                     )
                     viewModel.addAlarm(newAlarm)
                     onNavigateUp()
@@ -1226,6 +1246,10 @@ fun AccountabilityBuddyContent(
     onCustomMessageChange: (String) -> Unit,
     alertDelayMinutes: Int,
     onAlertDelayChange: (Int) -> Unit,
+    notifyBuddyOnSet: Boolean,
+    onNotifyBuddyOnSetChange: (Boolean) -> Unit,
+    notifyBuddyOnChangeOrDismiss: Boolean,
+    onNotifyBuddyOnChangeDismissChange: (Boolean) -> Unit,
     alarmLabel: String,
     confirmedBuddyNumbers: Set<String>,
     pendingBuddyCodes: Set<String>,
@@ -1447,6 +1471,31 @@ fun AccountabilityBuddyContent(
                     steps         = 29
                 )
 
+                if (phoneNumber.isNotBlank()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.buddy_notify_on_set), fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.buddy_notify_on_set_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = notifyBuddyOnSet, onCheckedChange = onNotifyBuddyOnSetChange)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.buddy_notify_on_change_dismiss), fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.buddy_notify_on_change_dismiss_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = notifyBuddyOnChangeOrDismiss, onCheckedChange = onNotifyBuddyOnChangeDismissChange)
+                    }
+                }
+
                 Surface(
                     shape    = MaterialTheme.shapes.medium,
                     color    = MaterialTheme.colorScheme.surfaceVariant,
@@ -1559,6 +1608,8 @@ private data class AlarmStateSnapshot(
     val buddyMessage: String,
     val buddyEnabled: Boolean,
     val buddyAlertDelay: Int,
+    val notifyBuddyOnSet: Boolean,
+    val notifyBuddyOnChangeOrDismiss: Boolean,
     val daysOfWeek: List<Int>,
     val mathDifficulty: Int,
     val mathProblemCount: Int,

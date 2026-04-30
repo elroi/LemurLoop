@@ -2,6 +2,7 @@ package com.elroi.lemurloop.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elroi.lemurloop.domain.buddy.AlarmBuddyLifecycleNotifier
 import com.elroi.lemurloop.domain.model.Alarm
 import com.elroi.lemurloop.domain.manager.SettingsManager
 import com.elroi.lemurloop.domain.manager.AlarmDefaults
@@ -20,7 +21,8 @@ class AlarmViewModel @Inject constructor(
     private val repository: AlarmRepository,
     private val scheduler: AlarmScheduler,
     private val settingsManager: SettingsManager,
-    private val accountabilityManager: com.elroi.lemurloop.domain.manager.AccountabilityManager
+    private val accountabilityManager: com.elroi.lemurloop.domain.manager.AccountabilityManager,
+    private val buddyLifecycleNotifier: AlarmBuddyLifecycleNotifier
 ) : ViewModel() {
 
     val confirmedBuddyNumbers: StateFlow<Set<String>> = settingsManager.confirmedBuddyNumbersFlow
@@ -49,21 +51,26 @@ class AlarmViewModel @Inject constructor(
 
     fun toggleAlarm(alarm: Alarm, isEnabled: Boolean) {
         viewModelScope.launch {
+            val previous = repository.getAlarmById(alarm.id) ?: alarm
             repository.updateAlarmToggle(alarm.id, isEnabled)
+            val updated = previous.copy(isEnabled = isEnabled)
             if (isEnabled) {
-                scheduler.schedule(alarm)
+                scheduler.schedule(updated)
             } else {
-                scheduler.cancel(alarm)
+                scheduler.cancel(updated)
             }
+            buddyLifecycleNotifier.onAlarmSaved(previous, updated)
         }
     }
 
     fun addAlarm(alarm: Alarm) {
         viewModelScope.launch {
+            val previous = repository.getAlarmById(alarm.id)
             repository.insertAlarm(alarm)
             if (alarm.isEnabled) {
                 scheduler.schedule(alarm)
             }
+            buddyLifecycleNotifier.onAlarmSaved(previous, alarm)
         }
     }
 

@@ -22,6 +22,10 @@ data class Alarm(
     val buddyName: String? = null,
     val userName: String? = null,
     val buddyMessage: String? = null,
+    /** Opt-in: SMS buddy when alarm is saved (new alarm heads-up). */
+    val notifyBuddyOnSet: Boolean = false,
+    /** Opt-in: SMS buddy on material schedule edits and when user dismisses a firing alarm. */
+    val notifyBuddyOnChangeOrDismiss: Boolean = false,
     val smileToDismiss: Boolean = false,
     val smileFallbackMethod: String = "MATH", // "NONE" or "MATH"
     val isBriefingEnabled: Boolean = true,

@@ -57,7 +57,14 @@ class DemoAlarmSeederTest {
         val scheduler = FakeAlarmScheduler()
         val seeder = DemoAlarmSeeder(repo, scheduler)
 
-        val insertedCount = seeder.seedDemoAlarms()
+        val demoLabels = listOf(
+            "Weekday Wake-Up",
+            "Gym Mission",
+            "Weekend Sleep-In",
+            "Smart Wake-Up Check",
+            "Face Game Challenge"
+        )
+        val insertedCount = seeder.seedDemoAlarms(demoLabels)
 
         val alarms = repo.current()
         assertEquals(insertedCount, alarms.size)
@@ -87,10 +94,17 @@ class DemoAlarmSeederTest {
         val scheduler = FakeAlarmScheduler()
         val seeder = DemoAlarmSeeder(repo, scheduler)
 
-        val insertedFirst = seeder.seedDemoAlarms()
+        val demoLabels = listOf(
+            "Weekday Wake-Up",
+            "Gym Mission",
+            "Weekend Sleep-In",
+            "Smart Wake-Up Check",
+            "Face Game Challenge"
+        )
+        val insertedFirst = seeder.seedDemoAlarms(demoLabels)
         val totalAfterFirst = repo.current().size
 
-        val insertedSecond = seeder.seedDemoAlarms()
+        val insertedSecond = seeder.seedDemoAlarms(demoLabels)
         val totalAfterSecond = repo.current().size
 
         // First run should add all demo alarms except the existing matching one

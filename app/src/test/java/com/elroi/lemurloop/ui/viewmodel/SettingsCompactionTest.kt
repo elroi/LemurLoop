@@ -17,10 +17,12 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import android.content.Context
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsCompactionTest {
 
+    private val appContext = mockk<Context>(relaxed = true)
     private val settingsManager = mockk<SettingsManager>(relaxed = true)
     private val geminiManager = mockk<GeminiManager>(relaxed = true)
     private val briefingGenerator = mockk<BriefingGenerator>(relaxed = true)
@@ -53,6 +55,7 @@ class SettingsCompactionTest {
         every { settingsManager.alarmCreationStyleFlow } returns MutableStateFlow("WIZARD")
 
         viewModel = SettingsViewModel(
+            appContext,
             settingsManager,
             geminiManager,
             briefingGenerator,
@@ -60,7 +63,7 @@ class SettingsCompactionTest {
             appDataRepository,
             ttsManager,
             cloudTtsEngine,
-            demoAlarmSeeder = mockk(relaxed = true)
+            mockk(relaxed = true)
         )
     }
 
