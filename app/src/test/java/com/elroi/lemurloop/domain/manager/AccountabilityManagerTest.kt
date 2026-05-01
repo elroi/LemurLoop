@@ -70,8 +70,8 @@ class AccountabilityManagerTest {
         val userName = "Alex"
         val alarmDesc = if (alarmLabel.isNotBlank()) "\"$alarmLabel\"" else "an alarm"
         val whoText = if (userName.isNotBlank()) userName else "Someone"
-        val message = "⏰ $whoText missed $alarmDesc! Please check in — they might need a wake-up call."
-        assertEquals("⏰ Alex missed \"Morning Workout\"! Please check in — they might need a wake-up call.", message)
+        val message = "⏰ $whoText missed $alarmDesc! Please check in—they might need a real wake-up call."
+        assertEquals("⏰ Alex missed \"Morning Workout\"! Please check in—they might need a real wake-up call.", message)
     }
 
     @Test
@@ -80,7 +80,7 @@ class AccountabilityManagerTest {
         val userName = "Alex"
         val alarmDesc = if (alarmLabel.isNotBlank()) "\"$alarmLabel\"" else "an alarm"
         val whoText = if (userName.isNotBlank()) userName else "Someone"
-        val message = "⏰ $whoText missed $alarmDesc! Please check in — they might need a wake-up call."
-        assertEquals("⏰ Alex missed an alarm! Please check in — they might need a wake-up call.", message)
+        val message = "⏰ $whoText missed $alarmDesc! Please check in—they might need a real wake-up call."
+        assertEquals("⏰ Alex missed an alarm! Please check in—they might need a real wake-up call.", message)
     }
 }

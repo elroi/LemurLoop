@@ -188,11 +188,11 @@
     <string name="alarm_detail_buddy_hint_phone">+1 234 567 8901</string>
     <string name="alarm_detail_buddy_field_user_name">Your name</string>
     <string name="alarm_detail_buddy_hint_user_name">Alex</string>
-    <string name="alarm_detail_buddy_field_message">Message</string>
-    <string name="alarm_detail_buddy_message_hint">Use {name} as a placeholder for your name</string>
+    <string name="alarm_detail_buddy_field_message">Custom SMS when you miss this alarm</string>
+    <string name="alarm_detail_buddy_message_hint">Optional—leave blank to use the default. Placeholders: {name}</string>
     <string name="alarm_detail_buddy_alert_after">Alert after</string>
     <string name="alarm_detail_buddy_unit_min">%1$d min</string>
-    <string name="alarm_detail_buddy_message_preview">Message preview</string>
+    <string name="alarm_detail_buddy_trust_footer_lifecycle">Whenever LemurLoop sends stock buddy wording (defaults you haven\'t overwritten in the fields above and below), the SMS includes:\n\n\"%1$s\"\n\nIf you write the whole SMS yourself, this line is omitted.</string>
     <string name="alarm_detail_buddy_permissions_error">SMS permissions required to send/receive messages</string>
     <string name="alarm_detail_buddy_status_confirmed">Buddy Confirmed</string>
     <string name="alarm_detail_buddy_status_awaiting_code">Awaiting code: %1$s</string>
@@ -653,18 +653,28 @@
     <string name="demo_alarm_face">Face Game Challenge</string>
 
     <!-- Accountability SMS (templates; user-facing text in messages) -->
-    <string name="buddy_invite_sms">⏰ %1$s, %2$s wants you as their LemurLoop accountability buddy! If they miss an alarm, you\'ll get a quick text to check in. Reply with code %3$s to confirm. — LemurLoop</string>
+    <string name="buddy_invite_sms">⏰ %1$s—it\'s %2$s texting you from my number. I\'m inviting you as my LemurLoop accountability buddy: if I miss an alarm later, you may get a short heads-up here. Reply with code %3$s to confirm.</string>
+    <string name="buddy_sms_trust_footer">If anything feels odd, call or text the number you\'re seeing—it\'s me.</string>
     <string name="buddy_confirm_sms">✅ Success! You are now confirmed as a LemurLoop accountability buddy. You will only be notified if an alarm is missed. — LemurLoop</string>
     <string name="buddy_invite_default_name">Hey</string>
     <string name="buddy_invite_default_user">Someone</string>
-    <string name="buddy_missed_alarm_sms">⏰ %1$s missed %2$s! Please check in — they might need a wake-up call.</string>
-    <string name="buddy_missed_alarm_an_alarm">an alarm</string>
+    <string name="buddy_missed_alarm_sms">⏰ LemurLoop (from %1$s): Missed alarm \"%2$s\". Please check in—they might need a real wake-up.</string>
     <string name="buddy_missed_alarm_they">they</string>
     <!-- Buddy lifecycle SMS (opt-in per alarm; only for confirmed buddies) -->
-    <string name="buddy_lifecycle_alarm_set">⏰ %1$s set a LemurLoop alarm \"%2$s\" for %3$s (%4$s). — LemurLoop</string>
-    <string name="buddy_lifecycle_alarm_changed">⏰ %1$s updated their LemurLoop alarm \"%2$s\" — now %3$s (%4$s). — LemurLoop</string>
-    <string name="buddy_lifecycle_alarm_dismissed">✅ %1$s dismissed their ringing alarm \"%2$s\". — LemurLoop</string>
+    <string name="buddy_lifecycle_alarm_set">⏰ LemurLoop (from %1$s): alarm \"%2$s\" is set for %3$s (%4$s).</string>
+    <string name="buddy_lifecycle_alarm_changed">⏰ LemurLoop (from %1$s): alarm \"%2$s\" changed—now %3$s (%4$s).</string>
+    <string name="buddy_lifecycle_alarm_dismissed">✅ LemurLoop (from %1$s): I dismissed alarm \"%2$s\".</string>
     <string name="buddy_lifecycle_repeat_once">one-time</string>
+    <string name="buddy_lifecycle_heads_up_message_label">Custom heads-up SMS (new alarm saved)</string>
+    <string name="buddy_lifecycle_heads_up_message_hint">Optional—leave blank to use the default. Placeholders: {name}, {label}, {time}, {repeat}</string>
+    <string name="buddy_lifecycle_schedule_changed_message_label">Custom SMS when the schedule changes</string>
+    <string name="buddy_lifecycle_schedule_changed_message_hint">Optional—leave blank to use the default. Placeholders: {name}, {label}, {time}, {repeat}</string>
+    <string name="buddy_lifecycle_dismissed_message_label">Custom SMS when you dismiss a ringing alarm</string>
+    <string name="buddy_lifecycle_dismissed_message_hint">Optional—leave blank to use the default. Placeholders: {name}, {label}, {time}, {repeat}</string>
+    <string name="buddy_lifecycle_templates_section_title">Buddy SMS wording</string>
+    <string name="buddy_lifecycle_templates_section_desc">Starter text matches the default SMS and updates when you change schedule or name—it is sent only if the switches above are on. Edit it or use placeholders to customize.</string>
+    <string name="buddy_lifecycle_templates_changed_dismiss_heading">Schedule changes and ringing dismiss</string>
+    <string name="buddy_opt_in_help_footer">You can learn more in the app: Settings → About.</string>
     <string name="buddy_notify_on_set">Text buddy when I save this alarm</string>
     <string name="buddy_notify_on_set_desc">Sends a heads-up with time and repeat days (confirmed buddies only).</string>
     <string name="buddy_notify_on_change_dismiss">Text buddy on schedule changes or dismiss</string>

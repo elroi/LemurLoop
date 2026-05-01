@@ -68,7 +68,16 @@ data class AlarmEntity(
     @ColumnInfo(defaultValue = "0")
     val notifyBuddyOnSet: Boolean = false,
     @ColumnInfo(defaultValue = "0")
-    val notifyBuddyOnChangeOrDismiss: Boolean = false
+    val notifyBuddyOnChangeOrDismiss: Boolean = false,
+    val buddyLifecycleSetMessage: String? = null,
+    /**
+     * Legacy DB column (migration 22→23); data was copied into [buddyLifecycleScheduleChangedMessage] /
+     * [buddyLifecycleDismissedMessage] in migration 23→24. Ignored when mapping to domain; cleared on saves.
+     */
+    @Deprecated("Superseded by buddyLifecycleScheduleChangedMessage and buddyLifecycleDismissedMessage.")
+    val buddyLifecycleFollowUpMessage: String? = null,
+    val buddyLifecycleScheduleChangedMessage: String? = null,
+    val buddyLifecycleDismissedMessage: String? = null
 ) {
     fun toDomain(): Alarm {
         return Alarm(
@@ -106,8 +115,12 @@ data class AlarmEntity(
             vibrationPattern = vibrationPattern,
             vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds,
             notifyBuddyOnSet = notifyBuddyOnSet,
-            notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss
+            notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss,
+            buddyLifecycleSetMessage = buddyLifecycleSetMessage,
+            buddyLifecycleScheduleChangedMessage = buddyLifecycleScheduleChangedMessage,
+            buddyLifecycleDismissedMessage = buddyLifecycleDismissedMessage
             // isVibrateOnly is ignored in domain
+            // buddyLifecycleFollowUpMessage is legacy; domain uses split schedule/dismiss fields
         )
     }
 
@@ -150,7 +163,11 @@ data class AlarmEntity(
                 vibrationPattern = alarm.vibrationPattern,
                 vibrationCrescendoStartGapSeconds = alarm.vibrationCrescendoStartGapSeconds,
                 notifyBuddyOnSet = alarm.notifyBuddyOnSet,
-                notifyBuddyOnChangeOrDismiss = alarm.notifyBuddyOnChangeOrDismiss
+                notifyBuddyOnChangeOrDismiss = alarm.notifyBuddyOnChangeOrDismiss,
+                buddyLifecycleSetMessage = alarm.buddyLifecycleSetMessage,
+                buddyLifecycleFollowUpMessage = null,
+                buddyLifecycleScheduleChangedMessage = alarm.buddyLifecycleScheduleChangedMessage,
+                buddyLifecycleDismissedMessage = alarm.buddyLifecycleDismissedMessage
             )
         }
     }

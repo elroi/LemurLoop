@@ -26,6 +26,12 @@ data class Alarm(
     val notifyBuddyOnSet: Boolean = false,
     /** Opt-in: SMS buddy on material schedule edits and when user dismisses a firing alarm. */
     val notifyBuddyOnChangeOrDismiss: Boolean = false,
+    /** Optional full text for heads-up SMS when a new alarm is saved; placeholders {name},{label},{time},{repeat}. */
+    val buddyLifecycleSetMessage: String? = null,
+    /** Optional SMS when the schedule changes materially; placeholders {name},{label},{time},{repeat}. */
+    val buddyLifecycleScheduleChangedMessage: String? = null,
+    /** Optional SMS when a ringing alarm is dismissed; placeholders {name},{label},{time},{repeat}. */
+    val buddyLifecycleDismissedMessage: String? = null,
     val smileToDismiss: Boolean = false,
     val smileFallbackMethod: String = "MATH", // "NONE" or "MATH"
     val isBriefingEnabled: Boolean = true,
