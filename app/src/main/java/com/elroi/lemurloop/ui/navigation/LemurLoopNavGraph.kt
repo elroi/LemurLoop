@@ -63,6 +63,26 @@ fun LemurLoopNavGraph(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToChat = {
+                    navController.navigate(Screen.LemurChat.route)
+                }
+            )
+        }
+
+        composable(Screen.LemurChat.route) {
+            com.elroi.lemurloop.ui.screen.alarm.LemurChatScreen(
+                onNavigateUp = { navController.navigateUp() },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToWizard = {
+                    navController.navigate(Screen.AlarmWizard.route) {
+                        popUpTo(Screen.LemurChat.route) { inclusive = true }
+                    }
+                },
+                onNavigateToDetailed = { alarmId ->
+                    navController.navigate(Screen.AlarmDetail.createRoute(alarmId ?: "")) {
+                        popUpTo(Screen.LemurChat.route) { inclusive = true }
+                    }
                 }
             )
         }

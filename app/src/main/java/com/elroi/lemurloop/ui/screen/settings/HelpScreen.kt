@@ -38,6 +38,7 @@ fun HelpScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            HelpSection(titleRes = R.string.help_section_chat_title, contentRes = R.string.help_section_chat_content)
             HelpSection(titleRes = R.string.help_section_briefing_title, contentRes = R.string.help_section_briefing_content)
             HelpSection(titleRes = R.string.help_section_evasive_title, contentRes = R.string.help_section_evasive_content)
             HelpSection(titleRes = R.string.help_section_gentle_title, contentRes = R.string.help_section_gentle_content)

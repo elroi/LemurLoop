@@ -3,6 +3,7 @@ package com.elroi.lemurloop.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elroi.lemurloop.domain.buddy.AlarmBuddyLifecycleNotifier
+import com.elroi.lemurloop.domain.creation.AlarmCreationSessionStore
 import com.elroi.lemurloop.domain.model.Alarm
 import com.elroi.lemurloop.domain.manager.SettingsManager
 import com.elroi.lemurloop.domain.manager.AlarmDefaults
@@ -22,8 +23,11 @@ class AlarmViewModel @Inject constructor(
     private val scheduler: AlarmScheduler,
     private val settingsManager: SettingsManager,
     private val accountabilityManager: com.elroi.lemurloop.domain.manager.AccountabilityManager,
-    private val buddyLifecycleNotifier: AlarmBuddyLifecycleNotifier
+    private val buddyLifecycleNotifier: AlarmBuddyLifecycleNotifier,
+    private val creationSession: AlarmCreationSessionStore
 ) : ViewModel() {
+
+    val creationDraft: StateFlow<Alarm?> = creationSession.draft
 
     val confirmedBuddyNumbers: StateFlow<Set<String>> = settingsManager.confirmedBuddyNumbersFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
@@ -125,5 +129,9 @@ class AlarmViewModel @Inject constructor(
         viewModelScope.launch {
             settingsManager.saveBriefingUserName(name.trim())
         }
+    }
+
+    fun resetAlarmCreationSession() {
+        creationSession.resetSession()
     }
 }

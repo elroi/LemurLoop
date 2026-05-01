@@ -123,6 +123,7 @@ fun AlarmDetailScreen(
     var currentAlarm   by remember { mutableStateOf<Alarm?>(null) }
     var initialState by remember { mutableStateOf<AlarmStateSnapshot?>(null) }
     var showDiscardDialog by remember { mutableStateOf<Boolean>(false) }
+    var draftAppliedFromSession by remember(alarmId) { mutableStateOf(false) }
 
     val hasChanges = remember(
         initialState, time, label, isGentleWake, buddyPhone, buddyName,
@@ -149,6 +150,7 @@ fun AlarmDetailScreen(
 
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val isCloudAiEnabled by viewModel.isCloudAiEnabled.collectAsState()
+    val creationDraft by viewModel.creationDraft.collectAsState()
     var showCloudAiSetupDialog by remember { mutableStateOf(false) }
 
     // Preview — launches AlarmActivity in preview mode + plays audio
@@ -251,7 +253,7 @@ fun AlarmDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(alarmId, defaultSettings) {
+    LaunchedEffect(alarmId, defaultSettings, creationDraft, draftAppliedFromSession) {
         if (!alarmId.isNullOrBlank()) {
             if (currentAlarm == null) {
                 currentAlarm = viewModel.getAlarm(alarmId)
@@ -309,6 +311,14 @@ fun AlarmDetailScreen(
             }
         } else {
             // Apply defaults for a new alarm once they load
+            if (!draftAppliedFromSession && creationDraft != null) {
+                creationDraft?.let { d ->
+                    time = d.time
+                    label = d.label ?: ""
+                    daysOfWeek = d.daysOfWeek
+                }
+                draftAppliedFromSession = true
+            }
             isGentleWake = defaultSettings.isGentleWake
             mathDifficulty = defaultSettings.mathDifficulty
             mathProblemCount = defaultSettings.mathProblemCount

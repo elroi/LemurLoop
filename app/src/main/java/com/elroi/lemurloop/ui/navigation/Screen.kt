@@ -23,6 +23,7 @@ sealed class Screen(val route: String) {
             if (isReplay) OnboardingReplay.route else Onboarding.route
     }
     object AlarmWizard : Screen("alarm_wizard")
+    object LemurChat : Screen("lemur_chat")
     object About : Screen("about")
     object DiagnosticLogs : Screen("diagnostic_logs")
 }

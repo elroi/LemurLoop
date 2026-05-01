@@ -239,7 +239,7 @@
     <string name="settings_demo_alarms_title">צור שעונים להדגמה</string>
     <string name="settings_demo_alarms_desc">הוסף שעונים לדוגמה כדי להכיר את LemurLoop. השעונים הקיימים נשמרים.</string>
     <string name="settings_privacy_title">מדיניות פרטיות</string>
-    <string name="settings_privacy_desc">הנתונים שלך נשארים במכשיר</string>
+    <string name="settings_privacy_desc">רוב הנתונים נשארים במכשיר. Gemini (מפתח ה-API שלך) מעבד בריפינג וצ\'אט בשרתי Google; אל תשלח סודות בצ\'אט</string>
     <string name="settings_diagnostic_title">לוגים אבחוניים</string>
     <string name="settings_diagnostic_desc">צפה באירועי מערכת ומידע דיבאג</string>
 
@@ -355,7 +355,7 @@
     <string name="intel_add_cloud_tts_key_first">הוסף קודם מפתח Google Cloud TTS API.</string>
     <string name="intel_preview_persona_voice">האזן לקול הדמות</string>
     <string name="intel_playing">מתנגן…</string>
-    <string name="intel_keys_explanation">Gemini משתמש במפתח AI Studio למעלה לכתיבת הבריפינג. קולות הענן משתמשים במפתח Google Cloud TTS להפוך את הטקסט לאודיו. שני המפתחות נשארים במכשיר ונשלחים ל-Google רק לבקשות אלה.</string>
+    <string name="intel_keys_explanation">Gemini משתמש במפתח AI Studio למעלה לבריפינג השכמה ולעוזר הצ\'אט Lemur. ההודעות שאתה שולח בצ\'אט (ובהקשר המערכת שנוסף) נשלחות ל-Google דרך האינטרנט, עשויות להיות מוזרמות, ועשויות להישמר לפי מדיניות Google וחשבון Google שלך. קולות הענן משתמשים במפתח Google Cloud TTS להפוך טקסט לאודיו. המפתחות נשמרים במכשיר ונשלחים רק עם הבקשות האלה.</string>
     <string name="settings_persona_voice_cloud_tts">קול דמות (Cloud TTS)</string>
     <string name="settings_use_cloud_voices">קולות איכות ענן</string>
     <string name="settings_api_credentials">פרטי גישה ל-API</string>
@@ -680,4 +680,28 @@
     <string name="buddy_notify_on_set_desc">מתריע על השעה וימי החזרה (רק לגיבויים מאושרים).</string>
     <string name="buddy_notify_on_change_dismiss">שליחת SMS בעדכון לוח זמנים או כיבוי אזעקה</string>
     <string name="buddy_notify_on_change_dismiss_desc">כשמשתנה השעה, הימים או הפעלה, או כשמכבים אזעקה מצלצלת.</string>
+
+    <string name="assistant_name">למור</string>
+    <string name="new_alarm_sheet_title">שעון חדש</string>
+    <string name="new_alarm_option_chat">צ\'אט עם למור</string>
+    <string name="new_alarm_option_wizard">אשף מודרך</string>
+    <string name="new_alarm_option_detailed">עורך מפורט</string>
+    <string name="lemur_chat_title">שעון חדש</string>
+    <string name="lemur_chat_privacy_hint_short">אל תדביקו סיסמאות או מידע רגיש. Gemini מעבד את ההודעות שלך.</string>
+    <string name="lemur_chat_input_hint">תאר מתי להתעורר…</string>
+    <string name="lemur_chat_send">שליחה</string>
+    <string name="lemur_chat_missing_key_message">הוסיפו מפתח Gemini API בהגדרות כדי לצ\'וט עם למור. אפשר להמשיך עם האשף או העורך המפורט בלי מפתח.</string>
+    <string name="lemur_chat_preview_title">תצוגה מקדימה</string>
+    <string name="lemur_chat_preview_one_time">שעון חד־פעמי</string>
+    <string name="lemur_chat_preview_activate">הפעלה</string>
+    <string name="lemur_chat_preview_save_inactive">שמירה כלא פעיל</string>
+    <string name="lemur_chat_overflow_wizard">פתיחת אשף</string>
+    <string name="lemur_chat_overflow_detailed">פתיחת עורך מפורט</string>
+    <string name="content_desc_overflow_menu">אפשרויות נוספות</string>
+    <string name="lemur_chat_error_dialog_title">לא ניתן להגיע ל-Gemini</string>
+    <string name="lemur_chat_error_network_body">בדקו את החיבור ומפתח ה-API ונסו שוב.</string>
+    <string name="lemur_chat_error_no_key_body">הוסיפו מפתח Gemini API בהגדרות.</string>
+    <string name="lemur_chat_error_open_settings">פתיחת הגדרות</string>
+    <string name="help_section_chat_title">צ\'אט עם למור (שעון חדש)</string>
+    <string name="help_section_chat_content">תארו מתי להתעורר בשפה חופשית; למור מציע הגדרות ואתם מאשרים לפני הפעלה. הצ\'אט משתמש במפתח Gemini שלכם: ההודעות נשלחות ל-Google בפרוטוקול המחובר לאינטרנט—אל תשלחו סיסמאות או מידע רגיש. התמליל נשאר בזיכרון עד שעוזבים את המסך; שעונים שמורים נשארים במכשיר.</string>
 </resources>

@@ -46,6 +46,7 @@ import java.time.LocalDateTime
 fun AlarmListScreen(
     onNavigateToDetail: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToChat: () -> Unit,
     viewModel: AlarmViewModel = hiltViewModel()
 ) {
     val alarms by viewModel.alarms.collectAsState()
@@ -84,7 +85,7 @@ fun AlarmListScreen(
         )
     }
 
-    val alarmCreationStyle by viewModel.alarmCreationStyle.collectAsState()
+    var showNewAlarmSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -101,12 +102,9 @@ fun AlarmListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { 
-                if (alarmCreationStyle == "WIZARD") {
-                    onNavigateToDetail("WIZARD") 
-                } else {
-                    onNavigateToDetail(null)
-                }
+            FloatingActionButton(onClick = {
+                viewModel.resetAlarmCreationSession()
+                showNewAlarmSheet = true
             }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.content_desc_add_alarm))
             }
@@ -293,6 +291,24 @@ fun AlarmListScreen(
                 }
             }
         }
+    }
+
+    if (showNewAlarmSheet) {
+        NewAlarmBottomSheet(
+            onDismiss = { showNewAlarmSheet = false },
+            onChat = {
+                showNewAlarmSheet = false
+                onNavigateToChat()
+            },
+            onWizard = {
+                showNewAlarmSheet = false
+                onNavigateToDetail("WIZARD")
+            },
+            onDetailed = {
+                showNewAlarmSheet = false
+                onNavigateToDetail(null)
+            }
+        )
     }
 }
 
