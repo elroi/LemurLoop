@@ -142,6 +142,19 @@ fun AlarmCreationWizard(
     val pendingCodes by viewModel.pendingBuddyCodes.collectAsState()
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val defaultBuddyName = stringResource(R.string.wizard_buddy_default_name)
+    val creationDraft by viewModel.creationDraft.collectAsState()
+    var seededFromChatDraft by remember { mutableStateOf(false) }
+
+    LaunchedEffect(creationDraft, seededFromChatDraft) {
+        if (!seededFromChatDraft && creationDraft != null) {
+            creationDraft?.let { d ->
+                selectedDays = d.daysOfWeek
+                alarmLabel = d.label ?: ""
+                selectedTime = d.time
+            }
+            seededFromChatDraft = true
+        }
+    }
 
     // Sync persona and name with defaults when loaded
     LaunchedEffect(defaultSettings) {

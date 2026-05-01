@@ -25,6 +25,7 @@ coreSplashscreen = "1.0.1"
 appcompat = "1.7.0"
 mockk = "1.12.5"
 coroutines = "1.6.4"
+jsonOrg = "20240303"
 [libraries]
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -73,6 +74,8 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-config = { group = "com.google.firebase", name = "firebase-config" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+# Real org.json for JVM unit tests (android.jar stubs throw at runtime)
+jsonOrgJvm = { group = "org.json", name = "json", version.ref = "jsonOrg" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

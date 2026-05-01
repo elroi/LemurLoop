@@ -237,7 +237,7 @@
     <string name="settings_demo_alarms_title">Create Demo Alarms</string>
     <string name="settings_demo_alarms_desc">Add rich example alarms to explore LemurLoop. Existing alarms are kept.</string>
     <string name="settings_privacy_title">Privacy Policy</string>
-    <string name="settings_privacy_desc">Your data stays on device</string>
+    <string name="settings_privacy_desc">Most data stays on your device. Gemini (your API key) processes briefing and chat on Google’s servers; do not send secrets in chat</string>
     <string name="settings_diagnostic_title">Diagnostic Logs</string>
     <string name="settings_diagnostic_desc">View system events and debug info</string>
 
@@ -353,7 +353,7 @@
     <string name="intel_add_cloud_tts_key_first">Add a Google Cloud TTS API key first.</string>
     <string name="intel_preview_persona_voice">Preview Persona Voice</string>
     <string name="intel_playing">Playing…</string>
-    <string name="intel_keys_explanation">Gemini uses the AI Studio key above to write your briefing. Cloud persona voices use the Google Cloud TTS key to turn that text into audio. Both keys stay on your device and are only sent to Google for these specific requests.</string>
+    <string name="intel_keys_explanation">Gemini uses the AI Studio key above for wake-up briefings and for the Lemur chat assistant. Full chat messages you send (plus system context we add) are sent to Google over the internet, may be streamed, and may be retained under Google’s and your Google account policies. Cloud persona voices use the Google Cloud TTS key to turn briefing text into audio. API keys stay on your device and are sent only with those requests.</string>
     <string name="settings_persona_voice_cloud_tts">Persona Voice (Cloud TTS)</string>
     <string name="settings_use_cloud_voices">Use cloud-quality voices</string>
     <string name="settings_api_credentials">API Credentials</string>
@@ -679,4 +679,31 @@
     <string name="buddy_notify_on_set_desc">Sends a heads-up with time and repeat days (confirmed buddies only).</string>
     <string name="buddy_notify_on_change_dismiss">Text buddy on schedule changes or dismiss</string>
     <string name="buddy_notify_on_change_dismiss_desc">If the time, days, or on/off state change, or when you dismiss a ringing alarm.</string>
+
+    <!-- New-alarm hub and Lemur chat -->
+    <string name="assistant_name">Lemur</string>
+    <string name="new_alarm_sheet_title">New alarm</string>
+    <string name="new_alarm_option_chat">Chat with Lemur</string>
+    <string name="new_alarm_option_wizard">Guided wizard</string>
+    <string name="new_alarm_option_detailed">Detailed editor</string>
+    <string name="lemur_chat_title">New alarm</string>
+    <string name="lemur_chat_privacy_hint_short">Don’t paste passwords or sensitive info. Gemini processes your messages.</string>
+    <string name="lemur_chat_input_hint">Describe when you want to wake up…</string>
+    <string name="lemur_chat_send">Send</string>
+    <string name="lemur_chat_missing_key_message">Add your Gemini API key in Settings to chat with Lemur. You can keep using the wizard or detailed editor without it.</string>
+    <string name="lemur_chat_preview_title">Alarm preview</string>
+    <string name="lemur_chat_preview_one_time">One-time alarm</string>
+    <string name="lemur_chat_preview_activate">Turn on</string>
+    <string name="lemur_chat_preview_save_inactive">Save inactive</string>
+    <string name="lemur_chat_overflow_wizard">Open wizard</string>
+    <string name="lemur_chat_overflow_detailed">Open detailed editor</string>
+    <string name="content_desc_overflow_menu">More options</string>
+    <string name="lemur_chat_error_dialog_title">Couldn’t reach Gemini</string>
+    <string name="lemur_chat_error_network_body">Check your connection and API key, then try again.</string>
+    <string name="lemur_chat_error_no_key_body">Add a Gemini API key in Settings.</string>
+    <string name="lemur_chat_error_open_settings">Open Settings</string>
+
+    <!-- Help — conversational alarm -->
+    <string name="help_section_chat_title">Chat with Lemur (new alarm)</string>
+    <string name="help_section_chat_content">Describe your wake-up time in plain language; Lemur proposes alarm settings you confirm before anything is turned on. Chat uses your Gemini API key: messages are sent to Google’s AI over the internet—avoid passwords or sensitive info. Transcripts stay in memory until you leave the screen; saved alarms stay on your device.</string>
 </resources>
