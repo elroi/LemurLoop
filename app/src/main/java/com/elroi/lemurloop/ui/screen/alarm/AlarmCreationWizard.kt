@@ -50,6 +50,7 @@ import com.elroi.lemurloop.ui.components.ImprovedDaySelector
 import com.elroi.lemurloop.ui.components.VibrationPatternGallery
 import com.elroi.lemurloop.ui.viewmodel.AlarmViewModel
 import com.elroi.lemurloop.util.AlarmUtils
+import com.elroi.lemurloop.util.BuddyLifecycleSmsPreview
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -130,6 +131,9 @@ fun AlarmCreationWizard(
     var buddyAlertAfterMinutes by remember { mutableIntStateOf(5) }
     var notifyBuddyOnSet by remember { mutableStateOf(false) }
     var notifyBuddyOnChangeOrDismiss by remember { mutableStateOf(false) }
+    var buddyLifecycleSetMessage by remember { mutableStateOf("") }
+    var buddyLifecycleScheduleChangedMessage by remember { mutableStateOf("") }
+    var buddyLifecycleDismissedMessage by remember { mutableStateOf("") }
 
     var showBuddyDialog by remember { mutableStateOf<Boolean>(false) }
     var showCloudAiSetupDialog by remember { mutableStateOf<Boolean>(false) }
@@ -179,7 +183,10 @@ fun AlarmCreationWizard(
                 mathGraduallyIncreaseDifficulty = mathGraduallyIncreaseDifficulty,
                 buddyPhoneNumber = if (buddyPhone.isBlank()) null else buddyPhone,
                 buddyName = if (buddyName.isBlank()) null else buddyName,
-                buddyMessage = buddyMessage,
+                buddyMessage = buddyMessage.ifBlank { null },
+                buddyLifecycleSetMessage = buddyLifecycleSetMessage.ifBlank { null },
+                buddyLifecycleScheduleChangedMessage = buddyLifecycleScheduleChangedMessage.ifBlank { null },
+                buddyLifecycleDismissedMessage = buddyLifecycleDismissedMessage.ifBlank { null },
                 buddyAlertDelayMinutes = buddyAlertAfterMinutes,
                 smileToDismiss = smileToDismiss,
                 smileFallbackMethod = smileFallbackMethod,
@@ -353,12 +360,18 @@ fun AlarmCreationWizard(
                         3 -> WakeUpBuddyStep(
                             buddyName, buddyPhone, buddyMessage, { buddyMessage = it },
                             buddyAlertAfterMinutes, { buddyAlertAfterMinutes = it },
-                            buddyUserName, { 
+                            buddyUserName, {
                                 buddyUserName = it
                                 viewModel.updateUserName(it)
                             },
                             notifyBuddyOnSet, { notifyBuddyOnSet = it },
                             notifyBuddyOnChangeOrDismiss, { notifyBuddyOnChangeOrDismiss = it },
+                            buddyLifecycleSetMessage, { buddyLifecycleSetMessage = it },
+                            buddyLifecycleScheduleChangedMessage, { buddyLifecycleScheduleChangedMessage = it },
+                            buddyLifecycleDismissedMessage, { buddyLifecycleDismissedMessage = it },
+                            buddyLifecycleSchedulePreviewLabel = alarmLabel.takeIf { it.isNotBlank() },
+                            buddyLifecyclePreviewTime = selectedTime,
+                            buddyLifecyclePreviewDaysOfWeek = selectedDays,
                             confirmedNumbers, pendingCodes, { showBuddyDialog = true },
                             onSendInvite = { 
                                 viewModel.sendBuddyOptInRequest(buddyPhone, buddyName, buddyUserName)
@@ -1013,6 +1026,15 @@ fun WakeUpBuddyStep(
     onNotifyBuddyOnSetChange: (Boolean) -> Unit,
     notifyBuddyOnChangeOrDismiss: Boolean,
     onNotifyBuddyOnChangeOrDismissChange: (Boolean) -> Unit,
+    buddyLifecycleSetMessage: String,
+    onBuddyLifecycleSetMessageChange: (String) -> Unit,
+    buddyLifecycleScheduleChangedMessage: String,
+    onBuddyLifecycleScheduleChangedMessageChange: (String) -> Unit,
+    buddyLifecycleDismissedMessage: String,
+    onBuddyLifecycleDismissedMessageChange: (String) -> Unit,
+    buddyLifecycleSchedulePreviewLabel: String? = null,
+    buddyLifecyclePreviewTime: LocalTime,
+    buddyLifecyclePreviewDaysOfWeek: List<Int> = emptyList(),
     confirmedNumbers: Set<String>,
     pendingCodes: Set<String>,
     onBuddyClick: () -> Unit,
@@ -1129,6 +1151,13 @@ fun WakeUpBuddyStep(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             )
+            Text(
+                stringResource(R.string.buddy_opt_in_help_footer),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            )
         }
 
         WizardAdvancedSection {
@@ -1145,7 +1174,17 @@ fun WakeUpBuddyStep(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-            
+
+            Text(
+                stringResource(
+                    R.string.alarm_detail_buddy_trust_footer_lifecycle,
+                    stringResource(R.string.buddy_sms_trust_footer).trim()
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
             
             Text(
@@ -1201,6 +1240,98 @@ fun WakeUpBuddyStep(
                     }
                     Switch(checked = notifyBuddyOnChangeOrDismiss, onCheckedChange = onNotifyBuddyOnChangeOrDismissChange)
                 }
+
+                val lifecycleLbl = buddyLifecycleSchedulePreviewLabel
+                val previewHeadsUp = remember(
+                    buddyUserName, lifecycleLbl, buddyLifecyclePreviewTime, buddyLifecyclePreviewDaysOfWeek
+                ) {
+                    BuddyLifecycleSmsPreview.builtInHeadsUp(
+                        context,
+                        buddyUserName.takeIf { it.isNotBlank() },
+                        lifecycleLbl,
+                        buddyLifecyclePreviewTime,
+                        buddyLifecyclePreviewDaysOfWeek
+                    )
+                }
+                val previewChanged = remember(
+                    buddyUserName, lifecycleLbl, buddyLifecyclePreviewTime, buddyLifecyclePreviewDaysOfWeek
+                ) {
+                    BuddyLifecycleSmsPreview.builtInScheduleChanged(
+                        context,
+                        buddyUserName.takeIf { it.isNotBlank() },
+                        lifecycleLbl,
+                        buddyLifecyclePreviewTime,
+                        buddyLifecyclePreviewDaysOfWeek
+                    )
+                }
+                val previewDismissed = remember(buddyUserName, lifecycleLbl) {
+                    BuddyLifecycleSmsPreview.builtInDismissed(
+                        context,
+                        buddyUserName.takeIf { it.isNotBlank() },
+                        lifecycleLbl
+                    )
+                }
+                val headsUpShown = buddyLifecycleSetMessage.ifBlank { previewHeadsUp }
+                val scheduleShown = buddyLifecycleScheduleChangedMessage.ifBlank { previewChanged }
+                val dismissedShown = buddyLifecycleDismissedMessage.ifBlank { previewDismissed }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                Text(
+                    stringResource(R.string.buddy_lifecycle_templates_section_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    stringResource(R.string.buddy_lifecycle_templates_section_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = headsUpShown,
+                    onValueChange = { typed ->
+                        onBuddyLifecycleSetMessageChange(if (typed == previewHeadsUp) "" else typed)
+                    },
+                    label = { Text(stringResource(R.string.buddy_lifecycle_heads_up_message_label)) },
+                    supportingText = { Text(stringResource(R.string.buddy_lifecycle_heads_up_message_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Text(
+                    stringResource(R.string.buddy_lifecycle_templates_changed_dismiss_heading),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+
+                OutlinedTextField(
+                    value = scheduleShown,
+                    onValueChange = { typed ->
+                        onBuddyLifecycleScheduleChangedMessageChange(if (typed == previewChanged) "" else typed)
+                    },
+                    label = { Text(stringResource(R.string.buddy_lifecycle_schedule_changed_message_label)) },
+                    supportingText = { Text(stringResource(R.string.buddy_lifecycle_schedule_changed_message_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                OutlinedTextField(
+                    value = dismissedShown,
+                    onValueChange = { typed ->
+                        onBuddyLifecycleDismissedMessageChange(if (typed == previewDismissed) "" else typed)
+                    },
+                    label = { Text(stringResource(R.string.buddy_lifecycle_dismissed_message_label)) },
+                    supportingText = { Text(stringResource(R.string.buddy_lifecycle_dismissed_message_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(12.dp)
+                )
             }
         }
     }

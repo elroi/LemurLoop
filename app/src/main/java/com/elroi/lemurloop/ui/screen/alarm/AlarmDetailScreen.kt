@@ -41,13 +41,13 @@ import androidx.compose.runtime.*
 import com.elroi.lemurloop.ui.components.BuddySelectionDialog
 import com.elroi.lemurloop.ui.components.SettingHelpIcon
 import com.elroi.lemurloop.ui.components.VibrationPatternGallery
+import com.elroi.lemurloop.util.BuddyLifecycleSmsPreview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.elroi.lemurloop.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -87,6 +87,9 @@ fun AlarmDetailScreen(
     var buddyName      by remember { mutableStateOf<String>("") }
     var buddyUserName  by remember { mutableStateOf<String>("") }
     var buddyMessage   by remember { mutableStateOf<String>("") }
+    var buddyLifecycleSetMessage by remember { mutableStateOf<String>("") }
+    var buddyLifecycleScheduleChangedMessage by remember { mutableStateOf<String>("") }
+    var buddyLifecycleDismissedMessage by remember { mutableStateOf<String>("") }
     var buddyEnabled   by remember { mutableStateOf<Boolean>(false) }
     var buddyAlertDelay by remember { mutableStateOf<Int>(5) }
     var notifyBuddyOnSet by remember { mutableStateOf(false) }
@@ -123,7 +126,7 @@ fun AlarmDetailScreen(
 
     val hasChanges = remember(
         initialState, time, label, isGentleWake, buddyPhone, buddyName,
-        buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+        buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
         notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
         daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
         snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
@@ -133,7 +136,7 @@ fun AlarmDetailScreen(
     ) {
         val current = AlarmStateSnapshot(
             time, label, isGentleWake, buddyPhone, buddyName,
-            buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+            buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
             notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
             snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
@@ -260,6 +263,9 @@ fun AlarmDetailScreen(
                     buddyName     = it.buddyName ?: ""
                     buddyUserName = it.userName ?: ""
                     buddyMessage  = it.buddyMessage ?: ""
+                    buddyLifecycleSetMessage = it.buddyLifecycleSetMessage ?: ""
+                    buddyLifecycleScheduleChangedMessage = it.buddyLifecycleScheduleChangedMessage ?: ""
+                    buddyLifecycleDismissedMessage = it.buddyLifecycleDismissedMessage ?: ""
                     buddyEnabled  = !it.buddyPhoneNumber.isNullOrBlank()
                     buddyAlertDelay = it.buddyAlertDelayMinutes
                     notifyBuddyOnSet = it.notifyBuddyOnSet
@@ -290,7 +296,7 @@ fun AlarmDetailScreen(
                     if (initialState == null) {
                         initialState = AlarmStateSnapshot(
                             time, label, isGentleWake, buddyPhone, buddyName,
-                            buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+                            buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
                             notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
                             snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
@@ -324,7 +330,7 @@ fun AlarmDetailScreen(
             if (initialState == null) {
                 initialState = AlarmStateSnapshot(
                     time, label, isGentleWake, buddyPhone, buddyName,
-                    buddyUserName, buddyMessage, buddyEnabled, buddyAlertDelay,
+                    buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
                     notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                     daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
                     snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
@@ -424,6 +430,9 @@ fun AlarmDetailScreen(
                             buddyName = if (buddyEnabled) buddyName else null,
                             userName = if (buddyEnabled) buddyUserName else null,
                             buddyMessage = if (buddyEnabled) buddyMessage else null,
+                            buddyLifecycleSetMessage = if (buddyEnabled) buddyLifecycleSetMessage.ifBlank { null } else null,
+                            buddyLifecycleScheduleChangedMessage = if (buddyEnabled) buddyLifecycleScheduleChangedMessage.ifBlank { null } else null,
+                            buddyLifecycleDismissedMessage = if (buddyEnabled) buddyLifecycleDismissedMessage.ifBlank { null } else null,
                             buddyAlertDelayMinutes = buddyAlertDelay,
                             notifyBuddyOnSet = buddyEnabled && notifyBuddyOnSet,
                             notifyBuddyOnChangeOrDismiss = buddyEnabled && notifyBuddyOnChangeOrDismiss,
@@ -1030,7 +1039,16 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                     onNotifyBuddyOnSetChange      = { notifyBuddyOnSet = it },
                     notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss,
                     onNotifyBuddyOnChangeDismissChange = { notifyBuddyOnChangeOrDismiss = it },
-                    alarmLabel            = label.ifBlank { "your alarm" },
+                    buddyLifecycleSetMessage       = buddyLifecycleSetMessage,
+                    onBuddyLifecycleSetChange      = { buddyLifecycleSetMessage = it },
+                    buddyLifecycleScheduleChangedMessage = buddyLifecycleScheduleChangedMessage,
+                    onBuddyLifecycleScheduleChangedChange = { buddyLifecycleScheduleChangedMessage = it },
+                    buddyLifecycleDismissedMessage = buddyLifecycleDismissedMessage,
+                    onBuddyLifecycleDismissedChange = { buddyLifecycleDismissedMessage = it },
+                    alarmLabel                = label.ifBlank { "your alarm" },
+                    buddyLifecycleSchedulePreviewLabel = label.takeIf { it.isNotBlank() },
+                    buddyLifecyclePreviewTime       = time,
+                    buddyLifecyclePreviewDaysOfWeek = daysOfWeek,
                     confirmedBuddyNumbers = confirmedBuddies,
                     pendingBuddyCodes     = pendingCodes,
                     globalBuddies         = globalBuddies,
@@ -1059,6 +1077,9 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         buddyName             = if (buddyEnabled) buddyName.ifBlank { null } else null,
                         userName              = buddyUserName.ifBlank { null },
                         buddyMessage          = buddyMessage.ifBlank { null },
+                        buddyLifecycleSetMessage = if (buddyEnabled) buddyLifecycleSetMessage.ifBlank { null } else null,
+                        buddyLifecycleScheduleChangedMessage = if (buddyEnabled) buddyLifecycleScheduleChangedMessage.ifBlank { null } else null,
+                        buddyLifecycleDismissedMessage = if (buddyEnabled) buddyLifecycleDismissedMessage.ifBlank { null } else null,
                         daysOfWeek            = daysOfWeek,
                         mathDifficulty        = mathDifficulty,
                         smileToDismiss        = smileToDismiss,
@@ -1087,6 +1108,9 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         buddyName             = if (buddyEnabled) buddyName.ifBlank { null } else null,
                         userName              = buddyUserName.ifBlank { null },
                         buddyMessage          = buddyMessage.ifBlank { null },
+                        buddyLifecycleSetMessage = if (buddyEnabled) buddyLifecycleSetMessage.ifBlank { null } else null,
+                        buddyLifecycleScheduleChangedMessage = if (buddyEnabled) buddyLifecycleScheduleChangedMessage.ifBlank { null } else null,
+                        buddyLifecycleDismissedMessage = if (buddyEnabled) buddyLifecycleDismissedMessage.ifBlank { null } else null,
                         daysOfWeek            = daysOfWeek,
                         mathDifficulty        = mathDifficulty,
                         smileToDismiss        = smileToDismiss,
@@ -1250,7 +1274,17 @@ fun AccountabilityBuddyContent(
     onNotifyBuddyOnSetChange: (Boolean) -> Unit,
     notifyBuddyOnChangeOrDismiss: Boolean,
     onNotifyBuddyOnChangeDismissChange: (Boolean) -> Unit,
+    buddyLifecycleSetMessage: String,
+    onBuddyLifecycleSetChange: (String) -> Unit,
+    buddyLifecycleScheduleChangedMessage: String,
+    onBuddyLifecycleScheduleChangedChange: (String) -> Unit,
+    buddyLifecycleDismissedMessage: String,
+    onBuddyLifecycleDismissedChange: (String) -> Unit,
     alarmLabel: String,
+    /** Used for localized lifecycle SMS starter text when label is unset; misses card still uses [alarmLabel] for preview. */
+    buddyLifecycleSchedulePreviewLabel: String? = null,
+    buddyLifecyclePreviewTime: LocalTime,
+    buddyLifecyclePreviewDaysOfWeek: List<Int> = emptyList(),
     confirmedBuddyNumbers: Set<String>,
     pendingBuddyCodes: Set<String>,
     globalBuddies: Set<String>,
@@ -1318,12 +1352,10 @@ fun AccountabilityBuddyContent(
     }
 
 
-    val alarmDesc      = if (alarmLabel.isNotBlank()) "\"$alarmLabel\"" else "an alarm"
-    val whoText        = if (userName.isNotBlank()) userName else "Someone"
-    val defaultMessage = "⏰ $whoText missed $alarmDesc! Please check in — they might need a wake-up call."
-    val smsPreview     = if (customMessage.isNotBlank())
-        customMessage.replace("{name}", userName.ifBlank { "they" })
-    else defaultMessage
+    val whoForSms = userName.ifBlank { stringResource(R.string.buddy_invite_default_user) }
+    val alarmDescForSms = alarmLabel.takeIf { it.isNotBlank() } ?: stringResource(R.string.alarm_default_label)
+    val missedBuiltInBody = stringResource(R.string.buddy_missed_alarm_sms, whoForSms, alarmDescForSms)
+    val trustFooterLine = stringResource(R.string.buddy_sms_trust_footer).trim()
     val hasContact = contactName.isNotBlank()
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1437,16 +1469,27 @@ fun AccountabilityBuddyContent(
                 )
 
                 OutlinedTextField(
-                    value         = customMessage.ifBlank { defaultMessage },
+                    value = customMessage.ifBlank { missedBuiltInBody },
                     onValueChange = { typed ->
-                        onCustomMessageChange(if (typed == defaultMessage) "" else typed)
+                        onCustomMessageChange(if (typed == missedBuiltInBody) "" else typed)
                     },
-                    label         = { Text(stringResource(R.string.alarm_detail_buddy_field_message)) },
-                    supportingText = { Text(stringResource(R.string.alarm_detail_buddy_message_hint),
-                        style = MaterialTheme.typography.labelSmall) },
+                    label = { Text(stringResource(R.string.alarm_detail_buddy_field_message)) },
+                    supportingText = {
+                        Text(
+                            stringResource(R.string.alarm_detail_buddy_message_hint),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
                     minLines = 2,
-                    maxLines = 4,
-                    modifier = Modifier.fillMaxWidth()
+                    maxLines = 5,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Text(
+                    stringResource(R.string.alarm_detail_buddy_trust_footer_lifecycle, trustFooterLine),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Row(
@@ -1494,18 +1537,100 @@ fun AccountabilityBuddyContent(
                         }
                         Switch(checked = notifyBuddyOnChangeOrDismiss, onCheckedChange = onNotifyBuddyOnChangeDismissChange)
                     }
-                }
 
-                Surface(
-                    shape    = MaterialTheme.shapes.medium,
-                    color    = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.alarm_detail_buddy_message_preview), style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(smsPreview, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
+                    val lifecycleLbl = buddyLifecycleSchedulePreviewLabel
+                    val previewHeadsUp = remember(userName, lifecycleLbl, buddyLifecyclePreviewTime, buddyLifecyclePreviewDaysOfWeek) {
+                        BuddyLifecycleSmsPreview.builtInHeadsUp(
+                            context,
+                            userName.takeIf { it.isNotBlank() },
+                            lifecycleLbl,
+                            buddyLifecyclePreviewTime,
+                            buddyLifecyclePreviewDaysOfWeek
+                        )
                     }
+                    val previewChanged = remember(userName, lifecycleLbl, buddyLifecyclePreviewTime, buddyLifecyclePreviewDaysOfWeek) {
+                        BuddyLifecycleSmsPreview.builtInScheduleChanged(
+                            context,
+                            userName.takeIf { it.isNotBlank() },
+                            lifecycleLbl,
+                            buddyLifecyclePreviewTime,
+                            buddyLifecyclePreviewDaysOfWeek
+                        )
+                    }
+                    val previewDismissed = remember(userName, lifecycleLbl) {
+                        BuddyLifecycleSmsPreview.builtInDismissed(
+                            context,
+                            userName.takeIf { it.isNotBlank() },
+                            lifecycleLbl
+                        )
+                    }
+                    val headsUpShown = buddyLifecycleSetMessage.ifBlank { previewHeadsUp }
+                    val scheduleShown = buddyLifecycleScheduleChangedMessage.ifBlank { previewChanged }
+                    val dismissedShown = buddyLifecycleDismissedMessage.ifBlank { previewDismissed }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Text(
+                        stringResource(R.string.buddy_lifecycle_templates_section_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        stringResource(R.string.buddy_lifecycle_templates_section_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    OutlinedTextField(
+                        value = headsUpShown,
+                        onValueChange = { typed ->
+                            onBuddyLifecycleSetChange(if (typed == previewHeadsUp) "" else typed)
+                        },
+                        label = { Text(stringResource(R.string.buddy_lifecycle_heads_up_message_label)) },
+                        supportingText = { Text(stringResource(R.string.buddy_lifecycle_heads_up_message_hint)) },
+                        minLines = 2,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            stringResource(R.string.buddy_lifecycle_templates_changed_dismiss_heading),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = scheduleShown,
+                        onValueChange = { typed ->
+                            onBuddyLifecycleScheduleChangedChange(if (typed == previewChanged) "" else typed)
+                        },
+                        label = { Text(stringResource(R.string.buddy_lifecycle_schedule_changed_message_label)) },
+                        supportingText = { Text(stringResource(R.string.buddy_lifecycle_schedule_changed_message_hint)) },
+                        minLines = 2,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = dismissedShown,
+                        onValueChange = { typed ->
+                            onBuddyLifecycleDismissedChange(if (typed == previewDismissed) "" else typed)
+                        },
+                        label = { Text(stringResource(R.string.buddy_lifecycle_dismissed_message_label)) },
+                        supportingText = { Text(stringResource(R.string.buddy_lifecycle_dismissed_message_hint)) },
+                        minLines = 2,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
 
                 if (!hasSmsPermissions) {
@@ -1547,6 +1672,12 @@ fun AccountabilityBuddyContent(
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(R.string.buddy_opt_in_help_footer),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
                             )
                         }
                         if (!isConfirmed && pendingCode == null) {
@@ -1606,6 +1737,9 @@ private data class AlarmStateSnapshot(
     val buddyName: String,
     val buddyUserName: String,
     val buddyMessage: String,
+    val buddyLifecycleSetMessage: String,
+    val buddyLifecycleScheduleChangedMessage: String,
+    val buddyLifecycleDismissedMessage: String,
     val buddyEnabled: Boolean,
     val buddyAlertDelay: Int,
     val notifyBuddyOnSet: Boolean,

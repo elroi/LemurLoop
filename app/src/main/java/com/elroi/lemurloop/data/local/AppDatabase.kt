@@ -118,11 +118,37 @@ val MIGRATION_21_22 = object : Migration(21, 22) {
     }
 }
 
+val MIGRATION_22_23 = object : Migration(22, 23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN buddyLifecycleSetMessage TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE alarms ADD COLUMN buddyLifecycleFollowUpMessage TEXT DEFAULT NULL")
+    }
+}
+
+val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN buddyLifecycleScheduleChangedMessage TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE alarms ADD COLUMN buddyLifecycleDismissedMessage TEXT DEFAULT NULL")
+        db.execSQL(
+            """
+            UPDATE alarms SET buddyLifecycleScheduleChangedMessage = buddyLifecycleFollowUpMessage
+            WHERE buddyLifecycleFollowUpMessage IS NOT NULL
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            UPDATE alarms SET buddyLifecycleDismissedMessage = buddyLifecycleFollowUpMessage
+            WHERE buddyLifecycleFollowUpMessage IS NOT NULL
+            """.trimIndent()
+        )
+    }
+}
+
 @Database(entities = [
     AlarmEntity::class, 
     com.elroi.lemurloop.data.local.entity.SleepRecordEntity::class,
     com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class
-], version = 22, exportSchema = false)
+], version = 24, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

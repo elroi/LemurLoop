@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.elroi.lemurloop.R
+import com.elroi.lemurloop.domain.buddy.applyBuddyLifecyclePlaceholders
 import com.elroi.lemurloop.domain.model.Alarm
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -39,13 +40,13 @@ class AccountabilityManager @Inject constructor(
 
         val name = buddyName?.trim()?.takeIf { it.isNotBlank() } ?: context.getString(R.string.buddy_invite_default_name)
         val user = userName?.trim()?.takeIf { it.isNotBlank() } ?: context.getString(R.string.buddy_invite_default_user)
-        val message = context.getString(R.string.buddy_invite_sms, name, user, code)
+        val message = withBuddyTrustFooter(context.getString(R.string.buddy_invite_sms, name, user, code))
 
         sendSms(phoneNumber, message)
     }
 
     fun sendBuddyConfirmationSuccess(phoneNumber: String) {
-        val message = context.getString(R.string.buddy_confirm_sms)
+        val message = withBuddyTrustFooter(context.getString(R.string.buddy_confirm_sms))
         sendSms(phoneNumber, message)
     }
 
@@ -67,9 +68,10 @@ class AccountabilityManager @Inject constructor(
         val message = if (!customMessage.isNullOrBlank()) {
             customMessage.replace("{name}", userName ?: context.getString(R.string.buddy_missed_alarm_they))
         } else {
-            val alarmDesc = if (!alarmLabel.isNullOrBlank()) "\"$alarmLabel\"" else context.getString(R.string.buddy_missed_alarm_an_alarm)
+            val alarmDesc = alarmLabel?.trim()?.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.alarm_default_label)
             val whoText = if (!userName.isNullOrBlank()) userName else context.getString(R.string.buddy_invite_default_user)
-            context.getString(R.string.buddy_missed_alarm_sms, whoText, alarmDesc)
+            context.getString(R.string.buddy_missed_alarm_sms, whoText, alarmDesc).let(::withBuddyTrustFooter)
         }
 
         sendSms(phoneNumber, message)
@@ -77,36 +79,72 @@ class AccountabilityManager @Inject constructor(
 
     fun sendAlarmLifecycleSetMessage(phoneNumber: String, alarm: Alarm) {
         if (phoneNumber.isBlank() || !hasSendSmsPermission()) return
-        val who = alarm.userName?.trim()?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.buddy_invite_default_user)
-        val label = alarm.label?.trim()?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.alarm_default_label)
-        val timeStr = formatAlarmTime(alarm)
-        val repeatStr = formatAlarmRepeat(alarm)
-        val message = context.getString(R.string.buddy_lifecycle_alarm_set, who, label, timeStr, repeatStr)
+        val parts = buddyLifecycleSubstitution(alarm)
+        val custom = alarm.buddyLifecycleSetMessage?.trim()?.takeIf { it.isNotBlank() }
+        val usedBuiltIn = custom == null
+        val raw = if (custom != null) {
+            custom.applyBuddyLifecyclePlaceholders(parts.name, parts.label, parts.time, parts.repeat)
+        } else {
+            context.getString(R.string.buddy_lifecycle_alarm_set, parts.name, parts.label, parts.time, parts.repeat)
+        }
+        val message = if (usedBuiltIn) withBuddyTrustFooter(raw) else raw
         sendSms(phoneNumber, message)
     }
 
     fun sendAlarmLifecycleScheduleChangedMessage(phoneNumber: String, alarm: Alarm) {
         if (phoneNumber.isBlank() || !hasSendSmsPermission()) return
+        val parts = buddyLifecycleSubstitution(alarm)
+        val custom = alarm.buddyLifecycleScheduleChangedMessage?.trim()?.takeIf { it.isNotBlank() }
+        val usedBuiltIn = custom == null
+        val raw = if (custom != null) {
+            custom.applyBuddyLifecyclePlaceholders(parts.name, parts.label, parts.time, parts.repeat)
+        } else {
+            context.getString(
+                R.string.buddy_lifecycle_alarm_changed,
+                parts.name,
+                parts.label,
+                parts.time,
+                parts.repeat
+            )
+        }
+        val message = if (usedBuiltIn) withBuddyTrustFooter(raw) else raw
+        sendSms(phoneNumber, message)
+    }
+
+    fun sendAlarmLifecycleDismissedMessage(phoneNumber: String, alarm: Alarm) {
+        if (phoneNumber.isBlank() || !hasSendSmsPermission()) return
+        val parts = buddyLifecycleSubstitution(alarm)
+        val custom = alarm.buddyLifecycleDismissedMessage?.trim()?.takeIf { it.isNotBlank() }
+        val usedBuiltIn = custom == null
+        val raw = if (custom != null) {
+            custom.applyBuddyLifecyclePlaceholders(parts.name, parts.label, parts.time, parts.repeat)
+        } else {
+            context.getString(R.string.buddy_lifecycle_alarm_dismissed, parts.name, parts.label)
+        }
+        val message = if (usedBuiltIn) withBuddyTrustFooter(raw) else raw
+        sendSms(phoneNumber, message)
+    }
+
+    private data class BuddyLifecycleParts(
+        val name: String,
+        val label: String,
+        val time: String,
+        val repeat: String
+    )
+
+    private fun buddyLifecycleSubstitution(alarm: Alarm): BuddyLifecycleParts {
         val who = alarm.userName?.trim()?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.buddy_invite_default_user)
         val label = alarm.label?.trim()?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.alarm_default_label)
         val timeStr = formatAlarmTime(alarm)
         val repeatStr = formatAlarmRepeat(alarm)
-        val message = context.getString(R.string.buddy_lifecycle_alarm_changed, who, label, timeStr, repeatStr)
-        sendSms(phoneNumber, message)
+        return BuddyLifecycleParts(who, label, timeStr, repeatStr)
     }
 
-    fun sendAlarmLifecycleDismissedMessage(phoneNumber: String, alarm: Alarm) {
-        if (phoneNumber.isBlank() || !hasSendSmsPermission()) return
-        val who = alarm.userName?.trim()?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.buddy_invite_default_user)
-        val label = alarm.label?.trim()?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.alarm_default_label)
-        val message = context.getString(R.string.buddy_lifecycle_alarm_dismissed, who, label)
-        sendSms(phoneNumber, message)
+    private fun withBuddyTrustFooter(body: String): String {
+        val footer = context.getString(R.string.buddy_sms_trust_footer).trim()
+        return if (footer.isEmpty()) body else "$body\n$footer"
     }
 
     private fun hasSendSmsPermission(): Boolean {

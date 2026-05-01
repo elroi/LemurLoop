@@ -1,7 +1,8 @@
 package com.elroi.lemurloop.ui.components
 
-import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+
 
 @Composable
 fun BuddySelectionDialog(
@@ -36,34 +37,25 @@ fun BuddySelectionDialog(
     var showManualEntry by remember { mutableStateOf(startInManualMode || globalBuddies.isEmpty()) }
 
     val contactPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickContact()
-    ) { uri: Uri? ->
-        uri ?: return@rememberLauncherForActivityResult
-        context.contentResolver.query(uri, arrayOf(ContactsContract.Contacts.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) name = cursor.getString(0) ?: ""
-        }
-        context.contentResolver.query(uri, arrayOf(ContactsContract.Contacts._ID), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val contactId = cursor.getString(0)
-                context.contentResolver.query(
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                    arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                    "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-                    arrayOf(contactId), null
-                )?.use { phoneCursor ->
-                    if (phoneCursor.moveToFirst()) {
-                        phone = phoneCursor.getString(0) ?: ""
-                        showManualEntry = true
-                    }
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = result.data?.data
+            uri ?: return@rememberLauncherForActivityResult
+            context.contentResolver.query(
+                uri,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    name = cursor.getString(0) ?: ""
+                    phone = cursor.getString(1) ?: ""
+                    showManualEntry = true
                 }
             }
         }
-    }
-
-    val contactPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) contactPickerLauncher.launch(null)
     }
 
     AlertDialog(
@@ -77,11 +69,10 @@ fun BuddySelectionDialog(
                 if (showManualEntry) {
                     OutlinedButton(
                         onClick = {
-                            val hasPermission = ContextCompat.checkSelfPermission(
-                                context, Manifest.permission.READ_CONTACTS
-                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                            if (hasPermission) contactPickerLauncher.launch(null)
-                            else contactPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            val intent = Intent(Intent.ACTION_PICK).apply {
+                                type = ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE
+                            }
+                            contactPickerLauncher.launch(intent)
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
