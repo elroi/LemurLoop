@@ -34,6 +34,7 @@ description: Guides LemurLoop's UI, screen, and settings patterns. Use when impl
   - Destructive or irreversible actions should include clear labeling and, where appropriate, confirmation steps.
   - Settings search should use a static, explicit list of searchable items; when adding a new setting that should be searchable, also add its corresponding `SettingSearchItem` entry.
   - To make a setting searchable, add an entry to the central settings search registry with its title, description, section, and navigation/behavior target so that search remains consistent as the app evolves.
+  - Google Cloud **Gemini** and **Cloud Text-to-Speech** require **separate** API keys and project setup; see `docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md` when adding or explaining those settings.
 
 - **About / privacy surfaces**
   - Use **BuildConfig** (VERSION_SUFFIX, BUILD_DATE) and **PackageManager** for version info (see AboutScreen.kt). Do not hardcode version strings in the UI.

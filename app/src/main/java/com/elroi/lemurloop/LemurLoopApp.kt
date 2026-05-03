@@ -8,7 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.work.Configuration
 import com.google.firebase.FirebaseApp
-import com.elroi.lemurloop.domain.worker.BriefingWorker
+import com.elroi.lemurloop.domain.manager.SettingsManager
 import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -32,6 +32,9 @@ class LemurLoopApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var settingsManager: SettingsManager
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -65,8 +68,31 @@ class LemurLoopApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        seedDevApiKeysFromBuildConfig()
         FirebaseApp.initializeApp(this)
         setupCrashHandler()
+    }
+
+    /**
+     * Debug builds only: copies keys from root `local.properties` (via BuildConfig) into DataStore
+     * when the corresponding setting is still empty, so device installs pick up dev keys after install.
+     * Does not overwrite keys already saved in settings.
+     */
+    private fun seedDevApiKeysFromBuildConfig() {
+        if (!BuildConfig.DEBUG) return
+        val gemini = BuildConfig.DEV_GEMINI_API_KEY.trim()
+        val tts = BuildConfig.DEV_CLOUD_TTS_API_KEY.trim()
+        if (gemini.isEmpty() && tts.isEmpty()) return
+        runBlocking(Dispatchers.IO) {
+            if (gemini.isNotEmpty() && settingsManager.geminiApiKeyFlow.first().isBlank()) {
+                settingsManager.saveGeminiApiKey(gemini)
+                settingsManager.saveIsCloudAiEnabled(true)
+            }
+            if (tts.isNotEmpty() && settingsManager.cloudTtsApiKeyFlow.first().isBlank()) {
+                settingsManager.saveCloudTtsApiKey(tts)
+                settingsManager.saveIsCloudTtsEnabled(true)
+            }
+        }
     }
 
     private fun setupCrashHandler() {

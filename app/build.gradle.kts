@@ -62,6 +62,9 @@ android {
 
         buildConfigField("String", "BUILD_DATE", "\"${getBuildDate()}\"")
         buildConfigField("String", "VERSION_SUFFIX", "\"-stable\"")
+        // Filled from root `local.properties` on debug only (see `buildTypes.debug`); release stays empty.
+        buildConfigField("String", "DEV_GEMINI_API_KEY", "\"\"")
+        buildConfigField("String", "DEV_CLOUD_TTS_API_KEY", "\"\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -79,6 +82,20 @@ android {
     }
 
     buildTypes {
+        debug {
+            val localFile = rootProject.file("local.properties")
+            val escapeForBuildConfig: (String) -> String = { s ->
+                s.replace("\\", "\\\\").replace("\"", "\\\"")
+            }
+            val localProps = Properties()
+            if (localFile.exists()) {
+                localFile.inputStream().use { localProps.load(it) }
+            }
+            val geminiDev = escapeForBuildConfig(localProps.getProperty("GEMINI_API_KEY") ?: "")
+            val ttsDev = escapeForBuildConfig(localProps.getProperty("CLOUD_TTS_API_KEY") ?: "")
+            buildConfigField("String", "DEV_GEMINI_API_KEY", "\"$geminiDev\"")
+            buildConfigField("String", "DEV_CLOUD_TTS_API_KEY", "\"$ttsDev\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

@@ -50,3 +50,7 @@ Welcome to **LemurLoop**, your accountability partner and AI-powered wake-up ass
 - **Cloud AI**: Google Generative AI SDK (Gemini), Google Cloud Text-to-Speech
 - **Analytics**: Firebase Analytics + Remote Config
 - **Async**: Kotlin Coroutines + Flow
+
+## Google Cloud API keys (Gemini + TTS)
+
+LemurLoop uses **separate** API keys for Gemini and for Cloud Text-to-Speech. Setup, project enablement, and why Google Cloud does not allow combining both APIs on one restricted key are documented in [docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md](docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md).
