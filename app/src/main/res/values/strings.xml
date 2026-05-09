@@ -689,7 +689,11 @@
     <string name="new_alarm_option_detailed">Detailed editor</string>
     <string name="lemur_chat_title">New alarm</string>
     <string name="lemur_chat_onboarding_title">Chat with Lemur</string>
-    <string name="lemur_chat_onboarding_body">Describe when to wake up in plain language. Lemur can set time, label, and repeat days here. For math challenges, buddy alerts, briefing, and more, use the wizard or detailed editor.</string>
+    <string name="lemur_chat_opener_bubble">Hi—I am %1$s. Tell me when to wake up, or pick a suggestion below.</string>
+    <string name="lemur_chat_onboarding_intro">Say when to wake up, or tap a suggestion—Lemur sets time, label, and repeat here.</string>
+    <string name="lemur_chat_onboarding_detail">Describe when to wake up in plain language. Lemur can set time, label, and repeat days here. For math challenges, buddy alerts, briefing, and more, use the wizard or detailed editor.</string>
+    <string name="lemur_chat_onboarding_learn_more">Learn more</string>
+    <string name="lemur_chat_onboarding_show_less">Show less</string>
     <string name="lemur_chat_starter_chip_a11y">Suggested prompt: %1$s</string>
     <string name="lemur_chat_privacy_hint_short">Don’t paste passwords or sensitive info. Gemini processes your messages.</string>
     <string name="lemur_chat_input_hint">Describe when you want to wake up…</string>

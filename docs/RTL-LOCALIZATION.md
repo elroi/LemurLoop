@@ -31,7 +31,7 @@ Run the app with **App language** set to **Hebrew** (Settings → App language �
 | **Alarm list** | (1) Title and settings icon on correct side for RTL. (2) FAB (add alarm) on correct side. (3) List items align RTL; swipe-to-delete feels natural (swipe left or right to reveal delete). (4) Hebrew strings. |
 | **Alarm detail (create/edit)** | (1) Top bar: back and title RTL. (2) Form fields and labels RTL. (3) Save and other actions on correct side. (4) Hebrew strings. |
 | **Alarm creation wizard** (all steps) | (1) Back/forward arrows point correctly. (2) Step content and buttons RTL. (3) Hebrew strings. |
-| **Lemur chat (new alarm)** | (1) Onboarding title/body and starter chips in Hebrew. (2) Layout RTL (onboarding shortcuts, chip row, input bar, message bubbles, preview hint). (3) Preview card advanced hint in Hebrew. (4) No clipped chip labels. |
+| **Lemur chat (new alarm)** | (1) Local opener bubble, onboarding intro/detail, “Learn more” / “Show less”, starter chips in Hebrew. (2) Layout RTL (onboarding shortcuts, chip row, input bar, message bubbles, preview hint). (3) Preview card advanced hint in Hebrew. (4) No clipped chip labels. |
 | **Settings** | (1) Screen title and back RTL. (2) List and subscreens (Help, About, Diagnostic logs, language selector) RTL. (3) Hebrew strings. |
 | **Alarm firing (AlarmActivity)** | (1) Snooze, dismiss, and challenge UI RTL when language is Hebrew. (2) Math problem can remain LTR. (3) Hebrew strings for buttons and labels. |
 | **Wake-up check (WakeupCheckActivity)** | (1) Layout RTL. (2) Hebrew strings. |

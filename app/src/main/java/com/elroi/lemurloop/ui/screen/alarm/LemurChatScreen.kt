@@ -1,5 +1,8 @@
 package com.elroi.lemurloop.ui.screen.alarm
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,17 +77,10 @@ private val LemurChatComposerBottomInset = 120.dp
 
 /**
  * LazyColumn `item` count before `items(state.messages)`, when [showOnboarding] is true.
- * Must match each gated `item { }` above the message list (onboarding row, starter chips row).
- * PR2: pass `includeLocalAssistantBubble = true` and insert the bubble as the first gated item (+1).
+ * Must match each gated `item { }` above the message list (local opener bubble, onboarding, starter chips).
  */
-private fun leadingItemCountBeforeMessages(
-    showOnboarding: Boolean,
-    includeLocalAssistantBubble: Boolean = false,
-): Int = when {
-    !showOnboarding -> 0
-    includeLocalAssistantBubble -> 3
-    else -> 2
-}
+private fun leadingItemCountBeforeMessages(showOnboarding: Boolean): Int =
+    if (showOnboarding) 3 else 0
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +96,7 @@ fun LemurChatScreen(
     val assistantName = stringResource(R.string.assistant_name)
     val missingKeyMsg = stringResource(R.string.lemur_chat_missing_key_message)
     val showOnboarding = state.messages.isEmpty()
-    val leadingBeforeMessages =
-        leadingItemCountBeforeMessages(showOnboarding = showOnboarding, includeLocalAssistantBubble = false)
+    val leadingBeforeMessages = leadingItemCountBeforeMessages(showOnboarding = showOnboarding)
 
     LaunchedEffect(state.messages.size, state.isSending, showOnboarding) {
         if (state.messages.isNotEmpty()) {
@@ -174,6 +169,16 @@ fun LemurChatScreen(
             )
         ) {
             if (showOnboarding) {
+                item(key = "local_opener") {
+                    val openerText = stringResource(R.string.lemur_chat_opener_bubble, assistantName)
+                    ChatBubble(
+                        message = ChatMessageUi(
+                            id = "local_opener",
+                            isUser = false,
+                            text = openerText
+                        )
+                    )
+                }
                 item(key = "onboarding") {
                     LemurChatOnboarding(
                         onOpenWizard = onNavigateToWizard,
@@ -221,6 +226,10 @@ private fun LemurChatOnboarding(
     onOpenWizard: () -> Unit,
     onOpenDetailed: () -> Unit
 ) {
+    var detailExpanded by remember { mutableStateOf(false) }
+    val learnMore = stringResource(R.string.lemur_chat_onboarding_learn_more)
+    val showLess = stringResource(R.string.lemur_chat_onboarding_show_less)
+    val toggleLabel = if (detailExpanded) showLess else learnMore
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -232,11 +241,29 @@ private fun LemurChatOnboarding(
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = stringResource(R.string.lemur_chat_onboarding_body),
+            text = stringResource(R.string.lemur_chat_onboarding_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
+        TextButton(
+            onClick = { detailExpanded = !detailExpanded },
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Text(toggleLabel)
+        }
+        AnimatedVisibility(
+            visible = detailExpanded,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Text(
+                text = stringResource(R.string.lemur_chat_onboarding_detail),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
