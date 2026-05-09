@@ -689,7 +689,11 @@
     <string name="new_alarm_option_detailed">עורך מפורט</string>
     <string name="lemur_chat_title">שעון חדש</string>
     <string name="lemur_chat_onboarding_title">צ\'אט עם למור</string>
-    <string name="lemur_chat_onboarding_body">תארו מתי להתעורר בשפה חופשית. למור יכול להגדיר כאן שעה, תווית וימי חזרה. לאתגר מתמטיקה, התראות לגיבוי, תדריך בוקר ועוד—השתמשו באשף או בעורך המפורט.</string>
+    <string name="lemur_chat_opener_bubble">היי—אני %1$s. תארו מתי להתעורר או בחרו הצעה למטה.</string>
+    <string name="lemur_chat_onboarding_intro">כתבו מתי להתעורר או בחרו הצעה—למור מגדיר כאן שעה, תווית וימי חזרה.</string>
+    <string name="lemur_chat_onboarding_detail">תארו מתי להתעורר בשפה חופשית. למור יכול להגדיר כאן שעה, תווית וימי חזרה. לאתגר מתמטיקה, התראות לגיבוי, תדריך בוקר ועוד—השתמשו באשף או בעורך המפורט.</string>
+    <string name="lemur_chat_onboarding_learn_more">מידע נוסף</string>
+    <string name="lemur_chat_onboarding_show_less">הצג פחות</string>
     <string name="lemur_chat_starter_chip_a11y">הצעה: %1$s</string>
     <string name="lemur_chat_privacy_hint_short">אל תדביקו סיסמאות או מידע רגיש. Gemini מעבד את ההודעות שלך.</string>
     <string name="lemur_chat_input_hint">תאר מתי להתעורר…</string>
