@@ -54,18 +54,21 @@ fun NewAlarmBottomSheet(
             SheetOptionRow(
                 icon = { Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(28.dp)) },
                 title = stringResource(R.string.new_alarm_option_chat),
+                supportingText = stringResource(R.string.new_alarm_option_chat_subtitle),
                 onClick = onChat
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SheetOptionRow(
                 icon = { Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(28.dp)) },
                 title = stringResource(R.string.new_alarm_option_wizard),
+                supportingText = null,
                 onClick = onWizard
             )
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             SheetOptionRow(
                 icon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(28.dp)) },
                 title = stringResource(R.string.new_alarm_option_detailed),
+                supportingText = null,
                 onClick = onDetailed
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -77,6 +80,7 @@ fun NewAlarmBottomSheet(
 private fun SheetOptionRow(
     icon: @Composable () -> Unit,
     title: String,
+    supportingText: String?,
     onClick: () -> Unit
 ) {
     Row(
@@ -87,10 +91,15 @@ private fun SheetOptionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         icon()
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(start = 16.dp)
-        )
+        Column(modifier = Modifier.padding(start = 16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            if (supportingText != null) {
+                Text(
+                    text = supportingText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
