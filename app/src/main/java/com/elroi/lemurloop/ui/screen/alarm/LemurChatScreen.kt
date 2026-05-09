@@ -5,13 +5,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +36,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,7 +49,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.elroi.lemurloop.R
@@ -57,6 +64,27 @@ import com.elroi.lemurloop.ui.viewmodel.LemurChatUiState
 import com.elroi.lemurloop.ui.viewmodel.LemurChatViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+
+/**
+ * Extra bottom [LazyColumn] inset so thread content clears [ChatInputBar] in the scaffold bottom bar.
+ * Approximate upper bound for OutlinedTextField (up to four lines) + send row + padding; tune in QA if clipped.
+ * Keep in sync when [ChatInputBar] layout changes.
+ */
+private val LemurChatComposerBottomInset = 120.dp
+
+/**
+ * LazyColumn `item` count before `items(state.messages)`, when [showOnboarding] is true.
+ * Must match each gated `item { }` above the message list (onboarding row, starter chips row).
+ * PR2: pass `includeLocalAssistantBubble = true` and insert the bubble as the first gated item (+1).
+ */
+private fun leadingItemCountBeforeMessages(
+    showOnboarding: Boolean,
+    includeLocalAssistantBubble: Boolean = false,
+): Int = when {
+    !showOnboarding -> 0
+    includeLocalAssistantBubble -> 3
+    else -> 2
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,10 +99,13 @@ fun LemurChatScreen(
     val listState = rememberLazyListState()
     val assistantName = stringResource(R.string.assistant_name)
     val missingKeyMsg = stringResource(R.string.lemur_chat_missing_key_message)
+    val showOnboarding = state.messages.isEmpty()
+    val leadingBeforeMessages =
+        leadingItemCountBeforeMessages(showOnboarding = showOnboarding, includeLocalAssistantBubble = false)
 
-    LaunchedEffect(state.messages.size, state.isSending) {
+    LaunchedEffect(state.messages.size, state.isSending, showOnboarding) {
         if (state.messages.isNotEmpty()) {
-            listState.scrollToItem(state.messages.lastIndex)
+            listState.scrollToItem(leadingBeforeMessages + state.messages.lastIndex)
         }
     }
 
@@ -120,6 +151,9 @@ fun LemurChatScreen(
         },
         bottomBar = {
             ChatInputBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 text = state.inputText,
                 enabled = !state.isSending,
                 onTextChange = viewModel::onInputChange,
@@ -134,8 +168,31 @@ fun LemurChatScreen(
                 .padding(horizontal = 12.dp),
             state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            contentPadding = PaddingValues(
+                top = 8.dp,
+                bottom = 8.dp + LemurChatComposerBottomInset
+            )
         ) {
+            if (showOnboarding) {
+                item(key = "onboarding") {
+                    LemurChatOnboarding(
+                        onOpenWizard = onNavigateToWizard,
+                        onOpenDetailed = { onNavigateToDetailed(null) }
+                    )
+                }
+                item(key = "starter_chips") {
+                    val starterLabels = stringArrayResource(R.array.lemur_chat_starter_labels)
+                    val starterPrompts = stringArrayResource(R.array.lemur_chat_starter_prompts)
+                    LemurChatStarterChips(
+                        labels = starterLabels,
+                        prompts = starterPrompts,
+                        chipsEnabled = !state.isSending,
+                        onPromptSelected = { text ->
+                            viewModel.sendStarterMessage(text, assistantName, missingKeyMsg)
+                        }
+                    )
+                }
+            }
             items(state.messages, key = { it.id }) { msg ->
                 ChatBubble(message = msg)
             }
@@ -155,6 +212,83 @@ fun LemurChatScreen(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LemurChatOnboarding(
+    onOpenWizard: () -> Unit,
+    onOpenDetailed: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.lemur_chat_onboarding_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.semantics { heading() }
+        )
+        Text(
+            text = stringResource(R.string.lemur_chat_onboarding_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TextButton(onClick = onOpenWizard) {
+                Text(stringResource(R.string.lemur_chat_overflow_wizard))
+            }
+            TextButton(onClick = onOpenDetailed) {
+                Text(stringResource(R.string.lemur_chat_overflow_detailed))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LemurChatStarterChips(
+    labels: Array<String>,
+    prompts: Array<String>,
+    chipsEnabled: Boolean,
+    onPromptSelected: (String) -> Unit
+) {
+    val count = minOf(labels.size, prompts.size)
+    if (count == 0) return
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 4.dp)
+    ) {
+        items(count, key = { i -> "$i-${labels[i]}" }) { index ->
+            val labelText = labels[index]
+            val fullPrompt = prompts[index]
+            val chipA11y = stringResource(R.string.lemur_chat_starter_chip_a11y, fullPrompt)
+            SuggestionChip(
+                onClick = { onPromptSelected(fullPrompt) },
+                label = {
+                    Text(
+                        text = labelText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                },
+                enabled = chipsEnabled,
+                modifier = Modifier
+                    .widthIn(max = 200.dp)
+                    .heightIn(min = 48.dp)
+                    .semantics { contentDescription = chipA11y }
+            )
         }
     }
 }
@@ -249,8 +383,15 @@ private fun AlarmDraftPreviewCard(
                 }
             }
             Text(
+                text = stringResource(R.string.lemur_chat_preview_advanced_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            Text(
                 text = draft.time.format(timeFmt),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(top = 8.dp)
             )
             draft.label?.let {
                 Text(text = it, style = MaterialTheme.typography.bodyLarge)
@@ -292,12 +433,11 @@ private fun ChatInputBar(
     text: String,
     enabled: Boolean,
     onTextChange: (String) -> Unit,
-    onSend: () -> Unit
+    onSend: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
+        modifier = modifier.padding(8.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {

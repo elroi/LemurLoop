@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="lemur_chat_starter_prompts">
+        <item>שעון בימי חול ב־7:00, מיום שני עד שישי.</item>
+        <item>שעון חד־פעמי ב־6:30 עם התווית אימון בוקר.</item>
+        <item>שעון בימי חול ב־8:15 עם התווית נסיעות.</item>
+        <item>עזרו לי לבחור שעת התעוררות לימי חול.</item>
+    </string-array>
+    <string-array name="lemur_chat_starter_labels">
+        <item>ימי חול 7:00</item>
+        <item>חד־פעמי 6:30</item>
+        <item>נסיעות 8:15</item>
+        <item>בחירת שעה</item>
+    </string-array>
+</resources>

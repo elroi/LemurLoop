@@ -4,6 +4,16 @@ object LemurChatPrompts {
 
     const val JSON_MARKER = "<<<JSON>>>"
 
+    /**
+     * English-only context for the model: what chat can set vs what needs wizard/detail.
+     * Kept short to limit tokens; must stay in sync for streaming and repair prompts.
+     */
+    internal fun appCapabilitiesSnippet(): String = """
+App limits (mention when users ask for more than basic scheduling):
+- You may only propose hour, minute, optional label, and days_of_week (1–7) or one-time via propose_alarm.
+- Math challenge to dismiss, buddy/SMS alerts, smile-to-dismiss, morning briefing and TTS, smart wakeup and wake-up check, evasive snooze, and detailed sound/vibration options require the detailed alarm editor or guided wizard—tell the user to open those in the app.
+""".trimIndent()
+
     fun buildStreamingPrompt(
         assistantName: String,
         historyTurns: List<Pair<String, String>>,
@@ -16,6 +26,8 @@ object LemurChatPrompts {
         val repair = repairHint?.let { "\nFix the previous response: $it\n" } ?: ""
         return """
 You are "$assistantName", the conversational assistant in the LemurLoop alarm clock app.
+
+${appCapabilitiesSnippet()}
 
 Help the user configure ONE alarm: local time (hour 0-23, minute 0-59), optional label, repeating weekdays or one-time.
 Weekdays use ISO day-of-week: Monday=1 through Sunday=7. Use an empty array [] for days_of_week only when the user clearly wants a one-time (non-repeating) alarm.
@@ -46,6 +58,8 @@ USER: $userMessage
         validationHint: String
     ): String = """
 You are "$assistantName" for LemurLoop. Your previous reply could not be parsed or validated.
+
+${appCapabilitiesSnippet()}
 
 Previous output:
 $rawBrokenOutput

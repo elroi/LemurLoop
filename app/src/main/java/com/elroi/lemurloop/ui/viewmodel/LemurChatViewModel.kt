@@ -100,21 +100,50 @@ class LemurChatViewModel @Inject constructor(
     fun sendUserMessage(contextAssistantName: String, missingKeyMessage: String) {
         val text = _uiState.value.inputText.trim()
         if (text.isEmpty() || _uiState.value.isSending) return
+        sendUserTurn(
+            userText = text,
+            clearInputAfterSend = true,
+            contextAssistantName = contextAssistantName,
+            missingKeyMessage = missingKeyMessage
+        )
+    }
+
+    fun sendStarterMessage(
+        starterText: String,
+        contextAssistantName: String,
+        missingKeyMessage: String
+    ) {
+        val text = starterText.trim()
+        if (text.isEmpty() || _uiState.value.isSending) return
+        sendUserTurn(
+            userText = text,
+            clearInputAfterSend = false,
+            contextAssistantName = contextAssistantName,
+            missingKeyMessage = missingKeyMessage
+        )
+    }
+
+    private fun sendUserTurn(
+        userText: String,
+        clearInputAfterSend: Boolean,
+        contextAssistantName: String,
+        missingKeyMessage: String
+    ) {
         val keyOk = _uiState.value.geminiKeyPresent
         if (!keyOk) {
-            val userMsg = ChatMessageUi(id = newId(), isUser = true, text = text)
+            val userMsg = ChatMessageUi(id = newId(), isUser = true, text = userText)
             val assistantMsg = ChatMessageUi(id = newId(), isUser = false, text = missingKeyMessage)
             _uiState.update {
                 it.copy(
                     messages = it.messages + userMsg + assistantMsg,
-                    inputText = ""
+                    inputText = if (clearInputAfterSend) "" else it.inputText
                 )
             }
             return
         }
 
         val priorHistory = buildPriorHistory()
-        val userMsg = ChatMessageUi(id = newId(), isUser = true, text = text)
+        val userMsg = ChatMessageUi(id = newId(), isUser = true, text = userText)
         val assistantId = newId()
         _uiState.update {
             it.copy(
@@ -124,7 +153,7 @@ class LemurChatViewModel @Inject constructor(
                     text = "",
                     isStreaming = true
                 ),
-                inputText = "",
+                inputText = if (clearInputAfterSend) "" else it.inputText,
                 isSending = true,
                 streamingAssistantId = assistantId
             )

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Full text sent to Gemini when the user taps the matching starter chip (same order as labels). -->
+    <string-array name="lemur_chat_starter_prompts">
+        <item>Set a weekday alarm at 7:00, Monday through Friday.</item>
+        <item>One-time alarm at 6:30 with label Morning workout.</item>
+        <item>Weekday alarm at 8:15 labeled Commute.</item>
+        <item>Help me pick a wake-up time for weekdays.</item>
+    </string-array>
+    <!-- Short labels shown on chips (same length as starter_prompts). -->
+    <string-array name="lemur_chat_starter_labels">
+        <item>Weekdays 7:00</item>
+        <item>One-time 6:30</item>
+        <item>Commute 8:15</item>
+        <item>Pick a time</item>
+    </string-array>
+</resources>
