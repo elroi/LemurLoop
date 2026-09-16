@@ -1,0 +1,14 @@
+---
+description: New-machine setup, Firebase package match, and Gemini vs Cloud TTS project mismatch
+alwaysApply: true
+---
+
+# Local dev and Google Cloud
+
+- **New computer:** clone is not enough. Gitignored: `local.properties` (`GEMINI_API_KEY`, `CLOUD_TTS_API_KEY`), `app/src/google-services.json`, release signing. Gemini chat and Cloud Text-to-Speech (TTS) do not use Firebase.
+- **Firebase:** `google-services.json` must include `package_name` **`com.elroi.lemurloop`**. The old AlarmPal client (`com.elroi.alarmpal`) alone will not initialize this app. Do not hand-edit `package_name`; register the Android app in Firebase and re-download.
+- **Two keys, two Google Cloud projects.** A Gemini (AI Studio) key and a TTS key are not interchangeable. Console “API enabled” on project A does not help if the app key belongs to project B.
+- **TTS 403 `BILLING_DISABLED`:** the numeric **project number in the error** is source of truth (IAM → Settings). Compare it to the project you billed. Empty TTS metrics on the billed project means traffic never arrived there. Activate / reopen billing on the **wrong** project will not fix it. Paste a key created on the billed TTS project (e.g. LemurLoop TTS).
+- **Expired free-trial billing accounts cannot be reopened.** Upgrade/Activate a full billing account, then **link that project** to it.
+- **Do not trust Settings Intelligence Health “AI Voice ok”** as Cloud TTS proof. That chip copies the **AI Brain** status. Prove TTS with Test API Key / log `Cloud TTS synthesized audio` (not HTTP 403).
+- **16 KB page-size dialog** on a debug install is Play-alignment of native libs (MediaPipe, ML Kit, etc.), not Firebase. Ignore for sideload; AGP 8.2 is a later Play-store upgrade.

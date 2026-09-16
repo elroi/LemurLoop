@@ -13,6 +13,14 @@ This document captures setup lessons for **LemurLoop**, which uses **two separat
 
 Do not assume one credential covers both. The app has **two fields** for a reason.
 
+**The TTS key must belong to the Google Cloud project you billed.** “Cloud Text-to-Speech API = Enabled” on **LemurLoop TTS** does nothing if Settings still has a key from another project. Logcat `Cloud TTS HTTP 403` with `BILLING_DISABLED` names the **project number the key actually uses**. Compare that to **IAM & Admin → Settings → Project number** on the project you opened. If they differ, create/copy a key on the billed TTS project and paste it into **Google Cloud TTS API Key** (leave Gemini as-is). Empty TTS metrics on the billed project mean the app never called it.
+
+Expired **free-trial** billing accounts cannot be reopened. Activate a full billing account, then **link that TTS project** to it. Enabling billing on the wrong project will not clear a 403 for the key’s project.
+
+Settings **Intelligence Health → AI Voice ok** is **not** a Cloud TTS test; it copies AI Brain status. Use **Test API Key** under the TTS field (or log `Cloud TTS synthesized audio`).
+
+Firebase (`google-services.json`) is a third, optional product. After the AlarmPal → LemurLoop rename, the JSON must include Android client **`com.elroi.lemurloop`**, not only `com.elroi.alarmpal`.
+
 ---
 
 ## 2. Gemini API key
