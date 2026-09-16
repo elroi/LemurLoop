@@ -23,14 +23,21 @@ Welcome to **LemurLoop**, your accountability partner and AI-powered wake-up ass
 3. **Run**: Press the green Play button.
 4. **Permissions**: Grant requested permissions (Notification, Alarm, SMS, Calendar, Camera) on the first run.
 
+## New computer
+
+Git does not include machine-local files. After clone:
+
+1. Android Studio Gradle JDK must be **17 or 21**, not the bundled JBR if it is Java 25 (this repo is Gradle 8.5). Prefer a Temurin 21 install; do not pick an IDE entry named `jbr-21` whose path is still `…/jbr/Contents/Home`.
+2. Optional debug keys in gitignored `local.properties`: `GEMINI_API_KEY`, `CLOUD_TTS_API_KEY` — see [docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md](docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md). Or paste keys in **Settings → Intelligence → API Credentials**.
+3. Optional Firebase: `app/src/google-services.json` with `package_name` **`com.elroi.lemurloop`** (not only the old `com.elroi.alarmpal` client). Analytics / Remote Config / on-device model download; not required for Gemini chat.
+
 ## Running Unit Tests
 
-- **JDK requirement**: JDK 17+ is recommended.
+- **JDK requirement**: JDK 17+ is recommended (max **21** for Gradle 8.5).
 - **Gradle JDK configuration**:
-  - By default, `gradle.properties` points `org.gradle.java.home` at Android Studio's bundled JBR.
-  - If that path does not exist on your machine or CI, either:
-    - Update `org.gradle.java.home` to a valid local JDK install, or
-    - Comment it out and rely on a correctly configured `JAVA_HOME`.
+  - Do **not** pin `org.gradle.java.home` to Android Studio’s bundled JBR (it may be Java 25).
+  - Use Android Studio’s Gradle JDK setting (Temurin 17/21) or `JAVA_HOME`.
+  - CI uses JDK 17 and strips any `org.gradle.java.home` line (see `.github/workflows/unit-tests.yml`).
 - **Run JVM unit tests**:
   - From the command line: `./gradlew :app:testDebugUnitTest`
   - From Android Studio: use the Gradle tool window or run tests from the gutter in `app/src/test/java`.
