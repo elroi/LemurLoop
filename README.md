@@ -9,10 +9,10 @@ Welcome to **LemurLoop**, your accountability partner and AI-powered wake-up ass
 - **Persona Voices**: Briefings are read aloud via Google Cloud TTS with selectable persona voices.
 - **Accountability Buddy**: Texts a friend via SMS if you oversleep. Buddy opt-in uses a 4-digit confirmation code; alert delay is customizable (default: 5 minutes).
 - **Smart Dismissal Challenges**: Solve a math problem (3 difficulty levels) or smile for the camera (ML Kit face detection) to dismiss.
-- **Evasive Snooze**: Optionally requires you to get up and move before snooze is granted.
+- **Evasive Snooze**: After a set number of snoozes, the snooze button starts moving around the screen — faster with each extra snooze — so it's harder to hit.
 - **Smart Wakeup Verification**: Multi-step check after dismissal to confirm you're truly awake.
 - **Smart Alarm Suggestions**: Suggests alarms based on your calendar.
-- **Sleep Tracking**: Monitors restlessness via accelerometer throughout the night.
+- **Sleep Tracking** *(planned, not yet implemented)*: Monitor restlessness via accelerometer throughout the night.
 - **Bilingual (EN/HE)**: Full Hebrew localization with RTL layout support.
 - **Diagnostic Logging**: Built-in debug trail stored in the local database for troubleshooting.
 
