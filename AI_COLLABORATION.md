@@ -1,6 +1,8 @@
 ## AI Collaboration in LemurLoop
 
-This project uses multiple AI assistants (for example Cursor and AntiGravity). Git is the single source of truth, and all assistants must work against the same repository state.
+This project uses multiple AI assistants (Cursor, Claude Code, Codex and Antigravity). Git is the single source of truth, and all assistants must work against the same repository state.
+
+Shared agent instructions and the rules for where lessons are recorded live in [AGENTS.md](AGENTS.md); in-progress handoffs live in [docs/agents/OPEN-THREADS.md](docs/agents/OPEN-THREADS.md).
 
 ### General Principles
 - **One source of truth**: Only the committed code in this repo is authoritative. Avoid long-lived local changes that never get pushed.
