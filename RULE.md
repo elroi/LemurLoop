@@ -20,10 +20,9 @@
   - No layer may depend on test code.
 
 - **Current exceptions (to be refactored over time)**
-  - **SettingsViewModel** uses `AppDatabase` directly in `wipeAllData()`. Preferred: a domain use case or “wipe” repository interface implemented in `data`.
-  - **DiagnosticLogsViewModel** uses `DiagnosticLogDao` and `DiagnosticLogEntity` directly. Preferred: a domain abstraction (e.g. diagnostic logs repository) implemented in `data`.
-  - **Domain → data**: `DiagnosticLogger` (domain/manager) uses `DiagnosticLogDao` and entities. Preferred: logging behind a domain interface implemented in `data`.
   - **Android-aware domain**: Some components in `domain/manager` (e.g. `SettingsManager`) use Android `Context`, DataStore, or other platform APIs. This is a pragmatic exception; prefer moving persistence and platform details into the `data` layer over time so domain stays as use cases and business rules.
+
+  `SettingsViewModel` (wipe-all) and `DiagnosticLogsViewModel`/`DiagnosticLogger` no longer depend on `AppDatabase`/`DiagnosticLogDao` directly — they go through `domain/repository/AppDataRepository` and `DiagnosticLogRepository`, implemented in `data`. See "Completed" in docs/REFACTORING_PLAN.md.
 
   See **docs/REFACTORING_PLAN.md** for the long-term plan to remove these exceptions.
 

@@ -8,7 +8,7 @@ This document tracks refactors that align the codebase with the architecture and
 
 **Goal:** ViewModels and UI layer must not depend on concrete `data` types (DAOs, entities, `AppDatabase`). They should depend only on `domain` (use cases or repository interfaces).
 
-### 1.1 SettingsViewModel – Wipe All Data
+### 1.1 SettingsViewModel – Wipe All Data — ✅ Done (see Completed)
 
 - **Current:** `SettingsViewModel` injects `AppDatabase` and calls `database.alarmDao()`, `database.sleepRecordDao()`, and `settingsManager.clearAll()` in `wipeAllData()`.
 - **Target:**
@@ -17,7 +17,7 @@ This document tracks refactors that align the codebase with the architecture and
   - Inject the use case (or repository) into `SettingsViewModel` and replace direct `AppDatabase` usage with a call to that abstraction.
 - **Benefit:** UI no longer depends on `data`; wipe behavior is testable via domain interface; single place to extend if new data sources are added.
 
-### 1.2 DiagnosticLogsViewModel – Diagnostic Logs Repository
+### 1.2 DiagnosticLogsViewModel – Diagnostic Logs Repository — ✅ Done (see Completed)
 
 - **Current:** `DiagnosticLogsViewModel` injects `DiagnosticLogDao` and `DiagnosticLogEntity`; exposes `List<DiagnosticLogEntity>` to the UI.
 - **Target:**
@@ -32,7 +32,7 @@ This document tracks refactors that align the codebase with the architecture and
 
 **Goal:** Domain layer must not depend on `data` implementation types (DAOs, entities). Persistence and logging should be behind interfaces implemented in `data`.
 
-### 2.1 DiagnosticLogger – Logging Interface
+### 2.1 DiagnosticLogger – Logging Interface — ✅ Done (see Completed)
 
 - **Current:** `DiagnosticLogger` (in `domain/manager`) uses `DiagnosticLogDao` and `DiagnosticLogEntity` directly.
 - **Target:**
@@ -106,3 +106,9 @@ Items 1 and 2 can be done together (diagnostic logs). Item 3 is independent. Ite
 
 - When a refactor is completed, move it to a “Completed” section at the bottom of this file with a short note and PR or commit reference.
 - Revisit this plan when adding new features that touch the same layers (e.g. new settings or new data to wipe).
+
+## Completed
+
+- **1.1 SettingsViewModel – Wipe All Data**: `SettingsViewModel.wipeAllData()` now calls `AppDataRepository.wipeAll()` (domain interface); `AppDataRepositoryImpl` (data) owns the `AppDatabase`/`SettingsManager` calls. Commit `bdc687b` ("refactor(diagnostics): add repository and app data wipe abstraction").
+- **1.2 DiagnosticLogsViewModel – Diagnostic Logs Repository**: `DiagnosticLogsViewModel` now depends on `DiagnosticLogRepository` (domain) and the domain `DiagnosticLog` model instead of `DiagnosticLogDao`/`DiagnosticLogEntity`. Commit `bdc687b`.
+- **2.1 DiagnosticLogger – Logging Interface**: `DiagnosticLogger` (domain/manager) now depends on `DiagnosticLogRepository` (domain interface) instead of `DiagnosticLogDao`/`DiagnosticLogEntity` directly. Commit `bdc687b`.
