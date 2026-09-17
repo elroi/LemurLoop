@@ -23,6 +23,7 @@ LemurLoop is a single-module Android alarm clock app (`:app`, package `com.elroi
 - `local.properties`: `GEMINI_API_KEY`, `CLOUD_TTS_API_KEY` — injected into `BuildConfig.DEV_*` for **debug builds only** (release stays empty). Keys can also be pasted in Settings → Intelligence → API Credentials.
 - `app/src/google-services.json`: optional. The Google Services plugin is applied only when this file exists, so builds and CI work without it. Its `package_name` must be `com.elroi.lemurloop` (the legacy `com.elroi.alarmpal` client alone won't initialize). Gemini chat and Cloud Text-to-Speech (TTS) do not need Firebase.
 - `.signing.properties` + `lemurloop.jks`: release signing.
+- **Google Play developer verification:** `com.elroi.lemurloop` and its signing key are registered and verified in Google Play Console (verified March 2026 for the September 30, 2026 deadline). Console inbox notifications are static broadcasts and do not auto-dismiss when satisfied; the **Android developer verification** page (showing `Registered`) is the source of truth. Register separately only if distributing APKs outside Google Play.
 - Gemini and Cloud TTS use **separate keys, often in separate Google Cloud projects**. A TTS 403 `BILLING_DISABLED` names the project number that actually received the call — compare it to the billed project. The "AI Voice ok" chip in Intelligence Health mirrors the AI Brain status and does not prove TTS works. See [docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md](docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md).
 
 ## Architecture
