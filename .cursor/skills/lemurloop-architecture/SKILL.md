@@ -25,7 +25,8 @@ description: Captures LemurLoop's Android architecture, package responsibilities
   - Test code must not be depended on by production code.
 
 - **Current exceptions (see RULE.md; refactor over time)**
-  - SettingsViewModel uses AppDatabase in `wipeAllData()`; DiagnosticLogsViewModel uses DiagnosticLogDao/Entity directly; DiagnosticLogger (domain) uses data-layer DAO/entity. Some domain managers (e.g. SettingsManager) are Android-aware (Context, DataStore). Prefer introducing domain abstractions and moving persistence to `data` when touching these areas.
+  - Some domain managers (e.g. SettingsManager) are Android-aware (Context, DataStore). Prefer introducing domain abstractions and moving persistence to `data` when touching these areas.
+  - (Resolved: SettingsViewModel and DiagnosticLogsViewModel/DiagnosticLogger now go through `AppDataRepository`/`DiagnosticLogRepository` domain interfaces instead of `AppDatabase`/DAOs directly.)
 
 - **Placing new code**
   - Put business rules or decisions (what should happen) in `domain`.
