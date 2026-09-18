@@ -144,11 +144,17 @@ val MIGRATION_23_24 = object : Migration(23, 24) {
     }
 }
 
+val MIGRATION_24_25 = object : Migration(24, 25) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE alarms ADD COLUMN aiPersona TEXT DEFAULT NULL")
+    }
+}
+
 @Database(entities = [
-    AlarmEntity::class, 
+    AlarmEntity::class,
     com.elroi.lemurloop.data.local.entity.SleepRecordEntity::class,
     com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class
-], version = 24, exportSchema = false)
+], version = 25, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

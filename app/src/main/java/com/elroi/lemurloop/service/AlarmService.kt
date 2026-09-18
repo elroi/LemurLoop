@@ -312,13 +312,14 @@ class AlarmService : Service() {
             com.elroi.lemurloop.domain.manager.BriefingStateManager.startGenerating()
             ttsManager.initializeIfNeeded()
             precomputedBriefing = serviceScope.async {
-                briefingGenerator.generateBriefing()
+                briefingGenerator.generateBriefing(currentAlarmId)
             }
             precomputedCloudAudio = serviceScope.async {
                 try {
-                    val script = precomputedBriefing?.await() ?: briefingGenerator.generateBriefing()
+                    val script = precomputedBriefing?.await() ?: briefingGenerator.generateBriefing(currentAlarmId)
                     val filtered = BriefingUtils.filterBriefingForTts(script)
-                    val persona = settingsManager.alarmDefaultsFlow.first().aiPersona
+                    val persona = currentAlarmId?.let { repository.getAlarmById(it)?.aiPersona }
+                        ?: settingsManager.alarmDefaultsFlow.first().aiPersona
                     val uiLanguage = java.util.Locale.getDefault().language
                     cloudTtsEngine.synthesizeToFile(filtered, persona, uiLanguage)
                 } catch (e: Exception) {
@@ -437,7 +438,7 @@ class AlarmService : Service() {
             // Start the briefing retrieval and UI update IMMEDIATELY, don't wait for ringtone fade-out
             ttsJob = serviceScope.launch {
                 Log.d("TTS_DEBUG", "Awaiting pre-computed briefing...")
-                val briefing = precomputedBriefing?.await() ?: briefingGenerator.generateBriefing()
+                val briefing = precomputedBriefing?.await() ?: briefingGenerator.generateBriefing(currentAlarmId)
                 Log.d("TTS_DEBUG", "Briefing ready: $briefing")
                 
                 com.elroi.lemurloop.domain.manager.BriefingStateManager.onBriefingReady(briefing)

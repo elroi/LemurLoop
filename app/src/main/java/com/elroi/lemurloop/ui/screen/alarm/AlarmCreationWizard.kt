@@ -177,10 +177,6 @@ fun AlarmCreationWizard(
     }
 
     fun handleNext() {
-        if (currentPage == 1) {
-            viewModel.updateAlarmDefaults(defaultSettings.copy(aiPersona = selectedPersona))
-        }
-
         if (currentPage < totalPages - 1) {
             currentPage++
         } else {
@@ -221,7 +217,8 @@ fun AlarmCreationWizard(
                 vibrationPattern = vibrationPattern,
                 vibrationCrescendoStartGapSeconds = vibrationCrescendoStartGapSeconds,
                 notifyBuddyOnSet = notifyBuddyOnSet,
-                notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss
+                notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss,
+                aiPersona = selectedPersona
             )
             try {
                 viewModel.addAlarm(newAlarm)

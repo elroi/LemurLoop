@@ -46,5 +46,7 @@ data class Alarm(
     val wakeupCheckTimeoutSeconds: Int = 60,
     val briefingTimeoutSeconds: Int = 30,
     val vibrationPattern: String = "BASIC", // BASIC, PULSE, HEARTBEAT, STACCATO
-    val vibrationCrescendoStartGapSeconds: Int = 30
+    val vibrationCrescendoStartGapSeconds: Int = 30,
+    /** Per-alarm override of the global AI persona (COACH/COMEDIAN/ZEN/HYPEMAN/SURPRISE). Null = use the global default. */
+    val aiPersona: String? = null
 )

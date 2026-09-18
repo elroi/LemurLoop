@@ -105,6 +105,8 @@ fun AlarmDetailScreen(
     var isSnoozeEnabled by remember { mutableStateOf<Boolean>(defaultSettings.isSnoozeEnabled) }
     var crescendoDuration by remember { mutableIntStateOf(defaultSettings.crescendoDurationMinutes) } // minutes, 0=instant
     var isBriefingEnabled by remember { mutableStateOf<Boolean>(defaultSettings.isBriefingEnabled) }
+    /** Null = follow the global default persona; non-null pins this alarm to a specific persona. */
+    var aiPersona      by remember { mutableStateOf<String?>(null) }
     var isTtsEnabled   by remember { mutableStateOf<Boolean>(defaultSettings.isTtsEnabled) }
     var isEvasiveSnooze by remember { mutableStateOf<Boolean>(defaultSettings.isEvasiveSnooze) }
     var evasiveSnoozesBeforeMoving by remember { mutableIntStateOf(defaultSettings.evasiveSnoozesBeforeMoving) }
@@ -130,7 +132,7 @@ fun AlarmDetailScreen(
         buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
         notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
         daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
-        snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
+        snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, aiPersona, isTtsEnabled, isEvasiveSnooze,
         evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
         wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds,
         vibrationPattern, vibrationCrescendoStartGapSeconds
@@ -140,7 +142,7 @@ fun AlarmDetailScreen(
             buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
             notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
-            snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
+            snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, aiPersona, isTtsEnabled, isEvasiveSnooze,
             evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
             wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds,
             vibrationPattern, vibrationCrescendoStartGapSeconds
@@ -283,6 +285,7 @@ fun AlarmDetailScreen(
                     isSnoozeEnabled = it.isSnoozeEnabled
                     crescendoDuration = it.crescendoDurationMinutes
                     isBriefingEnabled = it.isBriefingEnabled
+                    aiPersona      = it.aiPersona
                     isTtsEnabled   = it.isTtsEnabled
                     isEvasiveSnooze = it.isEvasiveSnooze
                     evasiveSnoozesBeforeMoving = it.evasiveSnoozesBeforeMoving
@@ -301,7 +304,7 @@ fun AlarmDetailScreen(
                             buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
                             notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                             daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
-                            snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
+                            snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, aiPersona, isTtsEnabled, isEvasiveSnooze,
                             evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
                             wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds,
                             vibrationPattern, vibrationCrescendoStartGapSeconds
@@ -343,7 +346,7 @@ fun AlarmDetailScreen(
                     buddyUserName, buddyMessage, buddyLifecycleSetMessage, buddyLifecycleScheduleChangedMessage, buddyLifecycleDismissedMessage, buddyEnabled, buddyAlertDelay,
                     notifyBuddyOnSet, notifyBuddyOnChangeOrDismiss,
                     daysOfWeek, mathDifficulty, mathProblemCount, mathGraduallyIncreaseDifficulty, mathEnabled, smileToDismiss, smileFallbackMethod,
-                    snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, isTtsEnabled, isEvasiveSnooze,
+                    snoozeDuration, isSnoozeEnabled, crescendoDuration, isBriefingEnabled, aiPersona, isTtsEnabled, isEvasiveSnooze,
                     evasiveSnoozesBeforeMoving, isSmoothFadeOut, isVibrate, isSoundEnabled, soundUri, isSmartWakeupEnabled,
                     wakeupCheckDelayMinutes, wakeupCheckTimeoutSeconds, briefingTimeoutSeconds,
                     vibrationPattern, vibrationCrescendoStartGapSeconds
@@ -1007,7 +1010,53 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                             }
                             Switch(checked = isTtsEnabled, onCheckedChange = { isTtsEnabled = it })
                         }
-                        
+
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            Text(stringResource(R.string.alarm_detail_persona_title), fontWeight = FontWeight.Medium)
+                            Text(stringResource(R.string.alarm_detail_persona_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            val personaOptions = listOf<Pair<String, String?>>(
+                                stringResource(R.string.alarm_detail_persona_global_default) to null,
+                                stringResource(R.string.persona_name_comedian) to "COMEDIAN",
+                                stringResource(R.string.persona_name_zen) to "ZEN",
+                                stringResource(R.string.persona_name_hypeman) to "HYPEMAN",
+                                stringResource(R.string.persona_name_coach) to "COACH",
+                                stringResource(R.string.persona_name_surprise) to "SURPRISE"
+                            )
+                            var personaMenuExpanded by remember { mutableStateOf(false) }
+                            val selectedPersonaLabel = personaOptions.find { it.second == aiPersona }?.first
+                                ?: personaOptions[0].first
+
+                            ExposedDropdownMenuBox(
+                                expanded = personaMenuExpanded,
+                                onExpandedChange = { personaMenuExpanded = !personaMenuExpanded },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                OutlinedTextField(
+                                    value = selectedPersonaLabel,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = personaMenuExpanded) },
+                                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = personaMenuExpanded,
+                                    onDismissRequest = { personaMenuExpanded = false }
+                                ) {
+                                    personaOptions.forEach { (optionLabel, optionValue) ->
+                                        DropdownMenuItem(
+                                            text = { Text(optionLabel) },
+                                            onClick = {
+                                                aiPersona = optionValue
+                                                personaMenuExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text(stringResource(R.string.settings_briefing_timeout), style = MaterialTheme.typography.bodySmall)
@@ -1095,6 +1144,7 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         smileToDismiss        = smileToDismiss,
                         snoozeDurationMinutes = snoozeDuration,
                         isBriefingEnabled     = isBriefingEnabled,
+                        aiPersona             = aiPersona,
                         isTtsEnabled          = isTtsEnabled,
                         isEvasiveSnooze       = isEvasiveSnooze,
                         evasiveSnoozesBeforeMoving = evasiveSnoozesBeforeMoving,
@@ -1126,6 +1176,7 @@ Text(stringResource(R.string.alarm_detail_briefing_title), fontWeight = FontWeig
                         smileToDismiss        = smileToDismiss,
                         snoozeDurationMinutes = snoozeDuration,
                         isBriefingEnabled     = isBriefingEnabled,
+                        aiPersona             = aiPersona,
                         isTtsEnabled          = isTtsEnabled,
                         isEvasiveSnooze       = isEvasiveSnooze,
                         evasiveSnoozesBeforeMoving = evasiveSnoozesBeforeMoving,
@@ -1765,6 +1816,7 @@ private data class AlarmStateSnapshot(
     val isSnoozeEnabled: Boolean,
     val crescendoDuration: Int,
     val isBriefingEnabled: Boolean,
+    val aiPersona: String?,
     val isTtsEnabled: Boolean,
     val isEvasiveSnooze: Boolean,
     val evasiveSnoozesBeforeMoving: Int,

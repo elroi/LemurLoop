@@ -427,6 +427,9 @@
     <string name="alarm_detail_briefing_title">Wake-up Briefing</string>
     <string name="alarm_detail_briefing_desc">Personalized AI briefing when you wake up</string>
     <string name="alarm_detail_tts_desc">Speak the briefing out loud</string>
+    <string name="alarm_detail_persona_title">AI Persona</string>
+    <string name="alarm_detail_persona_desc">Override the global persona for this alarm only</string>
+    <string name="alarm_detail_persona_global_default">Global Default</string>
     <string name="alarm_detail_btn_save_alarm">Save alarm</string>
     <string name="alarm_detail_set_time">Set time</string>
     <string name="alarm_detail_sms_permission_title">📱 SMS Permission Required</string>

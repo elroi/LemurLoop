@@ -42,4 +42,19 @@ class BriefingGeneratorUnitTest {
         // 37°C = 98.6°F
         assertEquals("98.6°F", formatFahrenheit(37.0))
     }
+
+    /**
+     * Per-alarm AI persona override: an alarm's own aiPersona field wins over the app-wide
+     * default persona when set, and falls back to the default when the alarm has no override
+     * (either because alarmId was null, e.g. a settings preview, or the alarm's aiPersona is null).
+     */
+    @Test
+    fun `resolvePersona prefers the alarm override when present`() {
+        assertEquals("ZEN", BriefingGenerator.resolvePersona(alarmOverride = "ZEN", globalDefault = "COACH"))
+    }
+
+    @Test
+    fun `resolvePersona falls back to the global default when there is no override`() {
+        assertEquals("COACH", BriefingGenerator.resolvePersona(alarmOverride = null, globalDefault = "COACH"))
+    }
 }

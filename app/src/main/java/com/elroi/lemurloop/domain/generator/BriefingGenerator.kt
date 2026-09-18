@@ -8,6 +8,7 @@ import com.elroi.lemurloop.domain.manager.BriefingStateManager
 import com.elroi.lemurloop.domain.manager.CalendarManager
 import com.elroi.lemurloop.domain.manager.GeminiManager
 import com.elroi.lemurloop.domain.manager.LocalLLMManager
+import com.elroi.lemurloop.domain.repository.AlarmRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -33,38 +34,41 @@ class BriefingGenerator @Inject constructor(
     private val settingsManager: SettingsManager,
     private val geminiManager: GeminiManager,
     private val scriptBuilder: BriefingScriptBuilder,
-    private val localLLMManager: LocalLLMManager
+    private val localLLMManager: LocalLLMManager,
+    private val alarmRepository: AlarmRepository
 ) {
     private val generationLock = Mutex()
 
-    suspend fun generateBriefing(): String = withContext(Dispatchers.IO) {
+    /** [alarmId] resolves that alarm's persona override, if any; null uses the global default persona. */
+    suspend fun generateBriefing(alarmId: String? = null): String = withContext(Dispatchers.IO) {
         val cached = getCachedBriefing()
         if (cached != null) {
             android.util.Log.d("BriefingGenerator", "Using cached briefing script.")
             return@withContext cached
         }
-        
+
         val script = generationLock.withLock {
             val postLockCached = getCachedBriefing()
             if (postLockCached != null) return@withLock postLockCached
-            
+
             BriefingStateManager.updateStatus("Activating LemurLoop brain cells...")
-            val generated = generateFullBriefing()
-            
+            val generated = generateFullBriefing(alarmId)
+
             generated
         }
-        
+
         if (script != null && script.isNotBlank() && !script.startsWith("ERROR:")) {
             return@withContext script.trim()
         }
-        
+
         BriefingStateManager.updateStatus("AI is sleeping... using standard backup script.")
         "Rise and shine! Your day is waiting for you."
     }
 
-    suspend fun refreshBriefing(): String? = withContext(Dispatchers.IO) {
+    /** [alarmId] resolves that alarm's persona override, if any; null uses the global default persona. */
+    suspend fun refreshBriefing(alarmId: String? = null): String? = withContext(Dispatchers.IO) {
         generationLock.withLock {
-            generateFullBriefing()
+            generateFullBriefing(alarmId)
         }
     }
 
@@ -78,7 +82,7 @@ class BriefingGenerator @Inject constructor(
         return if (isFresh) script else null
     }
 
-    private suspend fun generateFullBriefing(): String? {
+    private suspend fun generateFullBriefing(alarmId: String? = null): String? {
         val isAutoLocation = settingsManager.isAutoLocationFlow.first()
         var location = settingsManager.locationFlow.first().ifBlank { "New York" }
         val isCelsius = settingsManager.isCelsiusFlow.first()
@@ -190,7 +194,8 @@ class BriefingGenerator @Inject constructor(
         val isCloudEnabled = settingsManager.isCloudAiEnabledFlow.first()
         val preferredTier = settingsManager.preferredAiTierFlow.first()
         val fallbackOrder = settingsManager.aiFallbackOrderFlow.first()
-        val persona = settings.aiPersona
+        val alarmPersonaOverride = alarmId?.let { alarmRepository.getAlarmById(it)?.aiPersona }
+        val persona = resolvePersona(alarmPersonaOverride, settings.aiPersona)
         
         var aiScript: String? = null
         var aiSuccess = false
@@ -384,6 +389,12 @@ Rules: keep all facts exactly as written. Same number of paragraphs. No new info
 SCRIPT:
 $draftBriefing
 REWRITTEN:""".trimIndent()
+    }
+
+    companion object {
+        /** The per-alarm persona override wins when set; otherwise the global default persona applies. */
+        internal fun resolvePersona(alarmOverride: String?, globalDefault: String): String =
+            alarmOverride ?: globalDefault
     }
 
     private fun getWeatherDescription(code: Int): String {

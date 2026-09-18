@@ -100,19 +100,20 @@ class AndroidAlarmScheduler(
             
             val workRequest = OneTimeWorkRequestBuilder<BriefingWorker>()
                 .setInitialDelay(Duration.ofMillis(delayMillis))
+                .setInputData(androidx.work.workDataOf(com.elroi.lemurloop.domain.worker.BriefingWorker.KEY_ALARM_ID to alarm.id))
                 .build()
-                
+
             workManager.enqueueUniqueWork(
                 "briefing_${alarm.id}",
                 ExistingWorkPolicy.REPLACE,
                 workRequest
             )
-            
+
             // Proactively trigger generation if it's "now" or "soon" (< 30 mins)
             if (delayMillis == 0L) {
                 android.util.Log.d("AndroidAlarmScheduler", "Alarm is imminent. Triggering immediate briefing generation...")
                 scope.launch {
-                    briefingGenerator.refreshBriefing()
+                    briefingGenerator.refreshBriefing(alarm.id)
                 }
             }
         }
