@@ -47,7 +47,8 @@ object AppModule {
                 com.elroi.lemurloop.data.local.MIGRATION_20_21,
                 com.elroi.lemurloop.data.local.MIGRATION_21_22,
                 com.elroi.lemurloop.data.local.MIGRATION_22_23,
-                com.elroi.lemurloop.data.local.MIGRATION_23_24
+                com.elroi.lemurloop.data.local.MIGRATION_23_24,
+                com.elroi.lemurloop.data.local.MIGRATION_24_25
             )
             .build()
     }

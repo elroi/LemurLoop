@@ -77,7 +77,9 @@ data class AlarmEntity(
     @Deprecated("Superseded by buddyLifecycleScheduleChangedMessage and buddyLifecycleDismissedMessage.")
     val buddyLifecycleFollowUpMessage: String? = null,
     val buddyLifecycleScheduleChangedMessage: String? = null,
-    val buddyLifecycleDismissedMessage: String? = null
+    val buddyLifecycleDismissedMessage: String? = null,
+    @ColumnInfo(defaultValue = "NULL")
+    val aiPersona: String? = null
 ) {
     fun toDomain(): Alarm {
         return Alarm(
@@ -118,7 +120,8 @@ data class AlarmEntity(
             notifyBuddyOnChangeOrDismiss = notifyBuddyOnChangeOrDismiss,
             buddyLifecycleSetMessage = buddyLifecycleSetMessage,
             buddyLifecycleScheduleChangedMessage = buddyLifecycleScheduleChangedMessage,
-            buddyLifecycleDismissedMessage = buddyLifecycleDismissedMessage
+            buddyLifecycleDismissedMessage = buddyLifecycleDismissedMessage,
+            aiPersona = aiPersona
             // isVibrateOnly is ignored in domain
             // buddyLifecycleFollowUpMessage is legacy; domain uses split schedule/dismiss fields
         )
@@ -167,7 +170,8 @@ data class AlarmEntity(
                 buddyLifecycleSetMessage = alarm.buddyLifecycleSetMessage,
                 buddyLifecycleFollowUpMessage = null,
                 buddyLifecycleScheduleChangedMessage = alarm.buddyLifecycleScheduleChangedMessage,
-                buddyLifecycleDismissedMessage = alarm.buddyLifecycleDismissedMessage
+                buddyLifecycleDismissedMessage = alarm.buddyLifecycleDismissedMessage,
+                aiPersona = alarm.aiPersona
             )
         }
     }

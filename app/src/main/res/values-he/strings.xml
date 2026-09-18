@@ -429,6 +429,9 @@
     <string name="alarm_detail_briefing_title">בריפינג השכמה</string>
     <string name="alarm_detail_briefing_desc">בריפינג AI אישי כשאתה מתעורר</string>
     <string name="alarm_detail_tts_desc">הקראת הבריפינג בקול</string>
+    <string name="alarm_detail_persona_title">אישיות AI</string>
+    <string name="alarm_detail_persona_desc">החלפת האישיות הגלובלית עבור שעון זה בלבד</string>
+    <string name="alarm_detail_persona_global_default">ברירת המחדל הגלובלית</string>
     <string name="alarm_detail_btn_save_alarm">שמור שעון</string>
     <string name="alarm_detail_set_time">הגדר שעה</string>
     <string name="alarm_detail_sms_permission_title">📱 נדרשת הרשאת SMS</string>

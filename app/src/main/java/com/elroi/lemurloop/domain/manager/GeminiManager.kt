@@ -2,14 +2,10 @@ package com.elroi.lemurloop.domain.manager
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
-import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.BlockThreshold
-import com.google.ai.client.generativeai.type.HarmCategory
-import com.google.ai.client.generativeai.type.SafetySetting
-import com.google.ai.client.generativeai.type.content
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -81,27 +77,13 @@ class GeminiManager @Inject constructor(
     fun generateContentStreaming(prompt: String): Flow<String> = flow {
         val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
         if (apiKey.isBlank()) return@flow
-        
-        val config = getWorkingModelConfig(apiKey) ?: return@flow
-        
-        val safetySettings = listOf(
-            SafetySetting(HarmCategory.HARASSMENT, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.HATE_SPEECH, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.SEXUALLY_EXPLICIT, BlockThreshold.ONLY_HIGH),
-            SafetySetting(HarmCategory.DANGEROUS_CONTENT, BlockThreshold.ONLY_HIGH)
-        )
 
-        val model = GenerativeModel(
-            modelName = config.first,
-            apiKey = apiKey,
-            safetySettings = safetySettings
-        )
+        val config = getWorkingModelConfig(apiKey) ?: return@flow
 
         try {
             var fullText = ""
-            model.generateContentStream(prompt).collect { chunk ->
-                val text = chunk.text ?: ""
-                fullText += text
+            streamWithKey(apiKey, prompt, config.first, config.second).collect { delta ->
+                fullText += delta
                 emit(fullText)
             }
         } catch (e: Exception) {
@@ -109,6 +91,45 @@ class GeminiManager @Inject constructor(
             throw e
         }
     }
+
+    /**
+     * Streams via the raw HTTP streamGenerateContent SSE endpoint rather than the
+     * com.google.ai.client.generativeai SDK: that SDK (pinned at 0.9.0) predates newer
+     * model names like gemini-2.5-flash and silently yields no chunks for them, while the
+     * same model already works through generateWithKey's raw HTTP path below.
+     */
+    private fun streamWithKey(
+        apiKey: String,
+        prompt: String,
+        modelName: String,
+        version: String
+    ): Flow<String> = flow {
+        val apiUrl = "https://generativelanguage.googleapis.com/$version/models/$modelName:streamGenerateContent?alt=sse&key=$apiKey"
+        val url = URL(apiUrl)
+        val conn = url.openConnection() as HttpURLConnection
+        conn.requestMethod = "POST"
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.doOutput = true
+        conn.outputStream.use { it.write(buildGenerateContentRequestBody(prompt).toString().toByteArray(Charsets.UTF_8)) }
+
+        val responseCode = conn.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            val errorStream = conn.errorStream?.bufferedReader()?.use { it.readText() }
+            val errorMessage = try {
+                JSONObject(errorStream ?: "").getJSONObject("error").getString("message")
+            } catch (e: Exception) {
+                "Error $responseCode: ${conn.responseMessage}"
+            }
+            throw Exception(errorMessage)
+        }
+
+        conn.inputStream.bufferedReader().useLines { lines ->
+            for (line in lines) {
+                val delta = parseSseTextDelta(line) ?: continue
+                emit(delta)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 
     suspend fun generateContent(prompt: String): String? {
         val apiKey = settingsManager.geminiApiKeyFlow.first().trim()
@@ -172,29 +193,7 @@ class GeminiManager @Inject constructor(
             conn.setRequestProperty("Content-Type", "application/json")
             conn.doOutput = true
 
-            val requestBody = JSONObject().apply {
-                put("contents", org.json.JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("parts", org.json.JSONArray().apply {
-                            put(JSONObject().apply {
-                                put("text", prompt)
-                            })
-                        })
-                    })
-                })
-                // Add safety settings to be permissive for harmless briefings
-                put("safetySettings", org.json.JSONArray().apply {
-                    listOf("HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH", 
-                           "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT").forEach { category ->
-                        put(JSONObject().apply {
-                            put("category", category)
-                            put("threshold", "BLOCK_NONE")
-                        })
-                    }
-                })
-            }
-
-            conn.outputStream.use { it.write(requestBody.toString().toByteArray(Charsets.UTF_8)) }
+            conn.outputStream.use { it.write(buildGenerateContentRequestBody(prompt).toString().toByteArray(Charsets.UTF_8)) }
 
             val responseCode = conn.responseCode
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -222,6 +221,55 @@ class GeminiManager @Inject constructor(
         } catch (e: Exception) {
             android.util.Log.e("GeminiManager", "Network error in generateWithKey", e)
             throw e
+        }
+    }
+
+    private fun buildGenerateContentRequestBody(prompt: String): JSONObject = JSONObject().apply {
+        put("contents", org.json.JSONArray().apply {
+            put(JSONObject().apply {
+                put("parts", org.json.JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("text", prompt)
+                    })
+                })
+            })
+        })
+        // Add safety settings to be permissive for harmless briefings
+        put("safetySettings", org.json.JSONArray().apply {
+            listOf("HARM_CATEGORY_HARASSMENT", "HARM_CATEGORY_HATE_SPEECH",
+                   "HARM_CATEGORY_SEXUALLY_EXPLICIT", "HARM_CATEGORY_DANGEROUS_CONTENT").forEach { category ->
+                put(JSONObject().apply {
+                    put("category", category)
+                    put("threshold", "BLOCK_NONE")
+                })
+            }
+        })
+    }
+
+    companion object {
+        /**
+         * Parses one line of a Gemini streamGenerateContent SSE response into the text
+         * delta it carries, or null for non-data lines, the [DONE] sentinel, malformed
+         * JSON, or a chunk with no text (e.g. a safety-only event).
+         */
+        internal fun parseSseTextDelta(rawLine: String): String? {
+            val line = rawLine.trim()
+            if (!line.startsWith("data:")) return null
+
+            val jsonPart = line.removePrefix("data:").trim()
+            if (jsonPart.isEmpty() || jsonPart == "[DONE]") return null
+
+            return try {
+                val json = JSONObject(jsonPart)
+                val candidates = json.optJSONArray("candidates") ?: return null
+                if (candidates.length() == 0) return null
+                val parts = candidates.getJSONObject(0).optJSONObject("content")?.optJSONArray("parts")
+                    ?: return null
+                if (parts.length() == 0) return null
+                parts.getJSONObject(0).optString("text").takeIf { it.isNotEmpty() }
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 }
