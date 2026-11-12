@@ -379,6 +379,11 @@
     <!-- Main &amp; Alarm list -->
     <string name="loading">Loading…</string>
     <string name="alarm_list_title">LemurLoop</string>
+    <string name="home_tab_alarms">Alarms</string>
+    <string name="home_tab_timer">Timer</string>
+    <string name="home_tab_stopwatch">Stopwatch</string>
+    <string name="home_tab_sleep">Sleep</string>
+    <string name="feature_unavailable_message">This isn\'t ready yet.</string>
     <string name="alarm_list_active">Active</string>
     <string name="alarm_list_inactive">Inactive</string>
     <string name="alarm_list_deleted">Deleted %1$s%2$s</string>

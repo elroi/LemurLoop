@@ -381,6 +381,11 @@
     <!-- Main &amp; Alarm list -->
     <string name="loading">טוען…</string>
     <string name="alarm_list_title">LemurLoop</string>
+    <string name="home_tab_alarms">שעון</string>
+    <string name="home_tab_timer">טיימר</string>
+    <string name="home_tab_stopwatch">סטופר</string>
+    <string name="home_tab_sleep">שינה</string>
+    <string name="feature_unavailable_message">זה עדיין לא מוכן.</string>
     <string name="alarm_list_active">פעיל</string>
     <string name="alarm_list_inactive">לא פעיל</string>
     <string name="alarm_list_deleted">נמחק %1$s%2$s</string>

@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.elroi.lemurloop.ui.screen.alarm.AlarmListScreen
+import com.elroi.lemurloop.ui.screen.home.FeatureUnavailableScreen
 import com.elroi.lemurloop.ui.screen.onboarding.OnboardingScreen
 
 @Composable
@@ -38,35 +39,61 @@ fun LemurLoopNavGraph(
             OnboardingScreen(
                 isReplay = true,
                 onFinished = { createAlarm ->
+                    val popped = navController.popBackStack(Screen.AlarmList.route, inclusive = false)
+                    if (!popped) {
+                        navController.navigate(Screen.AlarmList.route) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
                     if (createAlarm) {
-                        navController.navigate(Screen.AlarmList.route) {
-                            popUpTo(Screen.Onboarding.OnboardingReplay.route) { inclusive = true }
-                        }
                         navController.navigate(Screen.AlarmWizard.route)
-                    } else {
-                        navController.navigate(Screen.AlarmList.route) {
-                            popUpTo(Screen.Onboarding.OnboardingReplay.route) { inclusive = true }
-                        }
                     }
                 }
             )
         }
 
         composable(Screen.AlarmList.route) {
-            AlarmListScreen(
-                onNavigateToDetail = { alarmId ->
-                    if (alarmId == "WIZARD") {
-                        navController.navigate(Screen.AlarmWizard.route)
-                    } else {
-                        navController.navigate(Screen.AlarmDetail.createRoute(alarmId ?: ""))
-                    }
-                },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
-                },
-                onNavigateToChat = {
-                    navController.navigate(Screen.LemurChat.route)
-                }
+            HomeTabRoute(
+                route = Screen.AlarmList.route,
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+            ) {
+                AlarmListScreen(
+                    onNavigateToDetail = { alarmId ->
+                        if (alarmId == "WIZARD") {
+                            navController.navigate(Screen.AlarmWizard.route)
+                        } else {
+                            navController.navigate(Screen.AlarmDetail.createRoute(alarmId ?: ""))
+                        }
+                    },
+                    onNavigateToSettings = {
+                        navController.navigate(Screen.Settings.route)
+                    },
+                    onNavigateToChat = {
+                        navController.navigate(Screen.LemurChat.route)
+                    },
+                )
+            }
+        }
+
+        composable(Screen.Timer.route) {
+            HomeTabRoute(
+                route = Screen.Timer.route,
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                alarmList = {},
+            )
+        }
+        composable(Screen.Stopwatch.route) {
+            HomeTabRoute(
+                route = Screen.Stopwatch.route,
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                alarmList = {},
+            )
+        }
+        composable(Screen.SleepTab.route) {
+            HomeTabRoute(
+                route = Screen.SleepTab.route,
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                alarmList = {},
             )
         }
 
@@ -146,6 +173,22 @@ fun LemurLoopNavGraph(
                 onNavigateUp = { navController.navigateUp() }
             )
         }
+    }
+}
+
+@Composable
+private fun HomeTabRoute(
+    route: String,
+    onNavigateToSettings: () -> Unit,
+    alarmList: @Composable () -> Unit,
+) {
+    val tab = selectedHomeTab(route) ?: return
+    when (tab.destination) {
+        HomeDestination.AlarmList -> alarmList()
+        HomeDestination.Unavailable -> FeatureUnavailableScreen(
+            titleRes = tab.labelRes,
+            onNavigateToSettings = onNavigateToSettings,
+        )
     }
 }
 

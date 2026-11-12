@@ -7,6 +7,9 @@ Use this glossary so Hebrew strings are consistent and natural across the app. P
 | English | Hebrew | Notes |
 |--------|--------|--------|
 | **Alarm** (the clock / wake-up) | **שעון מעורר** / **השעון** | In sentences use "השעון" or "שעון מעורר". For short labels (e.g. list item, default label) **שעון** is OK. Avoid **אזעקה** (siren/emergency) unless the context is clearly "alert" (e.g. notification). |
+| **Timer** (home tab) | **טיימר** | Short tab label. |
+| **Stopwatch** (home tab) | **סטופר** | Short tab label. |
+| **Sleep** (home tab) | **שינה** | Short tab label. The sleep-tracking screen title stays **מעקב שינה**. |
 | **Snooze** (noun / button) | **דחייה** | Duration: "משך דחייה". Button: "כפתור דחייה". Avoid **איחור** (lateness). |
 | **Dismiss** (turn off alarm) | **כבה** / **סיום** | Use **כבה** for the main "Dismiss" button (turn off). **סיום** for "dismissal" in section titles. Never use **בטל** here (that means Cancel). |
 | **Cancel** | **ביטול** (noun), **בטל** (button) | Only for canceling an action, not for turning off the alarm. |
