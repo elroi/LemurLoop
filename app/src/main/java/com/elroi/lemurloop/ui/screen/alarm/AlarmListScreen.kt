@@ -88,6 +88,7 @@ fun AlarmListScreen(
     var showNewAlarmSheet by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             // CenterAlignedTopAppBar keeps the app name centered in both LTR and RTL,
