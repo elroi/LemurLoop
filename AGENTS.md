@@ -67,6 +67,12 @@ Room `AppDatabase` (currently version 24, `exportSchema = false`). Migrations ar
 
 - One public `XxxScreen` Composable per screen; state in a ViewModel. New screens: a single `StateFlow<UiState>` + events. `SettingsViewModel` and the alarm list still use multiple `StateFlow`s (acceptable until refactored).
 - Routes are centralized in `ui/navigation/Screen.kt` + `LemurLoopNavGraph.kt`.
+- `MainScreen` locks the start route for the session. After onboarding finishes, that route can still be onboarding, so a tab switch must pop to `alarm_list`, not the graph start.
+- Navigation Compose 2.5.1, from `hilt-navigation-compose` 1.2.0, runs `popUpTo` before `launchSingleTop`. Re-tapping a destination that is not the root pops and restores unless the click returns without navigating.
+- Finishing onboarding replay pops back to the existing alarm list.
+- `MainScreen` consumes the scaffold padding. Tab scaffolds set `contentWindowInsets` to zero. `targetSdk` is 35, and the app does not call `enableEdgeToEdge`.
+- `androidx.ui.test.junit4` is declared for instrumented tests, and `app/src/androidTest` has no tests. A unit test cannot prove a composable is wired.
+- `HebrewResourceParityTest` requires `values-he` and `values-iw` to stay identical.
 - `SettingsScreen`, `AlarmDetailScreen` and `AlarmCreationWizard` are very large files — read the relevant section rather than the whole file.
 - **Settings search** uses a static registry in `domain/manager/SettingsSearch.kt`: a new searchable setting needs a matching `SettingSearchItem` entry there.
 - Version info on About comes from `BuildConfig` (`VERSION_SUFFIX`, `BUILD_DATE`) / PackageManager — don't hardcode it.

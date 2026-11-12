@@ -47,6 +47,9 @@ ksp_fail.log
 # Python scratch scripts
 *.py
 
+# Brainstorm visual-companion sessions (can contain a session key)
+.superpowers/
+
 # Android key stores (sensitive)
 *.jks
 *.keystore
