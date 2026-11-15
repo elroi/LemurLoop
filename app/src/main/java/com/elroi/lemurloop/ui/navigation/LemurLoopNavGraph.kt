@@ -56,32 +56,67 @@ fun LemurLoopNavGraph(
             HomeTabRoute(
                 route = Screen.AlarmList.route,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-            ) {
-                AlarmListScreen(
-                    onNavigateToDetail = { alarmId ->
-                        if (alarmId == "WIZARD") {
-                            navController.navigate(Screen.AlarmWizard.route)
-                        } else {
-                            navController.navigate(Screen.AlarmDetail.createRoute(alarmId ?: ""))
-                        }
-                    },
-                    onNavigateToSettings = {
-                        navController.navigate(Screen.Settings.route)
-                    },
-                    onNavigateToChat = {
-                        navController.navigate(Screen.LemurChat.route)
-                    },
-                )
-            }
+                // Named: a trailing lambda would bind to `timer` and leave Alarms blank.
+                alarmList = {
+                    AlarmListScreen(
+                        onNavigateToDetail = { alarmId ->
+                            if (alarmId == "WIZARD") {
+                                navController.navigate(Screen.AlarmWizard.route)
+                            } else {
+                                navController.navigate(Screen.AlarmDetail.createRoute(alarmId ?: ""))
+                            }
+                        },
+                        onNavigateToSettings = {
+                            navController.navigate(Screen.Settings.route)
+                        },
+                        onNavigateToChat = {
+                            navController.navigate(Screen.LemurChat.route)
+                        },
+                    )
+                },
+            )
         }
 
         composable(Screen.Timer.route) {
             HomeTabRoute(
                 route = Screen.Timer.route,
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-                alarmList = {},
+                timer = {
+                    com.elroi.lemurloop.ui.screen.timer.TimerScreen(
+                        onAdd = { navController.navigate(Screen.TimerNew.route) },
+                        onOpen = { timerId -> navController.navigate(Screen.TimerFocus.createRoute(timerId)) },
+                        onOpenSettings = { navController.navigate(Screen.TimerSettings.route) },
+                    )
+                },
             )
         }
+        composable(Screen.TimerNew.route) {
+            com.elroi.lemurloop.ui.screen.timer.TimerKeypadScreen(
+                navController = navController,
+                onBack = { navController.navigateUp() },
+                onOpenSettings = { navController.navigate(Screen.TimerSettings.route) },
+            )
+        }
+        composable(
+            route = Screen.TimerFocus.route,
+            arguments = listOf(
+                androidx.navigation.navArgument("timerId") {
+                    type = androidx.navigation.NavType.LongType
+                }
+            )
+        ) { entry ->
+            com.elroi.lemurloop.ui.screen.timer.TimerFocusScreen(
+                timerId = entry.arguments?.getLong("timerId") ?: 0L,
+                navController = navController,
+                onBack = { navController.navigateUp() },
+            )
+        }
+        composable(Screen.TimerSettings.route) {
+            com.elroi.lemurloop.ui.screen.timer.TimerSettingsScreen(
+                onBack = { navController.navigateUp() },
+            )
+        }
+
         composable(Screen.Stopwatch.route) {
             HomeTabRoute(
                 route = Screen.Stopwatch.route,
@@ -154,7 +189,8 @@ fun LemurLoopNavGraph(
                 onNavigateToHelp = { navController.navigate(Screen.Help.route) },
                 onNavigateToOnboarding = { navController.navigate(Screen.Onboarding.OnboardingReplay.route) },
                 onNavigateToAbout = { navController.navigate(Screen.About.route) },
-                onNavigateToLogs = { navController.navigate(Screen.DiagnosticLogs.route) }
+                onNavigateToLogs = { navController.navigate(Screen.DiagnosticLogs.route) },
+                onNavigateToTimerSettings = { navController.navigate(Screen.TimerSettings.route) },
             )
         }
 
@@ -180,12 +216,15 @@ fun LemurLoopNavGraph(
 private fun HomeTabRoute(
     route: String,
     onNavigateToSettings: () -> Unit,
-    alarmList: @Composable () -> Unit,
+    timer: @Composable () -> Unit = {},
+    // Last lambda param so a trailing lambda on the Alarms route cannot bind to `timer`.
+    alarmList: @Composable () -> Unit = {},
 ) {
     val tab = selectedHomeTab(route) ?: return
-    when (tab.destination) {
-        HomeDestination.AlarmList -> alarmList()
-        HomeDestination.Unavailable -> FeatureUnavailableScreen(
+    when (homeTabBody(tab.destination)) {
+        HomeTabBody.AlarmList -> alarmList()
+        HomeTabBody.Timer -> timer()
+        HomeTabBody.Unavailable -> FeatureUnavailableScreen(
             titleRes = tab.labelRes,
             onNavigateToSettings = onNavigateToSettings,
         )

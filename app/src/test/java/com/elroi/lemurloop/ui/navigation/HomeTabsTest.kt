@@ -27,6 +27,9 @@ class HomeTabsTest {
         Screen.About.route,
         Screen.DiagnosticLogs.route,
         Screen.SleepTracking.route,
+        Screen.TimerNew.route,
+        "timer_focus/7",
+        Screen.TimerSettings.route,
     )
 
     @Test
@@ -37,7 +40,7 @@ class HomeTabsTest {
         assertEquals(Screen.Stopwatch.route, homeTabs[2].route)
         assertEquals(Screen.SleepTab.route, homeTabs[3].route)
         assertEquals(HomeDestination.AlarmList, homeTabs[0].destination)
-        assertEquals(HomeDestination.Unavailable, homeTabs[1].destination)
+        assertEquals(HomeDestination.Timer, homeTabs[1].destination)
         assertEquals(HomeDestination.Unavailable, homeTabs[2].destination)
         assertEquals(HomeDestination.Unavailable, homeTabs[3].destination)
         assertEquals(R.string.home_tab_alarms, homeTabs[0].labelRes)
@@ -77,5 +80,13 @@ class HomeTabsTest {
         otherRoutes.forEach { route ->
             assertNull(selectedHomeTab(route))
         }
+    }
+
+    @Test
+    fun homeTabBody_alarmListDestination_selectsAlarmListSlot() {
+        // Trailing lambda on HomeTabRoute must not bind AlarmListScreen to the timer slot.
+        assertEquals(HomeTabBody.AlarmList, homeTabBody(HomeDestination.AlarmList))
+        assertEquals(HomeTabBody.Timer, homeTabBody(HomeDestination.Timer))
+        assertEquals(HomeTabBody.Unavailable, homeTabBody(HomeDestination.Unavailable))
     }
 }

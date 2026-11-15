@@ -7,15 +7,14 @@ import javax.inject.Inject
 
 class AppDataRepositoryImpl @Inject constructor(
     private val appDatabase: AppDatabase,
-    private val settingsManager: SettingsManager
+    private val settingsManager: SettingsManager,
+    private val timerDataWiper: TimerDataWiper
 ) : AppDataRepository {
 
     override suspend fun wipeAll() {
-        // Clear databases
+        timerDataWiper.wipe()
         appDatabase.alarmDao().deleteAllAlarms()
         appDatabase.sleepRecordDao().deleteAllRecords()
-
-        // Clear settings / DataStore
         settingsManager.clearAll()
     }
 }

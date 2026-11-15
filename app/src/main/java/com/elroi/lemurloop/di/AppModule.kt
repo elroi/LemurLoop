@@ -8,6 +8,7 @@ import com.elroi.lemurloop.data.local.dao.DiagnosticLogDao
 import com.elroi.lemurloop.data.repository.AlarmRepositoryImpl
 import com.elroi.lemurloop.data.repository.AppDataRepositoryImpl
 import com.elroi.lemurloop.data.repository.DiagnosticLogRepositoryImpl
+import com.elroi.lemurloop.data.repository.timerSettingsDataStore
 import com.elroi.lemurloop.domain.repository.AlarmRepository
 import com.elroi.lemurloop.domain.repository.AppDataRepository
 import com.elroi.lemurloop.domain.repository.DiagnosticLogRepository
@@ -48,7 +49,8 @@ object AppModule {
                 com.elroi.lemurloop.data.local.MIGRATION_21_22,
                 com.elroi.lemurloop.data.local.MIGRATION_22_23,
                 com.elroi.lemurloop.data.local.MIGRATION_23_24,
-                com.elroi.lemurloop.data.local.MIGRATION_24_25
+                com.elroi.lemurloop.data.local.MIGRATION_24_25,
+                com.elroi.lemurloop.data.local.MIGRATION_25_26
             )
             .build()
     }
@@ -81,11 +83,109 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideTimerDao(db: AppDatabase): com.elroi.lemurloop.data.local.dao.TimerDao {
+        return db.timerDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerRepository(
+        dao: com.elroi.lemurloop.data.local.dao.TimerDao
+    ): com.elroi.lemurloop.domain.repository.TimerRepository {
+        return com.elroi.lemurloop.data.repository.TimerRepositoryImpl(dao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerSettingsRepository(
+        app: Application
+    ): com.elroi.lemurloop.domain.repository.TimerSettingsRepository {
+        return com.elroi.lemurloop.data.repository.TimerSettingsRepositoryImpl(
+            app.timerSettingsDataStore
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerScheduler(
+        app: Application
+    ): com.elroi.lemurloop.domain.scheduler.TimerScheduler {
+        return com.elroi.lemurloop.data.scheduler.AndroidTimerScheduler(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerBootReconciler(
+        repository: com.elroi.lemurloop.domain.repository.TimerRepository,
+        scheduler: com.elroi.lemurloop.domain.scheduler.TimerScheduler,
+        notifier: com.elroi.lemurloop.domain.timer.TimerFinishedNotifier
+    ): com.elroi.lemurloop.domain.timer.TimerBootReconciler {
+        return com.elroi.lemurloop.domain.timer.TimerBootReconciler(
+            repository = repository,
+            scheduler = scheduler,
+            notifier = notifier,
+            ringRunning = { com.elroi.lemurloop.domain.timer.TimerRingSession.isRunning() }
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerFinishedNotifier(
+        app: Application
+    ): com.elroi.lemurloop.domain.timer.TimerFinishedNotifier {
+        return com.elroi.lemurloop.data.timer.AndroidTimerFinishedNotifier(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerRingStop(
+        app: Application
+    ): com.elroi.lemurloop.domain.timer.TimerRingStop {
+        return com.elroi.lemurloop.data.timer.AndroidTimerRingStop(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerRingControls(
+        app: Application
+    ): com.elroi.lemurloop.domain.timer.TimerRingControls {
+        return com.elroi.lemurloop.data.timer.AndroidTimerRingControls(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerTrackGrantReleaser(
+        app: Application
+    ): com.elroi.lemurloop.domain.timer.TimerTrackGrantReleaser {
+        return com.elroi.lemurloop.data.timer.AndroidTimerTrackGrantReleaser(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerDataWiper(
+        timerRepository: com.elroi.lemurloop.domain.repository.TimerRepository,
+        timerSettingsRepository: com.elroi.lemurloop.domain.repository.TimerSettingsRepository,
+        timerScheduler: com.elroi.lemurloop.domain.scheduler.TimerScheduler,
+        timerRingStop: com.elroi.lemurloop.domain.timer.TimerRingStop,
+        timerTrackGrantReleaser: com.elroi.lemurloop.domain.timer.TimerTrackGrantReleaser
+    ): com.elroi.lemurloop.data.repository.TimerDataWiper {
+        return com.elroi.lemurloop.data.repository.TimerDataWiper(
+            timerRepository = timerRepository,
+            timerSettingsRepository = timerSettingsRepository,
+            timerScheduler = timerScheduler,
+            timerRingStop = timerRingStop,
+            timerTrackGrantReleaser = timerTrackGrantReleaser
+        )
+    }
+
+    @Provides
+    @Singleton
     fun provideAppDataRepository(
         appDatabase: AppDatabase,
-        settingsManager: com.elroi.lemurloop.domain.manager.SettingsManager
+        settingsManager: com.elroi.lemurloop.domain.manager.SettingsManager,
+        timerDataWiper: com.elroi.lemurloop.data.repository.TimerDataWiper
     ): AppDataRepository {
-        return AppDataRepositoryImpl(appDatabase, settingsManager)
+        return AppDataRepositoryImpl(appDatabase, settingsManager, timerDataWiper)
     }
 
     @Provides

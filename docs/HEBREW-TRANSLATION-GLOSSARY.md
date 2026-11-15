@@ -8,6 +8,12 @@ Use this glossary so Hebrew strings are consistent and natural across the app. P
 |--------|--------|--------|
 | **Alarm** (the clock / wake-up) | **שעון מעורר** / **השעון** | In sentences use "השעון" or "שעון מעורר". For short labels (e.g. list item, default label) **שעון** is OK. Avoid **אזעקה** (siren/emergency) unless the context is clearly "alert" (e.g. notification). |
 | **Timer** (home tab) | **טיימר** | Short tab label. |
+| **Timer finished** | **הטיימר הסתיים** | Quiet notification when an unattended timer was too late to ring. |
+| **Pause** (timer) | **השהה** | Freezes a countdown. Distinct from snooze (**דחייה**). |
+| **Play** (timer) | **המשך** | Continues a paused countdown. |
+| **Refresh** (timer) | **איפוס** | Sets the time left back to the original duration and stays paused. |
+| **Duplicate** (timer) | **שכפול** | A new running timer with the same label and original duration. |
+| **Rename** (timer) | **שינוי שם** | Trimmed to 40 characters. Blank is allowed. |
 | **Stopwatch** (home tab) | **סטופר** | Short tab label. |
 | **Sleep** (home tab) | **שינה** | Short tab label. The sleep-tracking screen title stays **מעקב שינה**. |
 | **Snooze** (noun / button) | **דחייה** | Duration: "משך דחייה". Button: "כפתור דחייה". Avoid **איחור** (lateness). |

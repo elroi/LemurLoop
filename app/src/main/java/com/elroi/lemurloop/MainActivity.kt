@@ -3,6 +3,7 @@ package com.elroi.lemurloop
 import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
@@ -11,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.os.LocaleListCompat
 import com.elroi.lemurloop.domain.manager.SettingsManager
+import com.elroi.lemurloop.domain.timer.TimerAlarmIntents
 import com.elroi.lemurloop.ui.theme.LemurLoopTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.EntryPointAccessors
@@ -58,6 +61,8 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var settingsManager: SettingsManager
+
+    private val openTimerNonce = mutableIntStateOf(0)
 
     /**
      * When set in attachBaseContext, getResources() returns resources with this configuration
@@ -172,6 +177,7 @@ class MainActivity : AppCompatActivity() {
         val skipSplashDelay = consumeSkipNextSplashDelayFlag()
 
         super.onCreate(savedInstanceState)
+        noteTimerTabRequest(intent)
 
         debugLog(
             this,
@@ -208,10 +214,26 @@ class MainActivity : AppCompatActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        com.elroi.lemurloop.ui.MainScreen()
+                        com.elroi.lemurloop.ui.MainScreen(openTimerNonce = openTimerNonce.intValue)
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        noteTimerTabRequest(intent)
+    }
+
+    private fun noteTimerTabRequest(intent: Intent?) {
+        if (intent != null && TimerAlarmIntents.wantsTimerTab(
+                intent.action,
+                intent.getBooleanExtra(TimerAlarmIntents.EXTRA_OPEN_TIMER_TAB, false)
+            )
+        ) {
+            openTimerNonce.intValue += 1
         }
     }
 

@@ -15,7 +15,7 @@ Language is stored in DataStore (`user_settings`) under the key `app_language`; 
 - **Alarm list title (app name):** The main screen uses `CenterAlignedTopAppBar` so the app name "LemurLoop" is centered instead of start-aligned. In RTL, a start-aligned title would sit on the far right and look odd with an LTR brand name; centering avoids that and keeps the settings icon on the correct side (left in RTL).
 - **Math challenge (AlarmActivity):** The math problem and numeric input (e.g. `3 + 5 =`) are left-to-right for readability. The surrounding layout (buttons, labels) still follows RTL when the app is in Hebrew.
 - **Time display:** Times (e.g. `10:30`) are typically shown in the system/default format; they are not forced to RTL. Time pickers follow platform behavior.
-- **Numeric and formula content:** Any `Text` or `TextField` that shows only digits or arithmetic may be left-to-right. No code currently forces `LayoutDirection.Ltr` on these; if added for clarity, it should be documented here.
+- **Timer countdown and keypad:** The countdown and the keypad digits are forced left-to-right in Hebrew, hours then minutes then seconds. The surrounding screen still follows RTL. Swipe-to-delete goes toward the end of the row: right in English, left in Hebrew. The timer list enables only the start-to-end swipe, which is that direction in both layouts.
 
 ## Translation (Hebrew)
 
@@ -30,6 +30,7 @@ Run the app with **App language** set to **Hebrew** (Settings → App language �
 | **Onboarding** (all steps) | (1) All text in Hebrew. (2) Layout is RTL (content starts from the right). (3) Back/Next buttons on correct sides. (4) No clipped text. |
 | **Alarm list** | (1) Title and settings icon on correct side for RTL. (2) FAB (add alarm) on correct side. (3) List items align RTL; swipe-to-delete feels natural (swipe left or right to reveal delete). (4) Hebrew strings. |
 | **Home bar** | (1) Alarms, Timer, Stopwatch, and Sleep are in Hebrew. (2) Alarms is the rightmost tab. (3) The settings gear on a not-ready screen is on the left. (4) Titles stay centered. (5) The bar does not animate. |
+| **Timer** | (1) The bar still mirrors; Timer is not the rightmost tab. (2) Countdown and keypad digits read hours, then minutes, then seconds, left to right. (3) Swipe-to-delete goes left. (4) New timer strings are Hebrew. |
 | **Alarm detail (create/edit)** | (1) Top bar: back and title RTL. (2) Form fields and labels RTL. (3) Save and other actions on correct side. (4) Hebrew strings. |
 | **Alarm creation wizard** (all steps) | (1) Back/forward arrows point correctly. (2) Step content and buttons RTL. (3) Hebrew strings. |
 | **Lemur chat (new alarm)** | (1) Local opener bubble, onboarding intro/detail, “Learn more” / “Show less”, starter chips in Hebrew. (2) Layout RTL (onboarding shortcuts, chip row, input bar, message bubbles, preview hint). (3) Preview card advanced hint in Hebrew. (4) No clipped chip labels. |

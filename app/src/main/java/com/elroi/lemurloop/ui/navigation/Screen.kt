@@ -3,6 +3,11 @@ package com.elroi.lemurloop.ui.navigation
 sealed class Screen(val route: String) {
     object AlarmList : Screen("alarm_list")
     object Timer : Screen("timer")
+    object TimerNew : Screen("timer_new")
+    object TimerFocus : Screen("timer_focus/{timerId}") {
+        fun createRoute(timerId: Long) = "timer_focus/$timerId"
+    }
+    object TimerSettings : Screen("timer_settings")
     object Stopwatch : Screen("stopwatch")
     object SleepTab : Screen("sleep")
     object AlarmDetail : Screen("alarm_detail?alarmId={alarmId}") {
