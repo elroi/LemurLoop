@@ -1,7 +1,9 @@
 # Voice Challenge — plan
 
 **Slug:** claude-opus-4-8
-**Status:** Draft (vision frozen; Stage 1 planned)
+**Status:** Revision 2 (vision frozen; Stage 1 planned). R2 folds in the nine accepted
+findings from the cross-vendor review in
+[voice-challenge-plan.review-codex.md](voice-challenge-plan.review-codex.md).
 **Last updated:** 2026-11-15
 
 A spoken, hands-free wake-up challenge. The app speaks a challenge aloud — greeting
@@ -20,11 +22,13 @@ your voice. We get there gradually.
 
 ### Stage 1 — Speak your name + the math challenge *(build first)*
 
-> The alarm rings. A voice says: *"Good morning, Elroi. Let's wake up — what's seven
-> plus five?"* You say, *"Twelve."* It hears you: *"Correct. Have a good day."* The
-> alarm stops. A wrong answer gets *"Not quite — what's seven plus five?"* and it
-> waits. After a couple of misses, or if it can't make out your voice, the **number
-> pad appears** so you're never stuck.
+> The Smart Wakeup check appears (a few minutes after you dismissed the alarm). A voice
+> says: *"Good morning, Alex. Let's make sure you're up — what's seven plus five?"* You
+> say, *"Twelve."* It hears you: *"Great, you're awake."* The check clears. A wrong
+> answer gets *"Not quite — what's seven plus five?"* and it waits. After **two** misses,
+> or if it can't make out your voice, the **number pad appears** so you're never stuck.
+> If you ignore it entirely, the check times out and **re-triggers the alarm** (today's
+> behavior, unchanged).
 
 Reuses what the app already has — the persona voice (Text-to-Speech, TTS) and the
 `MathProblem` generator — and adds the one thing it doesn't: **listening** (ASR). The
@@ -51,6 +55,17 @@ to `BriefingGenerator` and Lemur chat.
 
 ---
 
+## Decisions (R2)
+
+- **Recognition backend — pilot mode, "whatever works."** Use Android's default
+  `SpeechRecognizer`, requesting on-device recognition when available
+  (`EXTRA_PREFER_OFFLINE` / `createOnDeviceSpeechRecognizer` on Application Programming
+  Interface (API) 31+) and accepting server-backed recognition as the fallback.
+  **Honest caveat:** server recognition sends wake-up audio to Google. Acceptable for a
+  private pilot; **the backend choice and a privacy notice must be revisited before any
+  public release.** Recorded as an open item, not settled for production.
+- **Retry budget — 2 spoken attempts, then the number pad.**
+
 ## Language scope: English-first voice, bilingual UI, Hebrew voice later
 
 The risky, uncertain part of Stage 1 is **parsing a spoken answer into a number**, which
@@ -58,118 +73,149 @@ is language-specific (English number words differ from Hebrew's gendered forms, 
 recognition quality differs). Doing both languages at once doubles the parsing logic and
 the test matrix before the approach is proven.
 
-Decision:
-
 - **Voice interaction is English-only in Stage 1.** `SpeechRecognizer` is pinned to
   `en-US`; the spoken number-word parser is English-only.
-- **UI strings stay fully bilingual.** Any new string (e.g. the "Answer out loud"
-  setting label) goes in `values`, `values-iw` and `values-he` from the start —
-  `HebrewResourceParityTest` requires `values-he` and `values-iw` to stay identical.
-  English-only lives in the *behavior*, never in `strings.xml`.
-- **Supported-language gate.** The voice challenge offers itself only when the app
-  locale is English. A Hebrew user gets the existing typed math challenge (unchanged) —
-  never worse off, just not voice-enabled yet. That gate is the exact seam where a later
-  "Stage 1.5 — Hebrew voice" increment plugs in (a second parser + recognizer locale).
+- **UI strings stay fully bilingual.** Any new string goes in `values`, `values-iw` and
+  `values-he` from the start — `HebrewResourceParityTest` requires `values-he` and
+  `values-iw` to stay identical. English-only lives in the *behavior*, never in
+  `strings.xml`.
+- **Supported-language gate.** The voice challenge offers itself only when the app locale
+  is English. A Hebrew user gets the existing typed math challenge (unchanged). That gate
+  is the seam where a later "Stage 1.5 — Hebrew voice" increment plugs in.
 
 ---
 
 ## Where Stage 1 lands
 
-The spoken math challenge replaces the current button-only **Smart Wakeup check**
-(`WakeupCheckActivity`), which today is just a countdown and an "I'm awake" button —
-the cleanest insertion point, and the challenge is *stronger* there than a single tap.
-The existing typed math challenge in `AlarmActivity` (dismissal) is left as-is for now;
-the ASR layer is built so it can also be wired there in a later increment.
+The spoken math challenge is added to the **Smart Wakeup check**
+(`WakeupCheckActivity`), which today is just a countdown and an "I'm awake" button.
+Crucially, that check is scheduled via AlarmManager **~3 minutes after dismissal**
+(`AlarmService.scheduleWakeupCheck`, `triggerAt = now + delay`), so **the alarm sound
+and its foreground service are already stopped** when the check runs. That means a quiet
+room and **no audio-focus contention** between the alarm player, TTS and ASR — the single
+biggest reason this is the right insertion point. A correct answer **clears the check**;
+it does not "stop the alarm" (there is none ringing). A timeout **re-triggers** the alarm,
+exactly as today.
+
+Putting voice at *dismissal* (`AlarmActivity`, alarm actively ringing) would reintroduce
+the audio-focus problem, so it is explicitly deferred. The ASR layer is built so it can be
+wired there later if we solve that.
 
 ---
 
 ## Stage 1 — step-by-step technical plan
 
 Test-driven development (TDD) per `AGENTS.md`: a failing test before production code for
-each unit that has testable logic (the number-word parser and the answer-match are the
-prime candidates; the `SpeechRecognizer` wrapper and Composable wiring are verified
-manually on device, since there is no `androidTest` suite).
+each unit with testable logic. The pure units (number-word parser, answer-match, error
+classification) are unit-tested; the Android pieces (`SpeechRecognizer` wrapper, Composable
+wiring) are verified on-device, since there is no `androidTest` suite.
 
-1. **Microphone permission.**
+1. **Spoken-number parser** *(first slice — pure Kotlin, no Android)* — new
+   `domain/dismissal/SpokenNumberParser.kt`: English recognition output → `Int`
+   ("twelve" → 12, "a hundred and five" → 105, bare digits "12" → 12, "for"/"to"
+   homophones considered), `null` on unparseable input. **Unit-tested first.**
+
+2. **Microphone permission — requested at opt-in, not at alarm time.**
    - Add `android.permission.RECORD_AUDIO` to `AndroidManifest.xml`.
-   - Runtime request flow (the challenge requests it on first use; denial → fall back to
-     the typed challenge, never a dead end).
+   - Request it when the user enables "Answer out loud" in the **unlocked** creation/edit
+     flow. At alarm time, if the permission is missing or revoked → **immediate typed
+     fallback**, never a lockscreen permission dialog at 6am.
 
-2. **ASR wrapper** — new `domain/dismissal/VoiceAnswerRecognizer.kt`, mirroring the
-   sensor wrappers (`SmileDetector`, `ShakeDetector`): wraps Android `SpeechRecognizer`,
-   pinned to `en-US`, exposes a suspend/callback API that returns recognized text or a
-   typed failure (no match / no permission / no speech / recognizer unavailable).
+3. **ASR wrapper** — new `domain/dismissal/VoiceAnswerRecognizer.kt`, mirroring the sensor
+   wrappers (`SmileDetector`, `ShakeDetector`): wraps `SpeechRecognizer`, pinned to
+   `en-US`, prefers on-device per the R2 decision. Must run on the **main thread**, and be
+   **cancelled/destroyed** across finish, timeout, rotation and process death. Exposes a
+   result or a **typed error**:
+   - *Immediate fallback:* permission denied, recognizer/language unavailable, service
+     disconnected.
+   - *Retryable (within the 2-attempt budget):* no-match, speech timeout.
+   The number pad must also appear immediately if init hangs.
 
-3. **Spoken-number parser** — new `domain/dismissal/SpokenNumberParser.kt`: maps English
-   recognition output to an `Int` ("twelve" → 12, "a hundred and five" → 105, bare
-   digits "12" → 12). Pure Kotlin, no Android → **unit-tested first**. Returns `null` on
-   unparseable input so the caller can retry.
+4. **Speak the prompt — completion-aware.** The existing
+   `TextToSpeechManager.speak()` is `suspend` but only awaits *initialization*, then fires
+   `tts.speak(..., QUEUE_FLUSH, ...)` and returns — it does **not** await `onDone`. Add a
+   completion-aware path (await `UtteranceProgressListener.onDone` for a unique utterance
+   id, plus a short acoustic-settling gap) so listening starts **after** the app stops
+   talking. Build the spoken string from `BRIEFING_USER_NAME` (degrade gracefully if
+   blank) + `MathProblem.question` read as words ("seven plus five", not "7 + 5").
 
-4. **Speak the prompt** — reuse `TextToSpeechManager.speak(text, personaId)`. Build the
-   spoken string from `BRIEFING_USER_NAME` + the `MathProblem.question`, read as words
-   ("seven plus five", not "7 + 5"). Serialize speak-then-listen so the recognizer does
-   not capture the app's own voice.
+5. **Challenge loop** — in `WakeupCheckActivity`: speak → listen → parse → compare to
+   `MathProblem.answer`. Correct → clear the check (`finish()`). Wrong → re-prompt, up to
+   **2 attempts**, then reveal the number-pad fallback (reuse the `AlarmActivity` math
+   input pattern). Timeout → re-trigger the alarm (unchanged `onExpired`).
 
-5. **Challenge loop + fallback** — in `WakeupCheckActivity`: speak → listen → parse →
-   compare to `MathProblem.answer`. Correct → `finish()`. Wrong → re-prompt. After N
-   misses or any recognizer failure → reveal the number-pad fallback (reuse the
-   `AlarmActivity` math input pattern). Timeout still re-triggers the alarm as today.
-
-6. **Per-alarm opt-in option** — "Answer out loud" boolean. This touches the full
-   per-alarm option chain (per `AGENTS.md`; mismatched extra keys fail silently):
-   - `domain/model/Alarm` — new field.
-   - `data/local/entity/AlarmEntity` — new column + **a new Room migration**
-     (bump `AppDatabase` version, add `MIGRATION_x_y`, register in `AppModule`).
+6. **Per-alarm opt-in option** — "Answer out loud" boolean. The full propagation chain
+   (mismatched extra keys fail silently):
+   - `domain/model/Alarm` — new field; `data/local/entity/AlarmEntity` — new column +
+     **a new Room migration** (bump `AppDatabase` version, add `MIGRATION_x_y`, register in
+     `AppModule`) **with a default for existing rows**; entity↔domain **mappers**.
+   - Repository **save/update** copies; **clone/duplicate** path; **reboot/reschedule**
+     reconstruction (`BootReceiver`).
    - `service/AlarmIntentExtras` — new `EXTRA_VOICE_CHALLENGE_ENABLED` constant.
    - `data/scheduler/AndroidAlarmScheduler` — put the extra.
-   - `receiver/AlarmReceiver` — **forward** the extra (easy to miss).
-   - `WakeupCheckActivity` — read the extra.
-   - Creation surfaces: `AlarmCreationWizard`, `AlarmDetailScreen` (and chat proposal if
-     applicable) — expose the toggle.
-   - `SettingsSearch` registry — a `SettingSearchItem` entry if it appears in Settings.
+   - `receiver/AlarmReceiver` — forward into the `AlarmService` intent.
+   - `service/AlarmService` — **read the extra and hold it in a field**, then
+     **re-`putExtra` it inside `scheduleWakeupCheck`** (that method builds a curated subset
+     of extras — the new one must be added there).
+   - `receiver/WakeupCheckReceiver` — **forward** it into the activity intent.
+   - `ui/activity/WakeupCheckActivity` — read it.
+   - Creation surfaces — **frozen list:** `AlarmCreationWizard` and `AlarmDetailScreen`
+     expose the toggle; chat-proposal wiring is **out of Stage 1**. Each producer sets the
+     field explicitly and gets a persistence test.
+   - `SettingsSearch` registry — a `SettingSearchItem` entry if it surfaces in Settings.
 
 7. **Strings** — all new user-facing strings in `values`, `values-iw`, `values-he`
    (parity test). Spoken prompt strings are English-only by design but still live in
    resources.
 
 8. **Tests.**
-   - `SpokenNumberParserTest` — words, digits, "and" forms, junk → null. (TDD anchor.)
-   - Answer-match logic (correct/incorrect/retry count) as a pure unit where extractable.
-   - `AlarmServiceExtrasTest` — extend to pin the new extra key constant.
-   - Manual device checklist: permission grant + denial, correct answer, wrong answer
-     retry, unrecognized speech → number-pad fallback, timeout re-trigger, Hebrew locale
-     shows the typed challenge (gate works).
+   - `SpokenNumberParserTest` — words, digits, "and" forms, homophones, junk → null.
+     (TDD anchor, slice 1.)
+   - Error-classification unit — each `SpeechRecognizer` error code → immediate-fallback
+     vs retryable.
+   - Answer-match / retry-count logic as a pure unit where extractable.
+   - Room **migration + default-for-existing-rows** test.
+   - `AlarmServiceExtrasTest` — pin the new extra key constant.
+   - **End-to-end option propagation** through schedule → receive → dismiss →
+     `scheduleWakeupCheck` → `WakeupCheckReceiver` → activity (the chain in step 6).
+   - Manual device checklist: permission grant / deny / permanent-deny **while locked**;
+     correct answer; wrong answer within budget; unrecognized speech → number-pad
+     fallback; on-device vs server path; process recreation / rotation; timeout
+     re-trigger; Hebrew locale shows the typed challenge (gate works).
 
 ---
 
 ## Review notes (maintainer / product-UX / reliability / QA)
 
 - **Maintainer:** follows the established wrapper pattern and the documented per-alarm
-  option chain; the risky logic (parser) is isolated and pure, so it is unit-testable and
-  reviewable without a device.
-- **Product/UX:** opt-in and a guaranteed tap fallback keep it from ever trapping a
-  sleepy user; the name reuses an existing setting rather than adding onboarding.
-- **Reliability:** ASR accuracy is the weak point — mitigated by retries, a visible
-  fallback, and speak/listen serialization so the app doesn't hear itself.
-- **QA/testability:** no `androidTest` suite, so UI wiring is manual-only; the plan pushes
-  as much logic as possible into pure units and names an explicit device checklist.
+  option chain (now with the AlarmService re-put and WakeupCheckReceiver forward hops that
+  R1 missed); the risky logic (parser, error classification) is isolated and pure.
+- **Product/UX:** opt-in, a 2-try budget, and a guaranteed tap fallback keep it from ever
+  trapping a sleepy user; the name reuses an existing setting rather than adding onboarding.
+- **Reliability:** no audio-focus contention (check runs with the alarm already stopped);
+  completion-aware speak prevents the app hearing itself; typed error taxonomy drives
+  correct retry-vs-fallback behavior.
+- **QA/testability:** no `androidTest` suite, so UI wiring is manual; the plan pushes logic
+  into pure units and names an explicit device checklist plus an end-to-end propagation
+  test.
 
 ---
 
 ## Risks & open questions
 
-- **ASR accuracy / ambient noise at wake-up** — the core risk; fallback is the safety net.
-- **Recognizer availability** — some devices/ROMs lack an on-device recognizer; treat as
-  a failure → fall back.
-- **Play Store review** — `RECORD_AUDIO` is a sensitive permission; needs a clear
-  in-app rationale and privacy-notice wording.
-- **"Speak-then-listen" timing** — must not capture the TTS output; needs device tuning.
-- **Empty user name** — `BRIEFING_USER_NAME` may be blank; greeting degrades gracefully
-  ("Good morning. What's…").
+- **Recognition backend for production** — pilot accepts "whatever works" incl. server
+  recognition; **must** be revisited with a privacy notice before public release.
+- **ASR accuracy / ambient noise at wake-up** — mitigated by the 2-try budget + fallback.
+- **Recognizer / on-device model availability** — varies by device/ROM/API level; treated
+  as an immediate-fallback error.
+- **Speak-then-listen timing** — needs device tuning even with `onDone` + settling gap.
+- **Empty user name** — greeting degrades to "Good morning. What's…".
+- **Play Store review** — `RECORD_AUDIO` needs a clear in-app rationale and privacy wording.
 
 ---
 
 ## Out of scope (Stage 1)
 
 Hebrew voice; non-math spoken intents (snooze/repeat); briefing integration; wiring the
-voice path into `AlarmActivity` dismissal; the buddy/SMS and sleep-tracking surfaces.
+voice path into `AlarmActivity` dismissal; chat-proposal toggle; buddy/SMS and
+sleep-tracking surfaces.
