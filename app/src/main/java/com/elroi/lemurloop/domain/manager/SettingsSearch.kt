@@ -164,6 +164,13 @@ object SettingsSearchRegistry {
 
         // Help & System
         SettingSearchItem(
+            id = "timer_settings",
+            title = "Timer",
+            description = "Sound, volume, vibration, and screen for timers",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
             id = "about",
             title = "About LemurLoop",
             description = "Version, credits, and legal",

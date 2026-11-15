@@ -10,7 +10,21 @@ import com.elroi.lemurloop.R
 
 enum class HomeDestination {
     AlarmList,
+    Timer,
     Unavailable,
+}
+
+/** Which slot [HomeTabRoute] must render for a destination. */
+enum class HomeTabBody {
+    AlarmList,
+    Timer,
+    Unavailable,
+}
+
+fun homeTabBody(destination: HomeDestination): HomeTabBody = when (destination) {
+    HomeDestination.AlarmList -> HomeTabBody.AlarmList
+    HomeDestination.Timer -> HomeTabBody.Timer
+    HomeDestination.Unavailable -> HomeTabBody.Unavailable
 }
 
 data class HomeTab(
@@ -22,7 +36,7 @@ data class HomeTab(
 
 val homeTabs: List<HomeTab> = listOf(
     HomeTab(Screen.AlarmList.route, R.string.home_tab_alarms, Icons.Filled.Alarm, HomeDestination.AlarmList),
-    HomeTab(Screen.Timer.route, R.string.home_tab_timer, Icons.Filled.Timer, HomeDestination.Unavailable),
+    HomeTab(Screen.Timer.route, R.string.home_tab_timer, Icons.Filled.Timer, HomeDestination.Timer),
     HomeTab(Screen.Stopwatch.route, R.string.home_tab_stopwatch, Icons.Filled.AvTimer, HomeDestination.Unavailable),
     HomeTab(Screen.SleepTab.route, R.string.home_tab_sleep, Icons.Filled.Bedtime, HomeDestination.Unavailable),
 )

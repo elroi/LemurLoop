@@ -6,7 +6,9 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.elroi.lemurloop.data.local.dao.AlarmDao
+import com.elroi.lemurloop.data.local.dao.TimerDao
 import com.elroi.lemurloop.data.local.entity.AlarmEntity
+import com.elroi.lemurloop.data.local.entity.TimerEntity
 
 val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -150,14 +152,34 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
     }
 }
 
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `timers` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `label` TEXT NOT NULL,
+                `originalDurationMillis` INTEGER NOT NULL,
+                `endsAtEpochMillis` INTEGER,
+                `pausedRemainingMillis` INTEGER,
+                `phase` TEXT NOT NULL,
+                `createdAtEpochMillis` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
 @Database(entities = [
     AlarmEntity::class,
     com.elroi.lemurloop.data.local.entity.SleepRecordEntity::class,
-    com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class
-], version = 25, exportSchema = false)
+    com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class,
+    TimerEntity::class
+], version = 26, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao
     abstract fun sleepRecordDao(): com.elroi.lemurloop.data.local.dao.SleepRecordDao
     abstract fun diagnosticLogDao(): com.elroi.lemurloop.data.local.dao.DiagnosticLogDao
+    abstract fun timerDao(): TimerDao
 }

@@ -7,23 +7,25 @@ LemurLoop is a single-module Android alarm clock app (`:app`, package `com.elroi
 ## Commands
 
 ```bash
-./gradlew :app:testDebugUnitTest                                   # all JVM unit tests (what CI runs)
-./gradlew :app:testDebugUnitTest --tests "com.elroi.lemurloop.domain.chat.LemurChatParserTest"   # one class
-./gradlew :app:testDebugUnitTest --tests "*LemurChatParserTest.parseModelOutput*"                # one method
-./gradlew :app:assembleDebug                                       # debug APK
-./gradlew :app:installDebug                                        # install on connected device/emulator
-./gradlew :app:lintDebug                                           # Android lint
+./gradlew :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest --tests "com.elroi.lemurloop.domain.chat.LemurChatParserTest"
+./gradlew :app:testDebugUnitTest --tests "*LemurChatParserTest.parseModelOutput*"
+./gradlew :app:assembleDebug
+./gradlew :app:installDebug
+./gradlew :app:lintDebug
 ```
 
-- **JDK:** Gradle 8.5 accepts Java 17–21 only. Never set `org.gradle.java.home` to Android Studio's bundled JBR (it may be Java 25, even when labeled `jbr-21` — trust `java -version`). CI (`.github/workflows/unit-tests.yml`) uses Temurin 17 and strips `org.gradle.java.home` from `gradle.properties`.
+CI runs the first command.
+
+- **JDK:** Gradle 8.5 accepts Java 17–21 only. Never set `org.gradle.java.home` to Android Studio's bundled JBR (it may be Java 25, even when labeled `jbr-21` — trust `java -version`). If `java` is not on `PATH`, set `JAVA_HOME` to a real JDK 17 or 21. CI (`.github/workflows/unit-tests.yml`) uses Temurin 17 and strips `org.gradle.java.home` from `gradle.properties`.
 - Tests are JVM-only under `app/src/test`; there is no `androidTest` suite. Naming: `functionUnderTest_condition_expectedResult`. Prefer fakes over mocks.
 
 ## Local setup (gitignored, not in a fresh clone)
 
-- `local.properties`: `GEMINI_API_KEY`, `CLOUD_TTS_API_KEY` — injected into `BuildConfig.DEV_*` for **debug builds only** (release stays empty). Keys can also be pasted in Settings → Intelligence → API Credentials.
+- `local.properties`: `GEMINI_API_KEY`, `CLOUD_TTS_API_KEY` — injected into `BuildConfig.DEV_*` for **debug builds only** (release stays empty). Keys can also be pasted in Settings → Intelligence → API Credentials. A new git worktree does not contain this file. Symlink it from the primary checkout, or Gradle fails with `SDK location not found`. The first Gradle run in that worktree needs network; `--offline` cannot resolve plugins until a networked run has succeeded.
 - `app/src/google-services.json`: optional. The Google Services plugin is applied only when this file exists, so builds and CI work without it. Its `package_name` must be `com.elroi.lemurloop` (the legacy `com.elroi.alarmpal` client alone won't initialize). Gemini chat and Cloud Text-to-Speech (TTS) do not need Firebase.
 - `.signing.properties` + `lemurloop.jks`: release signing.
-- **Google Play developer verification:** `com.elroi.lemurloop` and its signing key are registered and verified in Google Play Console (verified March 2026 for the September 30, 2026 deadline). Console inbox notifications are static broadcasts and do not auto-dismiss when satisfied; the **Android developer verification** page (showing `Registered`) is the source of truth. Register separately only if distributing APKs outside Google Play.
+- **Google Play developer verification:** `com.elroi.lemurloop` and its signing key are registered (verified March 2026, for the 2026-09-30 deadline). The Android developer verification page, showing Registered, is the source of truth. Console inbox items do not auto-dismiss. Register separately only for APKs outside Play.
 - Gemini and Cloud TTS use **separate keys, often in separate Google Cloud projects**. A TTS 403 `BILLING_DISABLED` names the project number that actually received the call — compare it to the billed project. The "AI Voice ok" chip in Intelligence Health mirrors the AI Brain status and does not prove TTS works. See [docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md](docs/GOOGLE-GEMINI-AND-TTS-API-KEYS.md).
 
 ## Architecture
@@ -38,13 +40,17 @@ Layers under `app/src/main/java/com/elroi/lemurloop/`:
 
 1. `AndroidAlarmScheduler` sets the exact system alarm, packing every alarm option into Intent extras, and enqueues `BriefingWorker` (WorkManager) to pre-generate the spoken briefing ahead of time.
 2. `receiver/AlarmReceiver` copies those extras into an intent for `service/AlarmService` (foreground service: sound, vibration crescendo, briefing TTS) and reschedules repeating alarms. `BootReceiver` restores alarms after reboot.
-3. `AlarmService` launches `ui/activity/AlarmActivity` (math / smile-to-dismiss challenges, snooze). **Evasive snooze** is purely on-screen: once `snoozeCount > evasiveSnoozesBeforeMoving`, the snooze button drifts around the screen, 50 dp/s faster per extra snooze — it does not require physical movement. After dismissal it schedules `WakeupCheckReceiver` → `WakeupCheckActivity` (the Smart Wakeup check); `onDestroy` also schedules it so the check fires even when the briefing ends naturally.
+3. `AlarmService` launches `ui/activity/AlarmActivity` (math / smile-to-dismiss, snooze). **Evasive snooze** is on-screen only: past `evasiveSnoozesBeforeMoving`, the button drifts 50 dp/s faster per extra snooze. Dismissal schedules `WakeupCheckReceiver` → `WakeupCheckActivity`; `onDestroy` schedules it too, so the check still runs when the briefing ends.
 
 **Adding a per-alarm option** touches all of: `domain/model/Alarm`, `data/local/entity/AlarmEntity` + a new Room migration, the extra constant in `service/AlarmIntentExtras`, `AndroidAlarmScheduler` (put), `AlarmReceiver` (forward — easy to miss), and `AlarmService`/`AlarmActivity` (read). Mismatched extra keys fail silently (see BUG-2 in [known_bugs.md](known_bugs.md)); `AlarmServiceExtrasTest` pins the key constants but does not check that every hop forwards them.
 
 ### Database
 
-Room `AppDatabase` (currently version 24, `exportSchema = false`). Migrations are `MIGRATION_x_y` vals in `data/local/AppDatabase.kt`, registered in `di/AppModule.kt` `addMigrations(...)`. Bump the version, add the migration, and register it — all three.
+Room `AppDatabase` (currently version 26, `exportSchema = false`). Migrations are `MIGRATION_x_y` vals in `data/local/AppDatabase.kt`, registered in `di/AppModule.kt` `addMigrations(...)`. Bump the version, add the migration, and register it — all three. Trust this version number only after checking the `@Database` annotation; the line has gone stale before.
+
+### Timers
+
+Not alarm rows; no `AlarmService`. Spec: [docs/superpowers/specs/2026-11-12-timer-design.md](docs/superpowers/specs/2026-11-12-timer-design.md). Device QA: [docs/agents/MANUAL-DEVICE-QA.md](docs/agents/MANUAL-DEVICE-QA.md).
 
 ### Briefing (spoken wake-up summary)
 
@@ -67,6 +73,7 @@ Room `AppDatabase` (currently version 24, `exportSchema = false`). Migrations ar
 
 - One public `XxxScreen` Composable per screen; state in a ViewModel. New screens: a single `StateFlow<UiState>` + events. `SettingsViewModel` and the alarm list still use multiple `StateFlow`s (acceptable until refactored).
 - Routes are centralized in `ui/navigation/Screen.kt` + `LemurLoopNavGraph.kt`.
+- `HomeTabRoute` takes more than one `@Composable () -> Unit` slot (`timer`, `alarmList`). Always pass them **named**. A trailing lambda binds to the last parameter and can leave Alarms blank while Timer still works (`homeTabBody` + `HomeTabsTest`).
 - `MainScreen` locks the start route for the session. After onboarding finishes, that route can still be onboarding, so a tab switch must pop to `alarm_list`, not the graph start.
 - Navigation Compose 2.5.1, from `hilt-navigation-compose` 1.2.0, runs `popUpTo` before `launchSingleTop`. Re-tapping a destination that is not the root pops and restores unless the click returns without navigating.
 - Finishing onboarding replay pops back to the existing alarm list.
@@ -74,7 +81,7 @@ Room `AppDatabase` (currently version 24, `exportSchema = false`). Migrations ar
 - `androidx.ui.test.junit4` is declared for instrumented tests, and `app/src/androidTest` has no tests. A unit test cannot prove a composable is wired.
 - `HebrewResourceParityTest` requires `values-he` and `values-iw` to stay identical.
 - `SettingsScreen`, `AlarmDetailScreen` and `AlarmCreationWizard` are very large files — read the relevant section rather than the whole file.
-- **Settings search** uses a static registry in `domain/manager/SettingsSearch.kt`: a new searchable setting needs a matching `SettingSearchItem` entry there.
+- **Settings search** is the registry in `domain/manager/SettingsSearch.kt`. A new item needs a `SettingSearchItem`, a title, and a description in `SettingsSearchLabels`. A sub-screen also needs a `settingsSubScreen` branch; a new section name needs a section branch. A registry row alone shows as the generic Settings label and does nothing. `SettingsSubScreenRoutesTest` locks the title and the route.
 - Version info on About comes from `BuildConfig` (`VERSION_SUFFIX`, `BUILD_DATE`) / PackageManager — don't hardcode it.
 
 ## Localization (English / Hebrew, RTL)
@@ -91,8 +98,9 @@ Strings live in `res/values`, `res/values-iw` and `res/values-he` — add new st
 
 ## Multiple agents, one repo
 
-- Several agents may be live in the same clone. Before switching branches, run `git status`; if there is uncommitted work you didn't make, use a separate `git worktree` instead. Stage explicit paths only.
+- Several agents may be live in the same clone. Run `git status` and `git worktree list` before switching. A handoff can name a branch this checkout has already left; leave the checkout there and add a worktree. If there is uncommitted work you didn't make, use a worktree instead of switching. Stage explicit paths only.
 - Create branches from the remote base: `git checkout -b <name> origin/main`.
+- A receiver or service added only so an intent has a component name is not the finished feature. The handoff has to say what still will not happen.
 
 ## Shared memory — where lessons go
 

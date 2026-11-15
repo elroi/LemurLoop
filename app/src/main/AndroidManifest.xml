@@ -67,6 +67,16 @@
             android:excludeFromRecents="true"
             android:launchMode="singleTop" />
         
+        <activity
+            android:name=".ui.activity.TimerRingActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity=".timer"
+            android:theme="@style/Theme.LemurLoop" />
+        
         <!-- Receiver -->
         <receiver
             android:name=".receiver.AlarmReceiver"
@@ -84,8 +94,14 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".receiver.TimerFiredReceiver"
+            android:enabled="true"
+            android:exported="false" />
 
 
         <!-- Service -->
@@ -100,6 +116,12 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <service
+            android:name=".service.TimerRingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"

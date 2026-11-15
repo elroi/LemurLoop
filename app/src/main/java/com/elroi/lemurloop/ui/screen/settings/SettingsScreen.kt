@@ -77,55 +77,9 @@ import com.elroi.lemurloop.ui.viewmodel.SettingsUiEvent
 import com.elroi.lemurloop.ui.viewmodel.ToastMessage
 import com.elroi.lemurloop.domain.manager.SettingSearchItem
 
-private fun getSearchItemTitleRes(id: String): Int = when (id) {
-    "morning_personality" -> R.string.search_morning_personality_title
-    "briefing_tts" -> R.string.search_briefing_tts_title
-    "briefing_content" -> R.string.search_briefing_content_title
-    "alarm_creation_style" -> R.string.search_alarm_creation_style_title
-    "alarm_sound" -> R.string.search_alarm_sound_title
-    "vibration" -> R.string.search_vibration_title
-    "gentle_wake" -> R.string.search_gentle_wake_title
-    "snooze_duration" -> R.string.search_snooze_duration_title
-    "math_challenge" -> R.string.search_math_challenge_title
-    "face_game" -> R.string.search_face_game_title
-    "weekend_days" -> R.string.search_weekend_days_title
-    "accountability_buddies" -> R.string.search_accountability_buddies_title
-    "cloud_ai" -> R.string.search_cloud_ai_title
-    "gemini_api_key" -> R.string.search_gemini_api_key_title
-    "intelligence_health" -> R.string.search_intelligence_health_title
-    "about" -> R.string.search_about_title
-    "replay_tutorial" -> R.string.search_replay_tutorial_title
-    "demo_alarms" -> R.string.search_demo_alarms_title
-    "privacy_policy" -> R.string.search_privacy_policy_title
-    "diagnostic_logs" -> R.string.search_diagnostic_logs_title
-    "danger_zone" -> R.string.search_danger_zone_title
-    else -> R.string.settings_screen_title
-}
+private fun getSearchItemTitleRes(id: String): Int = SettingsSearchLabels.titleRes(id)
 
-private fun getSearchItemDescRes(id: String): Int = when (id) {
-    "morning_personality" -> R.string.search_morning_personality_desc
-    "briefing_tts" -> R.string.search_briefing_tts_desc
-    "briefing_content" -> R.string.search_briefing_content_desc
-    "alarm_creation_style" -> R.string.search_alarm_creation_style_desc
-    "alarm_sound" -> R.string.search_alarm_sound_desc
-    "vibration" -> R.string.search_vibration_desc
-    "gentle_wake" -> R.string.search_gentle_wake_desc
-    "snooze_duration" -> R.string.search_snooze_duration_desc
-    "math_challenge" -> R.string.search_math_challenge_desc
-    "face_game" -> R.string.search_face_game_desc
-    "weekend_days" -> R.string.search_weekend_days_desc
-    "accountability_buddies" -> R.string.search_accountability_buddies_desc
-    "cloud_ai" -> R.string.search_cloud_ai_desc
-    "gemini_api_key" -> R.string.search_gemini_api_key_desc
-    "intelligence_health" -> R.string.search_intelligence_health_desc
-    "about" -> R.string.search_about_desc
-    "replay_tutorial" -> R.string.search_replay_tutorial_desc
-    "demo_alarms" -> R.string.search_demo_alarms_desc
-    "privacy_policy" -> R.string.search_privacy_policy_desc
-    "diagnostic_logs" -> R.string.search_diagnostic_logs_desc
-    "danger_zone" -> R.string.search_danger_zone_desc
-    else -> R.string.settings_search_hint
-}
+private fun getSearchItemDescRes(id: String): Int = SettingsSearchLabels.descriptionRes(id)
 
 private fun getSearchSectionRes(section: String): Int = when (section) {
     "Morning Experience" -> R.string.settings_section_morning
@@ -144,6 +98,7 @@ fun SettingsScreen(
     onNavigateToOnboarding: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
     onNavigateToLogs: () -> Unit = {},
+    onNavigateToTimerSettings: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val location by viewModel.location.collectAsState()
@@ -349,10 +304,12 @@ fun SettingsScreen(
                             pendingScrollToSectionId = event.sectionId
                         }
                         is SettingsUiEvent.OpenSubScreen -> {
-                            when (event.route) {
-                                "about" -> onNavigateToAbout()
-                                "onboarding" -> onNavigateToOnboarding()
-                                "logs" -> onNavigateToLogs()
+                            when (settingsSubScreen(event.route)) {
+                                SettingsSubScreen.About -> onNavigateToAbout()
+                                SettingsSubScreen.Onboarding -> onNavigateToOnboarding()
+                                SettingsSubScreen.Logs -> onNavigateToLogs()
+                                SettingsSubScreen.TimerSettings -> onNavigateToTimerSettings()
+                                null -> Unit
                             }
                         }
                         is SettingsUiEvent.PerformInlineAction -> {
@@ -1500,6 +1457,21 @@ fun SettingsScreen(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
+
+                        Row(
+                            modifier = Modifier
+                                .clickable { onNavigateToTimerSettings() }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.timer_settings), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.search_timer_settings_desc), style = MaterialTheme.typography.bodySmall)
+                            }
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null)
+                        }
 
                         // About
                         Row(

@@ -11,6 +11,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -30,6 +31,7 @@ import com.elroi.lemurloop.ui.viewmodel.OnboardingViewModel
 
 @Composable
 fun MainScreen(
+    openTimerNonce: Int = 0,
     onboardingViewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val isOnboardingComplete by onboardingViewModel.isOnboardingComplete.collectAsStateWithLifecycle()
@@ -56,6 +58,16 @@ fun MainScreen(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBar = showsHomeBar(currentRoute)
+
+    LaunchedEffect(openTimerNonce, isOnboardingComplete) {
+        if (openTimerNonce > 0 && isOnboardingComplete == true) {
+            navController.navigate(Screen.Timer.route) {
+                popUpTo(Screen.AlarmList.route) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
