@@ -9,13 +9,3 @@ The last remaining old remote branch. It has two unmerged commits not in `main`:
 ## Device verification pending (2026-09-17)
 
 BUG-2, BUG-4 and BUG-5 in [known_bugs.md](../../known_bugs.md) are fixed in code but haven't been checked on a real device.
-
-## Timer device check — `feature/timer` (2026-11-13, closed 2026-11-15)
-
-Worktree `/Users/elroi/Developer/LemurLoop-feature-timer` on `feature/timer`. Plan manual check finished on device.
-
-**Passed (full checklist):** preset/keypad; screen-off ring; dismiss; next-alarm chip; tab-to-zero; pause/+1/refresh/play/duplicate/rename/swipe/undo; two timers; reboot ≥60s quiet finish; clock fwd/back; timer settings; full-screen bar; Alarms blank fix; Settings search → Timer settings; wipeAll with running timer (alarm cancelled, no ring past old end); Hebrew bar/HMS/swipe-left/strings; existing alarm → `AlarmActivity`/`AlarmService` (not timer challenge/buddy).
-
-**Still unverified (accepted):** few-seconds overdue ring after unlock within ~30s.
-
-Do not commit until asked.
