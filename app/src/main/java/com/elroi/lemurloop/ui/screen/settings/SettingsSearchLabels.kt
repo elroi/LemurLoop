@@ -43,6 +43,11 @@ object SettingsSearchLabels {
         "diagnostic_logs" -> R.string.search_diagnostic_logs_title
         "danger_zone" -> R.string.search_danger_zone_title
         "timer_settings" -> R.string.search_timer_settings_title
+        "timer_voice_cues" -> R.string.search_timer_voice_cues_title
+        "timer_voice_cue_start" -> R.string.search_timer_voice_cue_start_title
+        "timer_voice_cue_mid_remaining" -> R.string.search_timer_voice_cue_mid_remaining_title
+        "timer_voice_cue_last_ten" -> R.string.search_timer_voice_cue_last_ten_title
+        "timer_voice_announce_on_resume" -> R.string.search_timer_voice_announce_on_resume_title
         else -> R.string.settings_screen_title
     }
 
@@ -69,6 +74,11 @@ object SettingsSearchLabels {
         "diagnostic_logs" -> R.string.search_diagnostic_logs_desc
         "danger_zone" -> R.string.search_danger_zone_desc
         "timer_settings" -> R.string.search_timer_settings_desc
+        "timer_voice_cues" -> R.string.search_timer_voice_cues_desc
+        "timer_voice_cue_start" -> R.string.search_timer_voice_cue_start_desc
+        "timer_voice_cue_mid_remaining" -> R.string.search_timer_voice_cue_mid_remaining_desc
+        "timer_voice_cue_last_ten" -> R.string.search_timer_voice_cue_last_ten_desc
+        "timer_voice_announce_on_resume" -> R.string.search_timer_voice_announce_on_resume_desc
         else -> R.string.settings_search_hint
     }
 }

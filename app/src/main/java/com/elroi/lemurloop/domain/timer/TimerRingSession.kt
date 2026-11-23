@@ -111,12 +111,14 @@ class TimerRingHandler(
     private val stopPlayback: () -> Unit,
     private val stopVibration: () -> Unit,
     private val stopService: () -> Unit,
-    private val cancelAlarm: (Long) -> Unit
+    private val cancelAlarm: (Long) -> Unit,
+    private val cancelVoiceCues: (Long) -> Unit
 ) {
     var sessionOpen: Boolean = false
 
     fun onFire(timerId: Long) {
         foreground()
+        cancelVoiceCues(timerId)
         if (sessionOpen) {
             val timer = loadTimer(timerId) ?: return
             saveTimers(listOf(TimerTransitions.beginRing(timer)))

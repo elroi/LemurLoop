@@ -1,11 +1,13 @@
 package com.elroi.lemurloop.data.repository
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.elroi.lemurloop.domain.timer.TimerSettings
 import com.elroi.lemurloop.domain.timer.TimerSound
 import com.elroi.lemurloop.domain.timer.TimerVibration
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueGlobals
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,8 +42,59 @@ class TimerSettingsRepositoryImplTest {
     @Test
     fun get_emptyStore_usesTheTimerDefaults() = runBlocking {
         withRepository { repository, _ ->
-            assertEquals(TimerSettings(), repository.get())
+            val settings = repository.get()
+            assertEquals(TimerSettings(), settings)
+            assertFalse(settings.voiceCuesMasterEnabled)
+            assertEquals(true, settings.voiceCueStartEnabled)
+            assertEquals(true, settings.voiceCueMidRemainingEnabled)
+            assertEquals(true, settings.voiceCueLastTenEnabled)
+            assertEquals(true, settings.voiceCueAnnounceOnResume)
         }
+    }
+
+    @Test
+    fun update_thenGet_roundTripsVoiceCueFlags() = runBlocking {
+        withRepository { repository, store ->
+            val written = TimerSettings(
+                voiceCuesMasterEnabled = true,
+                voiceCueStartEnabled = false,
+                voiceCueMidRemainingEnabled = false,
+                voiceCueLastTenEnabled = false,
+                voiceCueAnnounceOnResume = false
+            )
+
+            repository.update(written)
+
+            assertEquals(written, repository.get())
+            val stored = store.data.first()
+            assertEquals(true, stored[booleanPreferencesKey("voice_cues_master_enabled")])
+            assertEquals(false, stored[booleanPreferencesKey("voice_cue_start_enabled")])
+            assertEquals(false, stored[booleanPreferencesKey("voice_cue_mid_remaining_enabled")])
+            assertEquals(false, stored[booleanPreferencesKey("voice_cue_last_ten_enabled")])
+            assertEquals(false, stored[booleanPreferencesKey("voice_cue_announce_on_resume")])
+        }
+    }
+
+    @Test
+    fun toVoiceCueGlobals_mapsAllVoiceCueFlags() {
+        val settings = TimerSettings(
+            voiceCuesMasterEnabled = true,
+            voiceCueStartEnabled = false,
+            voiceCueMidRemainingEnabled = false,
+            voiceCueLastTenEnabled = false,
+            voiceCueAnnounceOnResume = false
+        )
+
+        assertEquals(
+            TimerVoiceCueGlobals(
+                masterEnabled = true,
+                startEnabled = false,
+                midRemainingEnabled = false,
+                lastTenEnabled = false,
+                announceOnResume = false
+            ),
+            settings.toVoiceCueGlobals()
+        )
     }
 
     @Test

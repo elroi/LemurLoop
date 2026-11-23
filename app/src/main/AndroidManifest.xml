@@ -103,6 +103,10 @@
             android:enabled="true"
             android:exported="false" />
 
+        <receiver
+            android:name=".receiver.TimerVoiceCueReceiver"
+            android:enabled="true"
+            android:exported="false" />
 
         <!-- Service -->
         <service
@@ -119,6 +123,12 @@
 
         <service
             android:name=".service.TimerRingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <service
+            android:name=".service.TimerVoiceCueService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />

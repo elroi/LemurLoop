@@ -170,12 +170,20 @@ val MIGRATION_25_26 = object : Migration(25, 26) {
     }
 }
 
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE timers ADD COLUMN voiceCueStartOverride INTEGER DEFAULT NULL;")
+        db.execSQL("ALTER TABLE timers ADD COLUMN voiceCueMidRemainingOverride INTEGER DEFAULT NULL;")
+        db.execSQL("ALTER TABLE timers ADD COLUMN voiceCueLastTenOverride INTEGER DEFAULT NULL;")
+    }
+}
+
 @Database(entities = [
     AlarmEntity::class,
     com.elroi.lemurloop.data.local.entity.SleepRecordEntity::class,
     com.elroi.lemurloop.data.local.entity.DiagnosticLogEntity::class,
     TimerEntity::class
-], version = 26, exportSchema = false)
+], version = 27, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alarmDao(): AlarmDao

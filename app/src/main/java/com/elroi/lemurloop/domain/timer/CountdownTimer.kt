@@ -13,8 +13,19 @@ data class CountdownTimer(
     val endsAtEpochMillis: Long?,
     val pausedRemainingMillis: Long?,
     val phase: TimerPhase,
-    val createdAtEpochMillis: Long
+    val createdAtEpochMillis: Long,
+    val voiceCueStartOverride: Boolean? = null,
+    val voiceCueMidRemainingOverride: Boolean? = null,
+    val voiceCueLastTenOverride: Boolean? = null
 )
+
+fun CountdownTimer.voiceOverrides(): TimerVoiceCueOverrides {
+    return TimerVoiceCueOverrides(
+        start = voiceCueStartOverride,
+        midRemaining = voiceCueMidRemainingOverride,
+        lastTen = voiceCueLastTenOverride
+    )
+}
 
 object TimerLimits {
     const val MAX_TIMERS = 20

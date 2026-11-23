@@ -176,6 +176,21 @@ class TimerTransitionsTest {
     }
 
     @Test
+    fun duplicate_copiesVoiceOverrides() {
+        val source = paused(
+            voiceCueStartOverride = true,
+            voiceCueMidRemainingOverride = false,
+            voiceCueLastTenOverride = null
+        )
+
+        val copy = TimerTransitions.duplicate(source, newId = 9L, nowEpochMillis = 800L)
+
+        assertEquals(true, copy.voiceCueStartOverride)
+        assertEquals(false, copy.voiceCueMidRemainingOverride)
+        assertNull(copy.voiceCueLastTenOverride)
+    }
+
+    @Test
     fun rename_trimsToFortyCharactersAndKeepsTheTimer() {
         val timer = running(label = "old", createdAt = 15L, endsAt = 77_000L)
         val renamed = TimerTransitions.rename(timer, "  " + "a".repeat(50) + "  ")
@@ -309,7 +324,10 @@ class TimerTransitionsTest {
         label: String = "Tea",
         original: Long = FIVE_MINUTES,
         remaining: Long = FIVE_MINUTES,
-        createdAt: Long = 10L
+        createdAt: Long = 10L,
+        voiceCueStartOverride: Boolean? = null,
+        voiceCueMidRemainingOverride: Boolean? = null,
+        voiceCueLastTenOverride: Boolean? = null
     ) = CountdownTimer(
         id = id,
         label = label,
@@ -317,7 +335,10 @@ class TimerTransitionsTest {
         endsAtEpochMillis = null,
         pausedRemainingMillis = remaining,
         phase = TimerPhase.Paused,
-        createdAtEpochMillis = createdAt
+        createdAtEpochMillis = createdAt,
+        voiceCueStartOverride = voiceCueStartOverride,
+        voiceCueMidRemainingOverride = voiceCueMidRemainingOverride,
+        voiceCueLastTenOverride = voiceCueLastTenOverride
     )
 
     private companion object {

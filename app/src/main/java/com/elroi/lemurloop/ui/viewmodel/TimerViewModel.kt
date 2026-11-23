@@ -10,6 +10,8 @@ import com.elroi.lemurloop.domain.timer.TimerListController
 import com.elroi.lemurloop.domain.timer.TimerOrdering
 import com.elroi.lemurloop.domain.timer.TimerRingControls
 import com.elroi.lemurloop.domain.timer.TimerRingStop
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueKind
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -29,15 +31,17 @@ data class TimerListUiState(
 
 @HiltViewModel
 class TimerViewModel @Inject constructor(
-    repository: TimerRepository,
+    private val repository: TimerRepository,
     scheduler: TimerScheduler,
     ringStop: TimerRingStop,
+    private val voiceCues: TimerVoiceCueCoordinatorPort,
     private val ringControls: TimerRingControls
 ) : ViewModel() {
     private val controller = TimerListController(
         repository = repository,
         scheduler = scheduler,
         ringStop = ringStop,
+        voiceCues = voiceCues,
         now = { System.currentTimeMillis() }
     )
     private val timers = MutableStateFlow<List<CountdownTimer>>(emptyList())
@@ -76,6 +80,15 @@ class TimerViewModel @Inject constructor(
     fun duplicate(id: Long) = run { controller.duplicate(id) }
     fun delete(id: Long) = run { controller.delete(id) }
     fun undo() = run { controller.undo() }
+
+    fun setVoiceCueStartOverride(id: Long, value: Boolean?) =
+        run { controller.setVoiceCueOverride(id, TimerVoiceCueKind.Start, value) }
+
+    fun setVoiceCueMidRemainingOverride(id: Long, value: Boolean?) =
+        run { controller.setVoiceCueOverride(id, TimerVoiceCueKind.MidRemaining, value) }
+
+    fun setVoiceCueLastTenOverride(id: Long, value: Boolean?) =
+        run { controller.setVoiceCueOverride(id, TimerVoiceCueKind.EnterLastTen, value) }
 
     fun dismissRinging() {
         ringControls.dismiss()

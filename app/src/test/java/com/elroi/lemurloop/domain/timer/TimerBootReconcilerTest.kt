@@ -57,7 +57,14 @@ class TimerBootReconcilerTest {
         val repository = MemoryTimers(listOf(future, paused, ringing))
         val scheduler = MemoryScheduler()
         val notifier = MemoryNotifier()
-        reconciler(repository, scheduler, notifier, ringRunning = false).reconcile(now)
+        val voiceCues = RecordingVoiceCues()
+        reconciler(
+            repository,
+            scheduler,
+            notifier,
+            ringRunning = false,
+            voiceCues = voiceCues
+        ).reconcile(now)
 
         assertEquals(
             listOf(Scheduled(1L, now + 10_000L), Scheduled(5L, now)),
@@ -67,6 +74,10 @@ class TimerBootReconcilerTest {
         assertTrue(notifier.finished.isEmpty())
         assertEquals(TimerPhase.Ringing, repository.getById(5L)!!.phase)
         assertEquals(TimerPhase.Running, repository.getById(1L)!!.phase)
+        assertEquals(
+            listOf(VoiceCueChange(1L, TimerVoiceCueRebuildReason.SilentReplan)),
+            voiceCues.changes
+        )
     }
 
     @Test
@@ -93,12 +104,14 @@ class TimerBootReconcilerTest {
         repository: TimerRepository,
         scheduler: TimerScheduler,
         notifier: TimerFinishedNotifier,
-        ringRunning: Boolean
+        ringRunning: Boolean,
+        voiceCues: TimerVoiceCueCoordinatorPort = RecordingVoiceCues()
     ) = TimerBootReconciler(
         repository = repository,
         scheduler = scheduler,
         notifier = notifier,
-        ringRunning = { ringRunning }
+        ringRunning = { ringRunning },
+        voiceCues = voiceCues
     )
 
     private fun running(
@@ -152,7 +165,21 @@ class TimerBootReconcilerTest {
         }
     }
 
+    private class RecordingVoiceCues : TimerVoiceCueCoordinatorPort {
+        val changes = mutableListOf<VoiceCueChange>()
+        override fun onTimerChanged(timerId: Long, reason: TimerVoiceCueRebuildReason) {
+            changes += VoiceCueChange(timerId, reason)
+        }
+        override fun onVoiceGlobalsChanged() = Unit
+        override fun cancel(timerId: Long) = Unit
+        override fun cancelAll() = Unit
+    }
+
     private data class Scheduled(val timerId: Long, val triggerAtEpochMillis: Long)
+    private data class VoiceCueChange(
+        val timerId: Long,
+        val reason: TimerVoiceCueRebuildReason
+    )
 
     private companion object {
         const val FIVE_MINUTES = 5 * 60_000L

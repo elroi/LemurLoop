@@ -14,6 +14,7 @@ class TimerListController(
     private val repository: TimerRepository,
     private val scheduler: TimerScheduler,
     private val ringStop: TimerRingStop,
+    private val voiceCues: TimerVoiceCueCoordinatorPort,
     private val now: () -> Long
 ) {
     private var pendingUndo: CountdownTimer? = null
@@ -41,6 +42,7 @@ class TimerListController(
                 val id = repository.upsert(created.timer)
                 val end = created.timer.endsAtEpochMillis ?: return TimerCommandResult.Refused
                 scheduler.schedule(id, end)
+                voiceCues.onTimerChanged(id, TimerVoiceCueRebuildReason.CreateOrDuplicate)
                 TimerCommandResult.Applied
             }
             TimerCreation.LimitReached -> TimerCommandResult.LimitReached
@@ -48,17 +50,46 @@ class TimerListController(
         }
     }
 
-    suspend fun pause(id: Long): TimerCommandResult = edit(id) { TimerTransitions.pause(it, now()) }
+    suspend fun pause(id: Long): TimerCommandResult =
+        edit(id, TimerVoiceCueRebuildReason.CancelOnly) { TimerTransitions.pause(it, now()) }
 
-    suspend fun play(id: Long): TimerCommandResult = edit(id) { TimerTransitions.play(it, now()) }
+    suspend fun play(id: Long): TimerCommandResult =
+        edit(id, TimerVoiceCueRebuildReason.Resume) { TimerTransitions.play(it, now()) }
 
-    suspend fun addOneMinute(id: Long): TimerCommandResult = edit(id) { TimerTransitions.addOneMinute(it, now()) }
+    suspend fun addOneMinute(id: Long): TimerCommandResult =
+        edit(id, TimerVoiceCueRebuildReason.SilentReplan) {
+            TimerTransitions.addOneMinute(it, now())
+        }
 
-    suspend fun refresh(id: Long): TimerCommandResult = edit(id) { TimerTransitions.refresh(it) }
+    suspend fun refresh(id: Long): TimerCommandResult =
+        edit(id, TimerVoiceCueRebuildReason.CancelOnly) { TimerTransitions.refresh(it) }
 
     suspend fun rename(id: Long, label: String): TimerCommandResult {
         val timer = repository.getById(id) ?: return TimerCommandResult.Refused
         repository.upsert(TimerTransitions.rename(timer, label))
+        return TimerCommandResult.Applied
+    }
+
+    suspend fun setVoiceCueOverride(
+        id: Long,
+        kind: TimerVoiceCueKind,
+        value: Boolean?
+    ): TimerCommandResult {
+        val timer = repository.getById(id) ?: return TimerCommandResult.Refused
+        val updated = when (kind) {
+            TimerVoiceCueKind.Start -> timer.copy(voiceCueStartOverride = value)
+            TimerVoiceCueKind.MidRemaining -> timer.copy(voiceCueMidRemainingOverride = value)
+            TimerVoiceCueKind.EnterLastTen -> timer.copy(voiceCueLastTenOverride = value)
+        }
+        repository.upsert(updated)
+        voiceCues.onTimerChanged(
+            id,
+            if (updated.phase == TimerPhase.Running) {
+                TimerVoiceCueRebuildReason.SilentReplan
+            } else {
+                TimerVoiceCueRebuildReason.CancelOnly
+            }
+        )
         return TimerCommandResult.Applied
     }
 
@@ -69,6 +100,7 @@ class TimerListController(
         val newId = repository.upsert(copy)
         val end = copy.endsAtEpochMillis ?: return TimerCommandResult.Refused
         scheduler.schedule(newId, end)
+        voiceCues.onTimerChanged(newId, TimerVoiceCueRebuildReason.CreateOrDuplicate)
         return TimerCommandResult.Applied
     }
 
@@ -77,6 +109,7 @@ class TimerListController(
         val anotherRinging = repository.getAll().any { it.id != id && it.phase == TimerPhase.Ringing }
         repository.delete(id)
         scheduler.cancel(id)
+        voiceCues.onTimerChanged(id, TimerVoiceCueRebuildReason.CancelOnly)
         pendingUndo = timer
         undoUntilEpochMillis = now() + UNDO_WINDOW_MILLIS
         if (timer.phase == TimerPhase.Ringing && !anotherRinging) {
@@ -97,11 +130,23 @@ class TimerListController(
             is TimerArm.Schedule -> scheduler.schedule(arm.timerId, arm.triggerAtEpochMillis)
             is TimerArm.Cancel -> scheduler.cancel(arm.timerId)
         }
+        voiceCues.onTimerChanged(
+            snapshot.id,
+            if (snapshot.phase == TimerPhase.Running) {
+                TimerVoiceCueRebuildReason.SilentReplan
+            } else {
+                TimerVoiceCueRebuildReason.CancelOnly
+            }
+        )
         pendingUndo = null
         return TimerCommandResult.Applied
     }
 
-    private suspend fun edit(id: Long, change: (CountdownTimer) -> TimerEdit): TimerCommandResult {
+    private suspend fun edit(
+        id: Long,
+        voiceCueReason: TimerVoiceCueRebuildReason,
+        change: (CountdownTimer) -> TimerEdit
+    ): TimerCommandResult {
         val timer = repository.getById(id) ?: return TimerCommandResult.Refused
         return when (val edit = change(timer)) {
             is TimerEdit.Applied -> {
@@ -112,6 +157,7 @@ class TimerListController(
                 } else {
                     scheduler.cancel(edit.timer.id)
                 }
+                voiceCues.onTimerChanged(edit.timer.id, voiceCueReason)
                 TimerCommandResult.Applied
             }
             TimerEdit.Refused -> TimerCommandResult.Refused

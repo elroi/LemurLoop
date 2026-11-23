@@ -14,7 +14,10 @@ data class TimerEntity(
     val endsAtEpochMillis: Long?,
     val pausedRemainingMillis: Long?,
     val phase: String,
-    val createdAtEpochMillis: Long
+    val createdAtEpochMillis: Long,
+    val voiceCueStartOverride: Boolean? = null,
+    val voiceCueMidRemainingOverride: Boolean? = null,
+    val voiceCueLastTenOverride: Boolean? = null
 ) {
     fun toDomain(): CountdownTimer {
         return CountdownTimer(
@@ -24,7 +27,10 @@ data class TimerEntity(
             endsAtEpochMillis = endsAtEpochMillis,
             pausedRemainingMillis = pausedRemainingMillis,
             phase = TimerPhase.valueOf(phase),
-            createdAtEpochMillis = createdAtEpochMillis
+            createdAtEpochMillis = createdAtEpochMillis,
+            voiceCueStartOverride = voiceCueStartOverride,
+            voiceCueMidRemainingOverride = voiceCueMidRemainingOverride,
+            voiceCueLastTenOverride = voiceCueLastTenOverride
         )
     }
 
@@ -37,7 +43,10 @@ data class TimerEntity(
                 endsAtEpochMillis = timer.endsAtEpochMillis,
                 pausedRemainingMillis = timer.pausedRemainingMillis,
                 phase = timer.phase.name,
-                createdAtEpochMillis = timer.createdAtEpochMillis
+                createdAtEpochMillis = timer.createdAtEpochMillis,
+                voiceCueStartOverride = timer.voiceCueStartOverride,
+                voiceCueMidRemainingOverride = timer.voiceCueMidRemainingOverride,
+                voiceCueLastTenOverride = timer.voiceCueLastTenOverride
             )
         }
     }

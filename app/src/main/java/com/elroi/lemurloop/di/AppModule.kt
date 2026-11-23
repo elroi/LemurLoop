@@ -50,7 +50,8 @@ object AppModule {
                 com.elroi.lemurloop.data.local.MIGRATION_22_23,
                 com.elroi.lemurloop.data.local.MIGRATION_23_24,
                 com.elroi.lemurloop.data.local.MIGRATION_24_25,
-                com.elroi.lemurloop.data.local.MIGRATION_25_26
+                com.elroi.lemurloop.data.local.MIGRATION_25_26,
+                com.elroi.lemurloop.data.local.MIGRATION_26_27
             )
             .build()
     }
@@ -115,16 +116,64 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideTimerVoiceCueScheduler(
+        app: Application
+    ): com.elroi.lemurloop.domain.scheduler.TimerVoiceCueScheduler {
+        return com.elroi.lemurloop.data.scheduler.AndroidTimerVoiceCueScheduler(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerVoiceCueSpeaker(
+        app: Application
+    ): com.elroi.lemurloop.domain.timer.TimerVoiceCueSpeaker {
+        return com.elroi.lemurloop.data.voice.AndroidTimerVoiceCueSpeaker(app)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimerVoiceCueCoordinator(
+        repository: com.elroi.lemurloop.domain.repository.TimerRepository,
+        settingsRepository: com.elroi.lemurloop.domain.repository.TimerSettingsRepository,
+        scheduler: com.elroi.lemurloop.domain.scheduler.TimerVoiceCueScheduler,
+        speaker: com.elroi.lemurloop.domain.timer.TimerVoiceCueSpeaker
+    ): com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort {
+        return com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinator(
+            settings = {
+                kotlinx.coroutines.runBlocking {
+                    settingsRepository.get().toVoiceCueGlobals()
+                }
+            },
+            loadTimer = { id ->
+                kotlinx.coroutines.runBlocking { repository.getById(id) }
+            },
+            loadRunningTimers = {
+                kotlinx.coroutines.runBlocking {
+                    repository.getAll().filter {
+                        it.phase == com.elroi.lemurloop.domain.timer.TimerPhase.Running
+                    }
+                }
+            },
+            scheduler = scheduler,
+            speaker = speaker,
+            now = System::currentTimeMillis
+        )
+    }
+
+    @Provides
+    @Singleton
     fun provideTimerBootReconciler(
         repository: com.elroi.lemurloop.domain.repository.TimerRepository,
         scheduler: com.elroi.lemurloop.domain.scheduler.TimerScheduler,
-        notifier: com.elroi.lemurloop.domain.timer.TimerFinishedNotifier
+        notifier: com.elroi.lemurloop.domain.timer.TimerFinishedNotifier,
+        voiceCues: com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort
     ): com.elroi.lemurloop.domain.timer.TimerBootReconciler {
         return com.elroi.lemurloop.domain.timer.TimerBootReconciler(
             repository = repository,
             scheduler = scheduler,
             notifier = notifier,
-            ringRunning = { com.elroi.lemurloop.domain.timer.TimerRingSession.isRunning() }
+            ringRunning = { com.elroi.lemurloop.domain.timer.TimerRingSession.isRunning() },
+            voiceCues = voiceCues
         )
     }
 
@@ -166,6 +215,7 @@ object AppModule {
         timerRepository: com.elroi.lemurloop.domain.repository.TimerRepository,
         timerSettingsRepository: com.elroi.lemurloop.domain.repository.TimerSettingsRepository,
         timerScheduler: com.elroi.lemurloop.domain.scheduler.TimerScheduler,
+        timerVoiceCues: com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort,
         timerRingStop: com.elroi.lemurloop.domain.timer.TimerRingStop,
         timerTrackGrantReleaser: com.elroi.lemurloop.domain.timer.TimerTrackGrantReleaser
     ): com.elroi.lemurloop.data.repository.TimerDataWiper {
@@ -173,6 +223,7 @@ object AppModule {
             timerRepository = timerRepository,
             timerSettingsRepository = timerSettingsRepository,
             timerScheduler = timerScheduler,
+            timerVoiceCues = timerVoiceCues,
             timerRingStop = timerRingStop,
             timerTrackGrantReleaser = timerTrackGrantReleaser
         )
