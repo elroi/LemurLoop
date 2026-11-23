@@ -42,7 +42,10 @@ class TimerRingSessionTest {
 
         rig.handler.onFire(9L)
 
-        assertEquals(listOf("foreground", "load", "save", "cancel:9"), rig.events)
+        assertEquals(
+            listOf("foreground", "cancelVoice:9", "load", "save", "cancel:9"),
+            rig.events
+        )
         assertEquals(TimerPhase.Ringing, rig.timers.getValue(9L).phase)
         assertTrue(rig.handler.sessionOpen)
     }
@@ -124,8 +127,18 @@ class TimerRingSessionTest {
         rig.timers.clear()
         rig.handler.onFire(4L)
 
-        assertEquals(listOf("foreground", "load", "stopService"), rig.events)
+        assertEquals(listOf("foreground", "cancelVoice:4", "load", "stopService"), rig.events)
         assertFalse(rig.handler.sessionOpen)
+    }
+
+    @Test
+    fun fire_cancelsVoiceCuesForOnlyTheFiringTimer() {
+        val rig = Rig()
+
+        rig.handler.onFire(4L)
+
+        assertTrue(rig.events.contains("cancelVoice:4"))
+        assertFalse(rig.events.contains("cancelVoice:9"))
     }
 
     @Test
@@ -245,7 +258,8 @@ class TimerRingSessionTest {
             stopPlayback = { events += "stopPlayback" },
             stopVibration = { events += "stopVibration" },
             stopService = { events += "stopService" },
-            cancelAlarm = { id -> events += "cancel:$id" }
+            cancelAlarm = { id -> events += "cancel:$id" },
+            cancelVoiceCues = { id -> events += "cancelVoice:$id" }
         )
     }
 }

@@ -127,6 +127,39 @@ fun TimerSettingsScreen(
             if (settings.sound == TimerSound.Silent && settings.vibration == TimerVibration.Off) {
                 Text(stringResource(R.string.timer_quiet_ring), color = MaterialTheme.colorScheme.error)
             }
+            Text(
+                stringResource(R.string.timer_voice_cues),
+                style = MaterialTheme.typography.titleMedium
+            )
+            SwitchRow(
+                label = stringResource(R.string.timer_voice_cues_master),
+                checked = settings.voiceCuesMasterEnabled,
+                onChange = viewModel::setVoiceCuesMasterEnabled
+            )
+            SwitchRow(
+                label = stringResource(R.string.timer_voice_cue_start),
+                checked = settings.voiceCueStartEnabled,
+                onChange = viewModel::setVoiceCueStartEnabled,
+                enabled = settings.voiceCuesMasterEnabled
+            )
+            SwitchRow(
+                label = stringResource(R.string.timer_voice_cue_mid_remaining),
+                checked = settings.voiceCueMidRemainingEnabled,
+                onChange = viewModel::setVoiceCueMidRemainingEnabled,
+                enabled = settings.voiceCuesMasterEnabled
+            )
+            SwitchRow(
+                label = stringResource(R.string.timer_voice_cue_last_ten),
+                checked = settings.voiceCueLastTenEnabled,
+                onChange = viewModel::setVoiceCueLastTenEnabled,
+                enabled = settings.voiceCuesMasterEnabled
+            )
+            SwitchRow(
+                label = stringResource(R.string.timer_voice_announce_on_resume),
+                checked = settings.voiceCueAnnounceOnResume,
+                onChange = viewModel::setVoiceCueAnnounceOnResume,
+                enabled = settings.voiceCuesMasterEnabled
+            )
         }
     }
 }
@@ -156,9 +189,26 @@ private fun VibrationChip(
 }
 
 @Composable
-private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun SwitchRow(
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    enabled: Boolean = true
+) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChange)
+        Text(
+            label,
+            modifier = Modifier.weight(1f),
+            color = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            }
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            enabled = enabled
+        )
     }
 }

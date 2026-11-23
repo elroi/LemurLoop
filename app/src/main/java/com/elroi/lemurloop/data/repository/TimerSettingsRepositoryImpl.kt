@@ -42,6 +42,11 @@ class TimerSettingsRepositoryImpl(
             } else {
                 prefs[CAPTURED_ALARM_VOLUME] = normalized.capturedAlarmVolume
             }
+            prefs[VOICE_CUES_MASTER_ENABLED] = normalized.voiceCuesMasterEnabled
+            prefs[VOICE_CUE_START_ENABLED] = normalized.voiceCueStartEnabled
+            prefs[VOICE_CUE_MID_REMAINING_ENABLED] = normalized.voiceCueMidRemainingEnabled
+            prefs[VOICE_CUE_LAST_TEN_ENABLED] = normalized.voiceCueLastTenEnabled
+            prefs[VOICE_CUE_ANNOUNCE_ON_RESUME] = normalized.voiceCueAnnounceOnResume
         }
     }
 
@@ -62,7 +67,12 @@ class TimerSettingsRepositoryImpl(
             rampMinutes = prefs[RAMP_MINUTES] ?: 1,
             vibration = TimerVibration.fromStored(prefs[VIBRATION]),
             keepScreenOn = prefs[KEEP_SCREEN_ON] ?: true,
-            capturedAlarmVolume = prefs[CAPTURED_ALARM_VOLUME]
+            capturedAlarmVolume = prefs[CAPTURED_ALARM_VOLUME],
+            voiceCuesMasterEnabled = prefs[VOICE_CUES_MASTER_ENABLED] ?: false,
+            voiceCueStartEnabled = prefs[VOICE_CUE_START_ENABLED] ?: true,
+            voiceCueMidRemainingEnabled = prefs[VOICE_CUE_MID_REMAINING_ENABLED] ?: true,
+            voiceCueLastTenEnabled = prefs[VOICE_CUE_LAST_TEN_ENABLED] ?: true,
+            voiceCueAnnounceOnResume = prefs[VOICE_CUE_ANNOUNCE_ON_RESUME] ?: true
         ).normalized()
     }
 
@@ -77,5 +87,10 @@ class TimerSettingsRepositoryImpl(
         private val VIBRATION = stringPreferencesKey(VIBRATION_KEY)
         private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         private val CAPTURED_ALARM_VOLUME = intPreferencesKey("captured_alarm_volume")
+        private val VOICE_CUES_MASTER_ENABLED = booleanPreferencesKey("voice_cues_master_enabled")
+        private val VOICE_CUE_START_ENABLED = booleanPreferencesKey("voice_cue_start_enabled")
+        private val VOICE_CUE_MID_REMAINING_ENABLED = booleanPreferencesKey("voice_cue_mid_remaining_enabled")
+        private val VOICE_CUE_LAST_TEN_ENABLED = booleanPreferencesKey("voice_cue_last_ten_enabled")
+        private val VOICE_CUE_ANNOUNCE_ON_RESUME = booleanPreferencesKey("voice_cue_announce_on_resume")
     }
 }

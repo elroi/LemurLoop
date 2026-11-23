@@ -7,6 +7,7 @@ import com.elroi.lemurloop.domain.timer.TimerSettings
 import com.elroi.lemurloop.domain.timer.TimerSound
 import com.elroi.lemurloop.domain.timer.TimerTrackGrantReleaser
 import com.elroi.lemurloop.domain.timer.TimerVibration
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class TimerSettingsViewModel @Inject constructor(
     private val repository: TimerSettingsRepository,
-    private val grants: TimerTrackGrantReleaser
+    private val grants: TimerTrackGrantReleaser,
+    private val voiceCues: TimerVoiceCueCoordinatorPort
 ) : ViewModel() {
     val settings = repository.observe().stateIn(
         viewModelScope,
@@ -31,6 +33,16 @@ class TimerSettingsViewModel @Inject constructor(
     fun setRampMinutes(minutes: Int) = update { it.copy(rampMinutes = minutes) }
     fun setVibration(vibration: TimerVibration) = update { it.copy(vibration = vibration) }
     fun setKeepScreenOn(enabled: Boolean) = update { it.copy(keepScreenOn = enabled) }
+    fun setVoiceCuesMasterEnabled(enabled: Boolean) =
+        updateVoice { it.copy(voiceCuesMasterEnabled = enabled) }
+    fun setVoiceCueStartEnabled(enabled: Boolean) =
+        updateVoice { it.copy(voiceCueStartEnabled = enabled) }
+    fun setVoiceCueMidRemainingEnabled(enabled: Boolean) =
+        updateVoice { it.copy(voiceCueMidRemainingEnabled = enabled) }
+    fun setVoiceCueLastTenEnabled(enabled: Boolean) =
+        updateVoice { it.copy(voiceCueLastTenEnabled = enabled) }
+    fun setVoiceCueAnnounceOnResume(enabled: Boolean) =
+        updateVoice { it.copy(voiceCueAnnounceOnResume = enabled) }
 
     fun setTrack(uri: String) {
         viewModelScope.launch {
@@ -53,6 +65,13 @@ class TimerSettingsViewModel @Inject constructor(
     private fun update(change: (TimerSettings) -> TimerSettings) {
         viewModelScope.launch {
             repository.update(change(repository.get()))
+        }
+    }
+
+    private fun updateVoice(change: (TimerSettings) -> TimerSettings) {
+        viewModelScope.launch {
+            repository.update(change(repository.get()))
+            voiceCues.onVoiceGlobalsChanged()
         }
     }
 }

@@ -29,6 +29,7 @@ import com.elroi.lemurloop.domain.timer.TimerRingNotification
 import com.elroi.lemurloop.domain.timer.TimerRingSession
 import com.elroi.lemurloop.domain.timer.TimerVibration
 import com.elroi.lemurloop.domain.timer.TimerVibrationRhythm
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort
 import com.elroi.lemurloop.ui.activity.TimerRingActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -49,6 +50,7 @@ class TimerRingService : Service() {
     @Inject lateinit var timerRepository: TimerRepository
     @Inject lateinit var timerSettingsRepository: TimerSettingsRepository
     @Inject lateinit var timerScheduler: TimerScheduler
+    @Inject lateinit var timerVoiceCues: TimerVoiceCueCoordinatorPort
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -77,7 +79,8 @@ class TimerRingService : Service() {
             stopPlayback = { releasePlayer() },
             stopVibration = { stopVibrator() },
             stopService = { stopRingService() },
-            cancelAlarm = { id -> timerScheduler.cancel(id) }
+            cancelAlarm = { id -> timerScheduler.cancel(id) },
+            cancelVoiceCues = { id -> timerVoiceCues.cancel(id) }
         )
     }
 

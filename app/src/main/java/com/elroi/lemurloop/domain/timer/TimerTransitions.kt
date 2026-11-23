@@ -101,6 +101,10 @@ object TimerTransitions {
             label = source.label,
             durationMillis = source.originalDurationMillis,
             nowEpochMillis = nowEpochMillis
+        ).copy(
+            voiceCueStartOverride = source.voiceCueStartOverride,
+            voiceCueMidRemainingOverride = source.voiceCueMidRemainingOverride,
+            voiceCueLastTenOverride = source.voiceCueLastTenOverride
         )
     }
 

@@ -3,11 +3,16 @@ package com.elroi.lemurloop.ui.screen.timer
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,8 +68,9 @@ fun TimerFocusScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 KeepTimerScreenOn(keepOn)
@@ -80,7 +86,62 @@ fun TimerFocusScreen(
                     onRefresh = { viewModel.refresh(timer.id) },
                     onDismiss = viewModel::dismissRinging
                 )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.timer_voice_cue_overrides),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    VoiceCueOverrideRow(
+                        label = stringResource(R.string.timer_voice_cue_start),
+                        value = timer.voiceCueStartOverride,
+                        onChange = { viewModel.setVoiceCueStartOverride(timer.id, it) }
+                    )
+                    VoiceCueOverrideRow(
+                        label = stringResource(R.string.timer_voice_cue_mid_remaining),
+                        value = timer.voiceCueMidRemainingOverride,
+                        onChange = { viewModel.setVoiceCueMidRemainingOverride(timer.id, it) }
+                    )
+                    VoiceCueOverrideRow(
+                        label = stringResource(R.string.timer_voice_cue_last_ten),
+                        value = timer.voiceCueLastTenOverride,
+                        onChange = { viewModel.setVoiceCueLastTenOverride(timer.id, it) }
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun VoiceCueOverrideRow(
+    label: String,
+    value: Boolean?,
+    onChange: (Boolean?) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = value == null,
+                onClick = { onChange(null) },
+                label = { Text(stringResource(R.string.timer_voice_cue_inherit)) }
+            )
+            FilterChip(
+                selected = value == true,
+                onClick = { onChange(true) },
+                label = { Text(stringResource(R.string.timer_voice_cue_on)) }
+            )
+            FilterChip(
+                selected = value == false,
+                onClick = { onChange(false) },
+                label = { Text(stringResource(R.string.timer_voice_cue_off)) }
+            )
         }
     }
 }

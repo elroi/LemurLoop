@@ -143,6 +143,78 @@ class TimerListControllerTest {
         assertTrue(rig.scheduler.scheduled.isEmpty())
     }
 
+    @Test
+    fun setVoiceCueOverride_runningAndPaused_persistsNullableValuesWithRequiredReplans() = runBlocking {
+        val rig = Rig(now = 1_000L)
+        rig.repository.rows[4L] = running(4L)
+        rig.repository.rows[5L] = running(5L).copy(
+            phase = TimerPhase.Paused,
+            endsAtEpochMillis = null,
+            pausedRemainingMillis = 30_000L
+        )
+
+        assertEquals(
+            TimerCommandResult.Applied,
+            rig.controller.setVoiceCueOverride(4L, TimerVoiceCueKind.Start, true)
+        )
+        assertEquals(
+            TimerCommandResult.Applied,
+            rig.controller.setVoiceCueOverride(4L, TimerVoiceCueKind.MidRemaining, false)
+        )
+        assertEquals(
+            TimerCommandResult.Applied,
+            rig.controller.setVoiceCueOverride(4L, TimerVoiceCueKind.EnterLastTen, null)
+        )
+        assertEquals(
+            TimerCommandResult.Applied,
+            rig.controller.setVoiceCueOverride(5L, TimerVoiceCueKind.Start, false)
+        )
+
+        val running = rig.repository.rows.getValue(4L)
+        assertEquals(true, running.voiceCueStartOverride)
+        assertEquals(false, running.voiceCueMidRemainingOverride)
+        assertNull(running.voiceCueLastTenOverride)
+        assertEquals(false, rig.repository.rows.getValue(5L).voiceCueStartOverride)
+        assertEquals(
+            listOf(
+                VoiceCueChange(4L, TimerVoiceCueRebuildReason.SilentReplan),
+                VoiceCueChange(4L, TimerVoiceCueRebuildReason.SilentReplan),
+                VoiceCueChange(4L, TimerVoiceCueRebuildReason.SilentReplan),
+                VoiceCueChange(5L, TimerVoiceCueRebuildReason.CancelOnly)
+            ),
+            rig.voiceCues.changes
+        )
+    }
+
+    @Test
+    fun voiceCues_allTimerTransitions_useTheRequiredReason() = runBlocking {
+        val rig = Rig(now = 1_000L)
+
+        rig.controller.start(60_000L, "Tea")
+        val createdId = rig.repository.rows.keys.single()
+        rig.controller.pause(createdId)
+        rig.controller.refresh(createdId)
+        rig.controller.play(createdId)
+        rig.controller.addOneMinute(createdId)
+        rig.controller.duplicate(createdId)
+        rig.controller.delete(createdId)
+        rig.controller.undo()
+
+        assertEquals(
+            listOf(
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.CreateOrDuplicate),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.CancelOnly),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.CancelOnly),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.Resume),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.SilentReplan),
+                VoiceCueChange(101L, TimerVoiceCueRebuildReason.CreateOrDuplicate),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.CancelOnly),
+                VoiceCueChange(createdId, TimerVoiceCueRebuildReason.SilentReplan)
+            ),
+            rig.voiceCues.changes
+        )
+    }
+
     private fun running(
         id: Long,
         endsAt: Long = 50_000L,
@@ -161,10 +233,12 @@ class TimerListControllerTest {
         val repository = MemoryTimers()
         val scheduler = MemoryScheduler()
         val ring = MemoryRing()
+        val voiceCues = RecordingVoiceCues()
         val controller = TimerListController(
             repository = repository,
             scheduler = scheduler,
             ringStop = ring,
+            voiceCues = voiceCues,
             now = { now }
         )
     }
@@ -207,5 +281,19 @@ class TimerListControllerTest {
         }
     }
 
+    private class RecordingVoiceCues : TimerVoiceCueCoordinatorPort {
+        val changes = mutableListOf<VoiceCueChange>()
+        override fun onTimerChanged(timerId: Long, reason: TimerVoiceCueRebuildReason) {
+            changes += VoiceCueChange(timerId, reason)
+        }
+        override fun onVoiceGlobalsChanged() = Unit
+        override fun cancel(timerId: Long) = Unit
+        override fun cancelAll() = Unit
+    }
+
     private data class Scheduled(val timerId: Long, val triggerAtEpochMillis: Long)
+    private data class VoiceCueChange(
+        val timerId: Long,
+        val reason: TimerVoiceCueRebuildReason
+    )
 }

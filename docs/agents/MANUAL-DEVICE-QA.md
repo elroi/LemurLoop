@@ -23,3 +23,9 @@ Gotchas from walking checklists on a real phone. Keep this short; product rules 
 ## UI automation on a personal phone
 
 - Confirm LemurLoop is the resumed activity before each tap. Other apps (e.g. Duolingo) stealing focus make misses look like product bugs.
+
+## Timer voice cues
+
+Optional spoken progress on countdown timers only. **Half-asleep checkbox script:** [TIMER-VOICE-CUES-HALF-ASLEEP-QA.md](TIMER-VOICE-CUES-HALF-ASLEEP-QA.md).
+
+If screen-off last-10 fails on API 34/35 after honest proof, stop and ask before cutting scope.

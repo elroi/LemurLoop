@@ -4,6 +4,8 @@ import com.elroi.lemurloop.domain.timer.CountdownTimer
 import com.elroi.lemurloop.domain.timer.TimerPhase
 import com.elroi.lemurloop.domain.timer.TimerSettings
 import com.elroi.lemurloop.domain.timer.TimerSound
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueCoordinatorPort
+import com.elroi.lemurloop.domain.timer.TimerVoiceCueRebuildReason
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -20,6 +22,7 @@ class TimerDataWiperTest {
             timerRepository = RecordingTimers(events),
             timerSettingsRepository = RecordingSettings(events, track),
             timerScheduler = RecordingScheduler(events),
+            timerVoiceCues = RecordingVoiceCues(events),
             timerRingStop = RecordingRingStop(events),
             timerTrackGrantReleaser = RecordingGrants(events)
         )
@@ -30,6 +33,7 @@ class TimerDataWiperTest {
             listOf(
                 "settings",
                 "timers",
+                "cancelAllVoiceCues",
                 "cancel:4",
                 "cancel:9",
                 "stopRing",
@@ -103,6 +107,16 @@ class TimerDataWiperTest {
         com.elroi.lemurloop.domain.timer.TimerRingStop {
         override fun stop() {
             events += "stopRing"
+        }
+    }
+
+    private class RecordingVoiceCues(private val events: MutableList<String>) :
+        TimerVoiceCueCoordinatorPort {
+        override fun onTimerChanged(timerId: Long, reason: TimerVoiceCueRebuildReason) = Unit
+        override fun onVoiceGlobalsChanged() = Unit
+        override fun cancel(timerId: Long) = Unit
+        override fun cancelAll() {
+            events += "cancelAllVoiceCues"
         }
     }
 

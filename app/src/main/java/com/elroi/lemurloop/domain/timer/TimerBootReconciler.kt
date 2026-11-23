@@ -7,7 +7,8 @@ class TimerBootReconciler(
     private val repository: TimerRepository,
     private val scheduler: TimerScheduler,
     private val notifier: TimerFinishedNotifier,
-    private val ringRunning: () -> Boolean
+    private val ringRunning: () -> Boolean,
+    private val voiceCues: TimerVoiceCueCoordinatorPort
 ) {
     suspend fun reconcile(nowEpochMillis: Long) {
         val timers = repository.getAll()
@@ -30,5 +31,10 @@ class TimerBootReconciler(
             repository.upsert(paused)
             notifier.notifyFinished(paused)
         }
+        repository.getAll()
+            .filter { it.phase == TimerPhase.Running }
+            .forEach {
+                voiceCues.onTimerChanged(it.id, TimerVoiceCueRebuildReason.SilentReplan)
+            }
     }
 }

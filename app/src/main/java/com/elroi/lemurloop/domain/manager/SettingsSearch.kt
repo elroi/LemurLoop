@@ -166,7 +166,42 @@ object SettingsSearchRegistry {
         SettingSearchItem(
             id = "timer_settings",
             title = "Timer",
-            description = "Sound, volume, vibration, and screen for timers",
+            description = "Sound, volume, vibration, screen, and voice cues for timers",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
+            id = "timer_voice_cues",
+            title = "Timer voice cues",
+            description = "Turn spoken timer progress on or off",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
+            id = "timer_voice_cue_start",
+            title = "Timer start voice cue",
+            description = "Announce when a timer starts",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
+            id = "timer_voice_cue_mid_remaining",
+            title = "Timer remaining-time voice cue",
+            description = "Announce time left midway through a timer",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
+            id = "timer_voice_cue_last_ten",
+            title = "Timer last-10 voice cue",
+            description = "Count down the final ten seconds aloud",
+            section = "Help & System",
+            target = SettingSearchTarget.SubScreen("timer_settings")
+        ),
+        SettingSearchItem(
+            id = "timer_voice_announce_on_resume",
+            title = "Timer resume voice cue",
+            description = "Announce when a paused timer resumes",
             section = "Help & System",
             target = SettingSearchTarget.SubScreen("timer_settings")
         ),

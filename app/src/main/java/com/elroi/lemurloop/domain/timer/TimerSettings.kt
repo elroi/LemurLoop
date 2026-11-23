@@ -50,13 +50,28 @@ data class TimerSettings(
     val rampMinutes: Int = 1,
     val vibration: TimerVibration = TimerVibration.Medium,
     val keepScreenOn: Boolean = true,
-    val capturedAlarmVolume: Int? = null
+    val capturedAlarmVolume: Int? = null,
+    val voiceCuesMasterEnabled: Boolean = false,
+    val voiceCueStartEnabled: Boolean = true,
+    val voiceCueMidRemainingEnabled: Boolean = true,
+    val voiceCueLastTenEnabled: Boolean = true,
+    val voiceCueAnnounceOnResume: Boolean = true
 ) {
     fun normalized(): TimerSettings {
         return copy(
             volumePercent = volumePercent.coerceIn(0, 100),
             rampMinutes = rampMinutes.coerceIn(0, 10),
             phoneTrackUri = phoneTrackUri?.ifBlank { null }
+        )
+    }
+
+    fun toVoiceCueGlobals(): TimerVoiceCueGlobals {
+        return TimerVoiceCueGlobals(
+            masterEnabled = voiceCuesMasterEnabled,
+            startEnabled = voiceCueStartEnabled,
+            midRemainingEnabled = voiceCueMidRemainingEnabled,
+            lastTenEnabled = voiceCueLastTenEnabled,
+            announceOnResume = voiceCueAnnounceOnResume
         )
     }
 }
