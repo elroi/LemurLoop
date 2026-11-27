@@ -13,6 +13,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
@@ -22,6 +23,7 @@ import com.elroi.lemurloop.domain.manager.SettingsManager
 import com.elroi.lemurloop.domain.repository.TimerRepository
 import com.elroi.lemurloop.domain.repository.TimerSettingsRepository
 import com.elroi.lemurloop.domain.timer.CountdownTimer
+import com.elroi.lemurloop.domain.timer.TimerLastTenCadence
 import com.elroi.lemurloop.domain.timer.TimerPhase
 import com.elroi.lemurloop.domain.timer.TimerVoiceCueBudget
 import com.elroi.lemurloop.domain.timer.TimerVoiceCueFireGate
@@ -39,6 +41,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -48,6 +51,7 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Speaks short timer progress cues while the app is backgrounded or the screen is off.
@@ -66,6 +70,7 @@ class TimerVoiceCueService : Service() {
     private val scope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
     private val sessions = mutableMapOf<Long, Job>()
     private val utterances = ConcurrentHashMap<String, CompletableDeferred<Unit>>()
+    private val utteranceStarts = ConcurrentHashMap<String, CompletableDeferred<Long>>()
     private val speechMutex = Mutex()
     private val ttsReady = CompletableDeferred<Boolean>()
     private var tts: TextToSpeech? = null
@@ -109,6 +114,7 @@ class TimerVoiceCueService : Service() {
         sessions.clear()
         utterances.values.forEach { it.cancel() }
         utterances.clear()
+        utteranceStarts.clear()
         abandonAudioFocus()
         tts?.stop()
         tts?.shutdown()
@@ -202,25 +208,92 @@ class TimerVoiceCueService : Service() {
         wakeLock.acquire(LAST_TEN_WAKE_LOCK_TIMEOUT_MILLIS)
         try {
             val localized = localizedSpeech() ?: return
-            val initialDigits = TimerVoiceCueFireGate.lastTenDigitsToSpeak(
+            // Wake the audio output path before "10" so the first digit isn't late.
+            warmUpAudioPath()
+            var onsetLead: Long? = null
+            var pending: SpokenDigit? = null
+            val digits = TimerVoiceCueFireGate.lastTenDigitsToSpeak(
                 System.currentTimeMillis(),
                 endsAtEpochMillis
             )
-            for (digit in initialDigits) {
-                val idealEpoch = endsAtEpochMillis - digit * 1_000L
-                val waitMillis = idealEpoch - System.currentTimeMillis()
+            for (digit in digits) {
+                pending?.observedOnsetMillis()?.let {
+                    onsetLead = TimerLastTenCadence.nextOnsetLeadMillis(onsetLead, it)
+                }
+                // Anchored to the end time, never to when the previous digit finished:
+                // waiting on speech completion drifted, then rushed and dropped digits.
+                val speakAt = TimerLastTenCadence.speakAtEpochMillis(
+                    digit,
+                    endsAtEpochMillis,
+                    onsetLead ?: TimerLastTenCadence.INITIAL_ONSET_LEAD_MILLIS
+                )
+                val waitMillis = speakAt - System.currentTimeMillis()
                 if (waitMillis > 0L) delay(waitMillis)
                 val stillValid = TimerVoiceCueFireGate.lastTenDigitsToSpeak(
                     System.currentTimeMillis(),
                     endsAtEpochMillis
                 ).contains(digit)
                 if (stillValid) {
-                    speakAndAwait(localized.context.getString(R.string.timer_voice_cue_digit, digit))
+                    // Flush, don't queue: a long digit must never push the next one late.
+                    pending = speakDigit(
+                        localized.context.getString(R.string.timer_voice_cue_digit, digit)
+                    ) ?: pending
                 }
             }
+            pending?.let { withTimeoutOrNull(LAST_DIGIT_DONE_TIMEOUT_MILLIS) { it.done.await() } }
         } finally {
             if (wakeLock.isHeld) wakeLock.release()
         }
+    }
+
+    private class SpokenDigit(
+        val requestedAtElapsed: Long,
+        val started: CompletableDeferred<Long>,
+        val done: CompletableDeferred<Unit>
+    ) {
+        @OptIn(ExperimentalCoroutinesApi::class)
+        fun observedOnsetMillis(): Long? =
+            if (started.isCompleted && !started.isCancelled) {
+                started.getCompleted() - requestedAtElapsed
+            } else {
+                null
+            }
+    }
+
+    private suspend fun warmUpAudioPath() {
+        val engine = tts ?: return
+        val utteranceId = UUID.randomUUID().toString()
+        val completion = CompletableDeferred<Unit>()
+        utterances[utteranceId] = completion
+        if (engine.playSilentUtterance(
+                WARMUP_SILENCE_MILLIS,
+                TextToSpeech.QUEUE_FLUSH,
+                utteranceId
+            ) == TextToSpeech.ERROR
+        ) {
+            utterances.remove(utteranceId)
+            return
+        }
+        withTimeoutOrNull(WARMUP_TIMEOUT_MILLIS) { completion.await() }
+    }
+
+    private fun speakDigit(text: String): SpokenDigit? {
+        val engine = tts ?: return null
+        val utteranceId = UUID.randomUUID().toString()
+        val digit = SpokenDigit(
+            requestedAtElapsed = SystemClock.elapsedRealtime(),
+            started = CompletableDeferred(),
+            done = CompletableDeferred()
+        )
+        utteranceStarts[utteranceId] = digit.started
+        utterances[utteranceId] = digit.done
+        val result = engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+        if (result == TextToSpeech.ERROR) {
+            utteranceStarts.remove(utteranceId)
+            utterances.remove(utteranceId)
+            return null
+        }
+        return digit
     }
 
     private suspend fun localizedSpeech(): LocalizedSpeech? {
@@ -299,6 +372,7 @@ class TimerVoiceCueService : Service() {
             tts?.stop()
             utterances.values.forEach { it.cancel() }
             utterances.clear()
+            utteranceStarts.clear()
         }
         finishIfIdle()
     }
@@ -373,15 +447,27 @@ class TimerVoiceCueService : Service() {
     }
 
     private val utteranceListener = object : UtteranceProgressListener() {
-        override fun onStart(utteranceId: String?) = Unit
+        override fun onStart(utteranceId: String?) {
+            utteranceId?.let { utteranceStarts.remove(it)?.complete(SystemClock.elapsedRealtime()) }
+        }
 
         override fun onDone(utteranceId: String?) {
-            utteranceId?.let { utterances.remove(it)?.complete(Unit) }
+            utteranceId?.let { finishUtterance(it) }
+        }
+
+        // QUEUE_FLUSH reports the flushed utterance here, not through onDone.
+        override fun onStop(utteranceId: String?, interrupted: Boolean) {
+            utteranceId?.let { finishUtterance(it) }
+        }
+
+        private fun finishUtterance(utteranceId: String) {
+            utteranceStarts.remove(utteranceId)?.cancel()
+            utterances.remove(utteranceId)?.complete(Unit)
         }
 
         @Deprecated("Deprecated in Java")
         override fun onError(utteranceId: String?) {
-            utteranceId?.let { utterances.remove(it)?.complete(Unit) }
+            utteranceId?.let { finishUtterance(it) }
         }
 
         override fun onError(utteranceId: String?, errorCode: Int) {
@@ -408,6 +494,9 @@ class TimerVoiceCueService : Service() {
             TimerVoiceCueBudget.LAST_TEN_WINDOW_MILLIS +
                 TimerVoiceCueBudget.LAST_TEN_WARMUP_LEAD_MILLIS +
                 2_000L
+        private const val WARMUP_SILENCE_MILLIS = 50L
+        private const val WARMUP_TIMEOUT_MILLIS = 700L
+        private const val LAST_DIGIT_DONE_TIMEOUT_MILLIS = 2_000L
         private const val TAG = "TimerVoiceCueService"
 
         private val SPEECH_AUDIO_ATTRIBUTES = AudioAttributes.Builder()

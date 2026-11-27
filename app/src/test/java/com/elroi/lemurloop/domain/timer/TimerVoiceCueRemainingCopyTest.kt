@@ -40,6 +40,6 @@ class TimerVoiceCueRemainingCopyTest {
         assertEquals(3_000L, TimerVoiceCueBudget.MID_CLEARANCE_BEFORE_LAST_TEN_MILLIS)
         assertEquals(1_500L, TimerVoiceCueBudget.FIRE_LATE_SKEW_MILLIS)
         assertEquals(400L, TimerVoiceCueBudget.LAST_TEN_DIGIT_SKEW_MILLIS)
-        assertEquals(800L, TimerVoiceCueBudget.LAST_TEN_WARMUP_LEAD_MILLIS)
+        assertEquals(1_500L, TimerVoiceCueBudget.LAST_TEN_WARMUP_LEAD_MILLIS)
     }
 }

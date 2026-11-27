@@ -39,7 +39,7 @@ class TimerVoiceCueCoordinatorTest {
         assertEquals(
             listOf(
                 Scheduled(7L, TimerVoiceCueKind.MidRemaining, now + 60_000L),
-                Scheduled(7L, TimerVoiceCueKind.EnterLastTen, now + 110_000L)
+                Scheduled(7L, TimerVoiceCueKind.EnterLastTen, now + 108_500L)
             ),
             rig.scheduler.scheduled
         )

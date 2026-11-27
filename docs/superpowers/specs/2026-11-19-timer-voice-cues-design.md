@@ -124,7 +124,7 @@ flowchart TD
 - FGS type **`mediaPlayback`**; notification id ≠ sleep (2), alarm (111), timer finished (220), timer ring (221).
 - `START_NOT_STICKY`. Manifest-registered, not exported.
 - `SPEAK_ONCE`: one line, then stop that work; do not `stopSelf` in a way that kills another timer’s in-flight last-10 (per-timer sessions / startId discipline).
-- `LAST_TEN`: end-anchored digits; timed `PARTIAL_WAKE_LOCK` while speaking; optional warm-up lead before first digit; then idle.
+- `LAST_TEN`: end-anchored digits; timed `PARTIAL_WAKE_LOCK` while speaking; then idle. The planner schedules `EnterLastTen` `LAST_TEN_WARMUP_LEAD_MILLIS` (1.5 s) before the window so the service and TTS are warm. Each digit is spoken at its own wall-clock time (`TimerLastTenCadence`) with `QUEUE_FLUSH`, minus a measured TTS onset lead, and never waits for the previous digit to finish — chaining on speech completion made the countdown rush and then stall (fixed 2026-11-27).
 - Alarm-adjacent audio attributes / focus for audibility (gate 7). Do not mutate `STREAM_ALARM` volume capture used by the ring.
 - Ring for timer A cancels only A’s cues.
 
