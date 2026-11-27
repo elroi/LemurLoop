@@ -47,6 +47,25 @@ class TimerVoiceCuePlanTest {
     }
 
     @Test
+    fun plan_lastTen_firesWarmupLeadBeforeTheWindow() {
+        // The service and TTS engine need time to start; firing exactly at T-10s
+        // made the first digits late, then rushed to catch up.
+        val plan = TimerVoiceCuePlan.plan(input(120_000L))
+        val enter = plan.single { it.kind == TimerVoiceCueKind.EnterLastTen }
+        assertEquals(
+            now + 120_000L - TimerVoiceCueBudget.LAST_TEN_WINDOW_MILLIS -
+                TimerVoiceCueBudget.LAST_TEN_WARMUP_LEAD_MILLIS,
+            enter.fireAtEpochMillis
+        )
+    }
+
+    @Test
+    fun plan_lastTen_insideWarmupLead_firesNow() {
+        val plan = TimerVoiceCuePlan.plan(input(11_000L))
+        assertEquals(now, plan.single { it.kind == TimerVoiceCueKind.EnterLastTen }.fireAtEpochMillis)
+    }
+
+    @Test
     fun plan_reconcile_allowStartFalse_omitsStart() {
         val plan = TimerVoiceCuePlan.plan(input(120_000L, allowStart = false))
         assertTrue(plan.none { it.kind == TimerVoiceCueKind.Start })

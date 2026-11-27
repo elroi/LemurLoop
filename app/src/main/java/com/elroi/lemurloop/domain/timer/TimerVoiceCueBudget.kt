@@ -6,5 +6,5 @@ object TimerVoiceCueBudget {
     const val MID_CLEARANCE_BEFORE_LAST_TEN_MILLIS = 3_000L
     const val FIRE_LATE_SKEW_MILLIS = 1_500L
     const val LAST_TEN_DIGIT_SKEW_MILLIS = 400L
-    const val LAST_TEN_WARMUP_LEAD_MILLIS = 800L
+    const val LAST_TEN_WARMUP_LEAD_MILLIS = 1_500L
 }

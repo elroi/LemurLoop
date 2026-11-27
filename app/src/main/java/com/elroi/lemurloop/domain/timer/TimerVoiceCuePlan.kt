@@ -42,10 +42,13 @@ object TimerVoiceCuePlan {
         }
 
         if (lastTenWanted) {
-            val enterAt = if (remaining <= TimerVoiceCueBudget.LAST_TEN_WINDOW_MILLIS) {
+            // Fire early so the service and TTS engine are warm before "10" is due.
+            val lead = TimerVoiceCueBudget.LAST_TEN_WINDOW_MILLIS +
+                TimerVoiceCueBudget.LAST_TEN_WARMUP_LEAD_MILLIS
+            val enterAt = if (remaining <= lead) {
                 input.nowEpochMillis
             } else {
-                input.endsAtEpochMillis - TimerVoiceCueBudget.LAST_TEN_WINDOW_MILLIS
+                input.endsAtEpochMillis - lead
             }
             out += TimerVoiceCueMilestone(TimerVoiceCueKind.EnterLastTen, enterAt)
         }
